@@ -10,37 +10,37 @@ Legend: `[ ]` todo · `[x]` done · `[!]` blocked (see `BLOCKERS.md`) · `[~]` s
 
 ## Phase 0 — Bootstrap, renderer smoke, contracts, isolation, determinism
 
-- [ ] **0.1 Environment bootstrap**
+- [x] **0.1 Environment bootstrap**
   - Files: `uv.lock`, `.python-version` (verify only)
   - Verification Command: `uv sync --locked && uv run knot --help && uv run knot selftest --seeds-only`
   - Done Criteria: all exit 0; `--help` lists the 10 subcommands; seeds KAT prints `"ok": true`.
 
-- [ ] **0.2 Git baseline**
+- [x] **0.2 Git baseline**
   - Files: repository root
   - Verification Command: `git rev-parse --is-inside-work-tree && git log --oneline -1`
   - Done Criteria: repo initialised on branch `main`; first commit `chore: import knotwork starter pack` contains every starter file; `git status` clean.
 
-- [ ] **0.3 Deterministic layered renderer** (§6)
+- [x] **0.3 Deterministic layered renderer** (§6)
   - Files: `src/knotwork/render/canvas.py`, `tests/conformance/test_render_smoke.py`
   - Verification Command: `uv run pytest tests/conformance/test_render_smoke.py -q`
   - Done Criteria: tests prove (a) beauty is RGB uint8 1024², drawn at 2048 and Lanczos-downsampled; (b) `id_buffer.png` reloads as uint16 and its values ⊆ {0} ∪ object ids; (c) every mask has values ⊆ {0,255} (no AA); (d) text masks are non-AA; (e) rendering the same scene twice gives identical `array_digest`s; (f) after `halo_patch`, `id` at the crossing centre equals the top object and halo pixels of the under-wire are 0 while its amodal mask stays continuous; (g) a font whose SHA-256 differs from the profile raises an error mentioning `E_FONT`; (h) `finish()` returns a valid `RenderManifest`.
 
-- [ ] **0.4 Contracts and schema sync**
+- [x] **0.4 Contracts and schema sync**
   - Files: `src/knotwork/knotcore/contracts.py`, `docs/schemas/*.schema.json` (verify only)
   - Verification Command: `uv run python scripts/export_schemas.py --check && uv run pytest tests/conformance/test_contracts.py -q`
   - Done Criteria: exit 0; no contract edits needed (if one is, follow CLAUDE.md §2 law 7).
 
-- [ ] **0.5 Kernel isolation double layer**
+- [x] **0.5 Kernel isolation double layer**
   - Files: `.importlinter`, `src/knotwork/devtools/kernel_audit.py` (verify only)
   - Verification Command: `uv run lint-imports && uv run pytest tests/conformance/test_kernel_isolation.py -q`
   - Done Criteria: `Contracts: 3 kept, 0 broken`; AST scanner tests pass.
 
-- [ ] **0.6 Seed determinism**
+- [x] **0.6 Seed determinism**
   - Files: `src/knotwork/knotcore/seeds.py` (verify only)
   - Verification Command: `uv run pytest tests/conformance/test_seeds.py -q`
   - Done Criteria: all pass including the fresh-process KAT test.
 
-- [ ] **0.7 Phase 0 gate**
+- [x] **0.7 Phase 0 gate**
   - Files: `.ci_phase`
   - Verification Command: `uv run python scripts/verify_phase.py --phase 0`
   - Done Criteria: `PHASE 0 GATE: PASSED`; write `0` to `.ci_phase`; commit `chore(phase0): gate passed`.
