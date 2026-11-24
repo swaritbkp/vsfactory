@@ -1,0 +1,114 @@
+"""{{name}}: a Knotwork TaskPlugin scaffolded by `knot new-plugin` (untrusted, adds zero kernel lines).
+
+Starting point: "how many discs are on the panel?" answered by the kernel's COUNT over the id buffer.
+Replace the scene, render and question logic with your own; keep every answer re-derivable from
+pixels by an existing kernel op (SPEC 7). It reuses the COUNT family id until the contracts grow a
+family for it (adding one is a contracts change: bump SCHEMA_VERSION, re-export schemas).
+"""
+
+from __future__ import annotations
+
+import copy
+import math
+from pathlib import Path
+from typing import Any
+
+from knotwork.knotcore.contracts import (
+    Answer,
+    AnswerType,
+    Claim,
+    ClaimSet,
+    Family,
+    FaultCode,
+    Op,
+    QuestionProgram,
+    RenderManifest,
+    SceneIR,
+)
+from knotwork.knotcore.seeds import SeedTree
+from knotwork.render.canvas import make_canvas, render_cfg
+
+NAME = "{{name}}"
+#: object-name prefix: manifest names must match ^[a-z]+/<kind>:<id>$ (no underscores)
+PREFIX = NAME.replace("_", "")
+KIND = "decor"
+COLORS = [(40, 90, 160), (170, 60, 40), (40, 130, 70), (120, 70, 140)]
+RADIUS = (16.0, 30.0)
+MARGIN = 80.0
+
+
+def _count_answer(k: int) -> Answer:
+    return Answer(type=AnswerType.INT, value=int(k), canonical=str(int(k)))
+
+
+def _place(rng: Any, k: int, size: float) -> list[list[float]]:
+    discs: list[list[float]] = []
+    while len(discs) < k:
+        r = float(rng.uniform(*RADIUS))
+        x, y = (float(rng.uniform(MARGIN, size - MARGIN)) for _ in range(2))
+        if all(math.hypot(x - a, y - b) > r + c + 24.0 for a, b, c in discs):
+            discs.append([x, y, r])
+    return discs
+
+
+class Plugin:
+    name = NAME
+    version = "0.1.0"
+    families = (Family.P4_COUNT_ZONE,)
+
+    def sample_scene(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR:
+        rng = seeds.rng()
+        k = int(rng.integers(1, 9))
+        cfg = render_cfg(profile)
+        pay = {"discs": _place(rng, k, float(cfg["canvas_px"])), "render": cfg,
+               "color": list(COLORS[int(rng.integers(len(COLORS)))])}  # fmt: skip
+        return SceneIR(plugin=NAME, plugin_version=self.version, seed_path=seeds.path_str,
+                       params={"k": k}, payload=pay)  # fmt: skip
+
+    def render(
+        self, scene: SceneIR, out_dir: Path, fault: FaultCode | None = None
+    ) -> RenderManifest:
+        del fault  # no fault hooks in the scaffold
+        c = make_canvas(scene.payload["render"])
+        rgb = tuple(int(v) for v in scene.payload["color"])
+        for i, (x, y, r) in enumerate(scene.payload["discs"]):
+            oid = c.new_object(f"{PREFIX}/decor:disc{i}", KIND, (rgb[0], rgb[1], rgb[2]))
+            c.disk(oid, (x, y), r)
+        return c.finish(out_dir, NAME)
+
+    def claims(self, scene: SceneIR) -> ClaimSet:
+        k = len(scene.payload["discs"])
+        return ClaimSet(plugin=NAME, claims=[Claim(claim_id="count", op=Op.COUNT, args=[KIND, "any"],
+                                                   expected=_count_answer(k))])  # fmt: skip
+
+    def questions(self, scene: SceneIR, seeds: SeedTree, family: Family) -> QuestionProgram:
+        return QuestionProgram(
+            program_id=f"{NAME}/{family.value}/{seeds.digest()[:16]}", family=family,
+            steps=[{"step_id": "s0", "op": "COUNT", "args": [KIND, "any"]}],  # type: ignore[list-item]
+            text="How many coloured discs are on the panel?\n"
+                 "End your reply with a final line of the form 'ANSWER: <integer>'.",
+            answer_type=AnswerType.INT, difficulty={"n": float(len(scene.payload["discs"]))},
+        )  # fmt: skip
+
+    def symbolic_answer(self, scene: SceneIR, program: QuestionProgram) -> Answer:
+        return _count_answer(len(scene.payload["discs"]))
+
+    def geometric_answer(self, scene: SceneIR, program: QuestionProgram) -> Answer | None:
+        return None
+
+    def causal_twin(
+        self, scene: SceneIR, program: QuestionProgram, seeds: SeedTree
+    ) -> tuple[SceneIR, str]:
+        pay = copy.deepcopy(scene.payload)
+        pay["discs"] = pay["discs"][:-1] if len(pay["discs"]) > 1 else _place(seeds.rng(), 2, 1024.0)
+        return scene.model_copy(update={"payload": pay}), "remove_or_add_disc"
+
+    def nuisance_twin(self, scene: SceneIR, program: QuestionProgram, seeds: SeedTree) -> SceneIR:
+        pay = copy.deepcopy(scene.payload)
+        rng = seeds.rng()
+        pay["color"] = list(COLORS[int(rng.integers(len(COLORS)))])
+        pay["render"]["background_rgb"] = [int(v) - int(rng.integers(4, 20)) for v in pay["render"]["background_rgb"]]
+        return scene.model_copy(update={"payload": pay})
+
+
+PLUGIN = Plugin()

@@ -1,0 +1,61 @@
+"""Scaffolded tests for {{name}}: protocol conformance and kernel certification of clean scenes."""
+
+from __future__ import annotations
+
+import importlib.util
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from knotwork.knotcore import engine
+from knotwork.knotcore.contracts import Family, TaskPlugin, Verdict
+from knotwork.knotcore.seeds import SeedTree
+from knotwork.render.canvas import REPO_ROOT
+
+HERE = Path(__file__).resolve().parents[1]
+
+
+def _plugin() -> Any:
+    spec = importlib.util.spec_from_file_location("{{name}}_plugin", HERE / "plugin.py")
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.PLUGIN
+
+
+def _profile() -> dict[str, Any]:
+    return yaml.safe_load((REPO_ROOT / "configs" / "default_profile.yaml").read_text(encoding="utf-8"))
+
+
+def test_protocol() -> None:
+    assert isinstance(_plugin(), TaskPlugin)
+
+
+def test_clean_scenes_certify(tmp_path: Path) -> None:
+    plugin, prof = _plugin(), _profile()
+    certified = 0
+    for i in range(4):
+        seeds = SeedTree(7).child("{{name}}", i)
+        scene = plugin.sample_scene(seeds.child("scene"), prof)
+        q = plugin.questions(scene, seeds.child("question"), Family.P4_COUNT_ZONE)
+        out = tmp_path / f"s{i}"
+        plugin.render(scene, out)
+        (out / "claims.json").write_text(plugin.claims(scene).model_dump_json(), encoding="utf-8")
+        d1 = plugin.symbolic_answer(scene, q)
+        cert = engine.certify(out, q, d1, None, prof["kernel"], "kw-" + "0" * 20)
+        certified += cert.verdict is Verdict.CERTIFIED
+        assert cert.d3.canonical == d1.canonical, cert.codes
+    assert certified == 4
+
+
+def test_twins_change_what_they_should() -> None:
+    plugin, prof = _plugin(), _profile()
+    seeds = SeedTree(9).child("{{name}}")
+    scene = plugin.sample_scene(seeds, prof)
+    q = plugin.questions(scene, seeds.child("q"), Family.P4_COUNT_ZONE)
+    causal, _ = plugin.causal_twin(scene, q, seeds.child("c"))
+    nuisance = plugin.nuisance_twin(scene, q, seeds.child("n"))
+    a = plugin.symbolic_answer(scene, q).canonical
+    assert plugin.symbolic_answer(causal, q).canonical != a
+    assert plugin.symbolic_answer(nuisance, q).canonical == a

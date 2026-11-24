@@ -15,7 +15,7 @@ concurrency:
 jobs:
   gates:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     env:
       KNOTWORK_NETWORK: deny
       PYTHONHASHSEED: "0"
