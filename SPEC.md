@@ -907,3 +907,19 @@ spec leaves open. Never silently change a threshold.
   children with `PYTHONUTF8=1`/`PYTHONIOENCODING=utf-8`, decodes their output as UTF-8
   (`errors="replace"`), and reads/writes every text file as UTF-8 instead of the locale codepage (cp1252
   on Windows). No threshold or check changed. The repository's GitHub name is `vsfactory`.
+* D-11: CW progress `φ` is wrapped to `[−45°, 315°)` (`gauge._phi`) instead of `[0°, 360°)`: zone-arc
+  pixels rasterised a fraction of a degree before the scale start would otherwise get `φ ≈ 360°` and make
+  the first zone span the whole dial. The 270° sweep leaves a 90° dead band, so no valid pixel moves.
+* D-12: Kernel primitives signal a failed check by raising `io.KernelFault(code)`; `engine` catches every
+  fault and records it as a certificate code (errors are values at the kernel boundary, one line per
+  check instead of tuple plumbing through every primitive).
+* D-13: OCR details SPEC 7.9 leaves open: a label's template-fallback group = label objects with the same
+  `parent`; candidate glyphs are rendered through the beauty chain (2× font, Lanczos to 1024 then 768)
+  with a 4-px background margin (plain 0.75× renders gave < 0.05 margins for P/R/F and 1/10).
+* D-14: `TRACE` ending on an unlabelled terminal returns its `terminal_id`; `GAUGE_OF` accepts a port's
+  `terminal_id` or its OCR'd label (so `GAUGE_OF($s0)` composes with `TRACE`); the witness samples the
+  needle-tip colour 3 px inward of the PCA far end (a 5×5 patch on the last pixel straddles background).
+* D-15: The needle hides part of a tick label when it points within ~2.5 units of that tick (labels sit at
+  0.62 R on the needle's path); plugins keep needle values clear of tick values so labels stay OCR-legible.
+  M9 (pivot moved by (14, −9)) is only observable when that shift has a component perpendicular to the
+  needle above the kernel limit `max(3, 0.03 R)`; `fault_effective(M9)` therefore checks that geometry.

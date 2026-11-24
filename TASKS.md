@@ -49,67 +49,67 @@ Legend: `[ ]` todo · `[x]` done · `[!]` blocked (see `BLOCKERS.md`) · `[~]` s
 
 ## Phase 1 — knotcore trusted pixel kernel (§7) — executable LOC ≤ 850, total ≤ 1350
 
-- [ ] **1.1 Bundle loader and kernel fixtures**
+- [x] **1.1 Bundle loader and kernel fixtures**
   - Files: `src/knotwork/knotcore/io.py`, `tests/kernel/conftest.py`, `tests/kernel/fixtures.py`, `tests/kernel/test_io.py`
   - Verification Command: `uv run pytest tests/kernel/test_io.py -q`
   - Done Criteria: `load_bundle(dir) -> Bundle` (manifest, claims, beauty, luminance, id uint16, masks bool) with `E_SCHEMA` on invalid JSON/shape; fixtures build tiny synthetic bundles with `render.canvas` directly (two strands with one crossing + terminals + labels; one gauge) — **no plugin imports in tests/kernel**.
 
-- [ ] **1.2 OCR with template fallback** (§7.9)
+- [x] **1.2 OCR with template fallback** (§7.9)
   - Files: `src/knotwork/knotcore/ocr.py`, `tests/kernel/test_ocr.py`
   - Verification Command: `uv run pytest tests/kernel/test_ocr.py -q`
   - Done Criteria: OCR runs only on the 768-px consumption image; every start letter in the profile alphabet, `1`–`10`, `G1`–`G4` and all tick labels (`00`…`90`) read correctly at 768 px with RapidOCR (≥ 99 % over the fixture set, 100 % after fallback); the crop-hash LRU cache (§7.9) returns the cached result for an identical crop without calling RapidOCR again (test with a counting stub) and is keyed by `array_digest` of the preprocessed crop; forced-fallback test exercises template matching; a swapped label yields `E_LABEL_MISMATCH`; blank crop yields `E_OCR_FAIL`; engine is a lazy singleton.
 
-- [ ] **1.3 TRACE** (§7.1–7.2)
+- [x] **1.3 TRACE** (§7.1–7.2)
   - Files: `src/knotwork/knotcore/topo.py`, `tests/kernel/test_trace.py`
   - Verification Command: `uv run pytest tests/kernel/test_trace.py -q`
   - Done Criteria: correct end label on fixtures; broken mask ⇒ `E_TRACE_NO_TERMINAL`; mask touching two end boxes ⇒ `E_TRACE_AMBIGUOUS`; evidence has `path_px`, `end_terminal`, `ocr_text`.
 
-- [ ] **1.4 CROSS with geodesic ordering** (§7.3)
+- [x] **1.4 CROSS with geodesic ordering** (§7.3)
   - Files: `src/knotwork/knotcore/topo.py`, `tests/kernel/test_cross.py`
   - Verification Command: `uv run pytest tests/kernel/test_cross.py -q`
   - Done Criteria: counts 0/1/3 crossings correctly; `"*"` sums over strands; centres ordered by `MCP_Geometric` distance from the start box (test with a strand that doubles back so x-order ≠ geodesic order).
 
-- [ ] **1.5 ONTOP** (§7.4)
+- [x] **1.5 ONTOP** (§7.4)
   - Files: `src/knotwork/knotcore/topo.py`, `tests/kernel/test_ontop.py`
   - Verification Command: `uv run pytest tests/kernel/test_ontop.py -q`
   - Done Criteria: reads the id buffer at the indexed crossing centre; occluder over a crossing ⇒ `E_OCCLUDED_CROSSING`; out-of-range idx ⇒ `E_CLAIM_MISMATCH`.
 
-- [ ] **1.6 READ** (§7.5)
+- [x] **1.6 READ** (§7.5)
   - Files: `src/knotwork/knotcore/gauge.py`, `tests/kernel/test_read.py`
   - Verification Command: `uv run pytest tests/kernel/test_read.py -q`
   - Done Criteria: hypothesis test over linear/offset scales and integer values: `|v̂ − v| ≤ tol` and `tol < 0.01 × span`; displaced pivot ⇒ `E_NEEDLE_OFFCENTER`; ticks rendered out of value order ⇒ `E_SCALE_MISMATCH`; never reads `claimed_center`.
 
-- [ ] **1.7 ZONE, GAUGE_OF, READ_ALL** (§7.6–7.7)
+- [x] **1.7 ZONE, GAUGE_OF, READ_ALL** (§7.6–7.7)
   - Files: `src/knotwork/knotcore/gauge.py`, `tests/kernel/test_zone.py`
   - Verification Command: `uv run pytest tests/kernel/test_zone.py -q`
   - Done Criteria: zone from arc-mask angular extents; needle within 1° of a boundary ⇒ `E_ZONE_UNRESOLVED`; GAUGE_OF resolves the unique dilated dial.
 
-- [ ] **1.8 COUNT, CMP, ARGMAX** (§7.8)
+- [x] **1.8 COUNT, CMP, ARGMAX** (§7.8)
   - Files: `src/knotwork/knotcore/logic.py`, `tests/kernel/test_logic.py`
   - Verification Command: `uv run pytest tests/kernel/test_logic.py -q`
   - Done Criteria: tolerance-aware CMP; ARGMAX tie within tolerances ⇒ `E_AMBIGUOUS_ARGMAX`; COUNT honours `min_visible_px` and `zone:` predicates.
 
-- [ ] **1.9 Beauty-to-mask witness** (§7.10)
+- [x] **1.9 Beauty-to-mask witness** (§7.10)
   - Files: `src/knotwork/knotcore/witness.py`, `tests/kernel/test_witness.py`
   - Verification Command: `uv run pytest tests/kernel/test_witness.py -q`
   - Done Criteria: low-contrast wire ⇒ `E_BEAUTY_MISMATCH`; beauty top wire ≠ id top at a crossing ⇒ `E_BEAUTY_MISMATCH`; ink without id ⇒ `E_UNEXPLAINED_INK`; AA fringe of legit strokes is NOT flagged; mask on border / OOB box ⇒ `E_OOB`; returns `WitnessCheck` list.
 
-- [ ] **1.10 Consumption-resolution legibility guard** (§7.11)
+- [x] **1.10 Consumption-resolution legibility guard** (§7.11)
   - Files: `src/knotwork/knotcore/legibility.py`, `tests/kernel/test_legibility.py`
   - Verification Command: `uv run pytest tests/kernel/test_legibility.py -q`
   - Done Criteria: 2-px strokes ⇒ `E_ILLEGIBLE_RES`; 15° crossing ⇒ `E_TANGENT_CROSSING`; crossings closer than 4 strokes ⇒ `E_CROSSING_SPACING`; foreign ink near a terminal ⇒ `E_TERMINAL_CLEARANCE`; labels OCR'd at 768.
 
-- [ ] **1.11 Engine: execute, claims, certify** (§7.12)
+- [x] **1.11 Engine: execute, claims, certify** (§7.12)
   - Files: `src/knotwork/knotcore/engine.py`, `tests/kernel/test_engine.py`
   - Verification Command: `uv run pytest tests/kernel/test_engine.py -q`
   - Done Criteria: clean fixture ⇒ `CERTIFIED`; a 4-step premise program returns `Answer(type=PREMISE, value=PremiseValue(premise_holds=(ZONE == claimed_zone), value=READ), canonical="yes|no; <g>")` for both a true and a false premise (§7.12); wrong D1 ⇒ `E_D1_D3_MISMATCH`; wrong ONTOP claim ⇒ `E_ZORDER`; wrong READ claim ⇒ `E_SCALE_MISMATCH`; D2 ≠ D1 ⇒ `E_D1_D2_MISMATCH`; all stages run and codes accumulate; `$sN` substitution works for 3-step programs; `engine.kernel_sha256()` equals `devtools.kernel_audit.kernel_sha256()`.
 
-- [ ] **1.12 Grading** (§13.3)
+- [x] **1.12 Grading** (§13.3)
   - Files: `src/knotwork/knotcore/grading.py`, `tests/kernel/test_grading.py`
   - Verification Command: `uv run pytest tests/kernel/test_grading.py -q`
   - Done Criteria: table-driven tests for all 5 types (free text with/without `ANSWER:` line, native values); hypothesis fuzz never raises; AST test proves imports ⊆ {json, math, re, unicodedata, typing, __future__}.
 
-- [ ] **1.13 Phase 1 gate**
+- [x] **1.13 Phase 1 gate**
   - Files: `.ci_phase`
   - Verification Command: `uv run python scripts/verify_phase.py --phase 1`
   - Done Criteria: PASSED with knotcore executable LOC ≤ 850 and total ≤ 1350 (record `loc_report().summary()` and the per-module table in the commit body); commit `feat(knotcore): pixel kernel complete`.
