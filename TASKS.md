@@ -118,67 +118,67 @@ Legend: `[ ]` todo · `[x]` done · `[!]` blocked (see `BLOCKERS.md`) · `[~]` s
 
 ## Phase 2 — Untrusted plugins, twins, gaslighting, fault matrix, contact sheet
 
-- [ ] **2.1 Tangle braid algebra** (§8.1)
+- [x] **2.1 Tangle braid algebra** (§8.1)
   - Files: `src/knotwork/plugins/tangle/braid.py`, `tests/plugins/test_braid.py`
   - Verification Command: `uv run pytest tests/plugins/test_braid.py -q`
   - Done Criteria: composition matches hand-worked examples (σ₁σ₂ on n=3, polarity rule `over = a iff ε=+1`); sampled permutations uniform (χ² p > 0.01 over 6000 draws, n=4); pure pairs and R-II pairs preserve permutation; ID slots counted; per-strand crossing counts correct.
 
-- [ ] **2.2 Tangle layouts + shapely validation**
+- [x] **2.2 Tangle layouts + shapely validation**
   - Files: `src/knotwork/plugins/tangle/layout.py`, `src/knotwork/plugins/tangle/geom.py`, `tests/plugins/test_tangle_layout.py`
   - Verification Command: `uv run pytest tests/plugins/test_tangle_layout.py -q`
   - Done Criteria: strip + horseshoe; jitter fold-free (`is_simple`); geometric intersection counts equal braid crossing counts for 200 sampled scenes; nominal crossing angle ≥ 35°; `geom.geometric_answer` (D2) agrees with braid D1 on T1/T2/T3.
 
-- [ ] **2.3 Tangle render + plugin** (§6.1, §8.1)
+- [x] **2.3 Tangle render + plugin** (§6.1, §8.1)
   - Files: `src/knotwork/plugins/tangle/render.py`, `src/knotwork/plugins/tangle/plugin.py`, `src/knotwork/plugins/tangle/__init__.py`, `tests/plugins/test_tangle_plugin.py`
   - Verification Command: `uv run pytest tests/plugins/test_tangle_plugin.py -q`
   - Done Criteria: `isinstance(PLUGIN, TaskPlugin)`; schematic/harness styles; unique/partial/mono colours; exact prompts; claims for every crossing/start/strand; ≥ 95 % of 40 sampled clean scenes certify through `knotcore.engine.certify`; fault hooks M1–M7, M10 implemented and `fault_effective` defined; causal/nuisance twins per §8.1.
 
-- [ ] **2.4 Gauge plugin** (§8.2)
+- [x] **2.4 Gauge plugin** (§8.2)
   - Files: `src/knotwork/plugins/gauge/{scale,render,geom,plugin,__init__}.py`, `tests/plugins/test_gauge_plugin.py`
   - Verification Command: `uv run pytest tests/plugins/test_gauge_plugin.py -q`
   - Done Criteria: linear + offset scales, horizontal 2-digit labels OCR at 768 (100 % on 40 dials); zones; needle avoids boundaries; ≥ 95 % certify; M8/M9 hooks; twins.
 
-- [ ] **2.5 Panel plugin with gaslighting** (§8.3)
+- [x] **2.5 Panel plugin with gaslighting** (§8.3)
   - Files: `src/knotwork/plugins/panel/{compose,programs,plugin,__init__}.py`, `tests/plugins/test_panel_plugin.py`
   - Verification Command: `uv run pytest tests/plugins/test_panel_plugin.py -q && git diff --stat HEAD -- src/knotwork/knotcore`
   - Done Criteria: P1–P5 + T_GASLIGHT programs execute in the kernel unchanged (the `git diff` on knotcore is empty); premise families emit exactly the 4 steps `TRACE, GAUGE_OF, READ, ZONE` and D1 builds the same `PremiseValue` the kernel builds; schedule gives exact `round_half_up(0.15 n)` gaslight and control counts; ARGMAX margin ≥ 3 × tol; ≥ 90 % certify.
 
-- [ ] **2.6 Plugin registry**
+- [x] **2.6 Plugin registry**
   - Files: `src/knotwork/plugins/registry.py`, `tests/plugins/test_registry.py`
   - Verification Command: `uv run pytest tests/plugins/test_registry.py -q && uv run lint-imports`
   - Done Criteria: `get_plugin(name)` for tangle/gauge/panel; unknown name raises `KeyError`; import contracts still kept.
 
-- [ ] **2.7 Pipeline bundle I/O + certification orchestrator** (§3, §7.13)
+- [x] **2.7 Pipeline bundle I/O + certification orchestrator** (§3, §7.13)
   - Files: `src/knotwork/pipeline/io.py`, `src/knotwork/pipeline/certify.py`, `tests/pipeline/test_io_certify.py`
   - Verification Command: `uv run pytest tests/pipeline/test_io_certify.py -q`
   - Done Criteria: writes bundles exactly per §3 with decoded-array digests and `bundle_id`; converts failed certificates into `QuarantineRecord` with correct `stage` and `primary_code`.
 
-- [ ] **2.8 Twin builder**
+- [x] **2.8 Twin builder**
   - Files: `src/knotwork/pipeline/twins.py`, `tests/pipeline/test_twins.py`
   - Verification Command: `uv run pytest tests/pipeline/test_twins.py -q`
   - Done Criteria: causal twin answer differs with `pixel_diff_frac < 0.05`; nuisance answer equal with `≥ 0.02`; retries ≤ 3; twin family consistent with premise truth.
 
-- [ ] **2.9 `knot generate` + offline freshness receipt** (§8.4, §11.1)
+- [x] **2.9 `knot generate` + offline freshness receipt** (§8.4, §11.1)
   - Files: `src/knotwork/pipeline/generate.py`, `src/knotwork/freshness/receipt.py`, `src/knotwork/freshness/beacon.py` (offline path), `tests/pipeline/test_generate.py`
   - Verification Command: `uv run knot generate --plugin tangle --n 6 --seed 1 --out artifacts/tmp/gen && uv run pytest tests/pipeline/test_generate.py -q`
   - Done Criteria: exact base count; index/quarantine/stats/receipt written; `families_expected` in stats; canary in every task.json.
 
-- [ ] **2.10 Determinism under parallelism**
+- [x] **2.10 Determinism under parallelism**
   - Files: `tests/pipeline/test_determinism.py`
   - Verification Command: `uv run pytest tests/pipeline/test_determinism.py -q`
   - Done Criteria: same seed ⇒ identical ids for `--workers 1` and `--workers 2`; different seed ⇒ disjoint ids.
 
-- [ ] **2.11 `knot mutate` — M1–M10 conformance matrix** (§10)
+- [x] **2.11 `knot mutate` — M1–M10 conformance matrix** (§10)
   - Files: `src/knotwork/pipeline/mutate.py`, `tests/pipeline/test_mutate.py`
   - Verification Command: `uv run knot mutate --fault all --n 4 --out artifacts/tmp/mutate.json && uv run pytest tests/pipeline/test_mutate.py -q`
   - Done Criteria: MutateReport per §9.1; `exact_catch_rate == 1.0`; clean false-quarantine ≤ 0.10. If a fault is missed, fix the **kernel check or plugin injection** — never weaken thresholds.
 
-- [ ] **2.12 Contact sheet with Pixel-Witness Proof strips** (§9.1 "Contact sheet")
+- [x] **2.12 Contact sheet with Pixel-Witness Proof strips** (§9.1 "Contact sheet")
   - Files: `src/knotwork/pipeline/contact_sheet.py`, `tests/pipeline/test_contact_sheet.py`
   - Verification Command: `uv run python -m knotwork.pipeline.contact_sheet --data artifacts/phase2 --out artifacts/tmp/sheet.png && uv run pytest tests/pipeline/test_contact_sheet.py -q`
   - Done Criteria: PNG ≥ 2048×1536 + sidecar `sheet.json` per §9.1; rows `tangle`/`gauge`/`panel` start base, causal, nuisance; Pixel-Witness Proof strips `pixel_witness:tangle` and `pixel_witness:panel` with exactly `beauty | id_buffer | kernel_overlay` (overlay = kernel TRACE component, crossing centres + halo circles + ONTOP winner, needle PCA axis + dial centre, OCR text — all computed by calling knotcore on the bundle); fault row M1–M10 captioned with their E_* codes.
 
-- [ ] **2.13 Phase 2 gate → [HUMAN-CHECKPOINT-1]**
+- [x] **2.13 Phase 2 gate → [HUMAN-CHECKPOINT-1]**
   - Files: `.ci_phase`, `artifacts/phase2/CHECKPOINT_1_READY.md`
   - Verification Command: `uv run python scripts/verify_phase.py --phase 2`
   - Done Criteria: PASSED; `.ci_phase` = 2; commit `feat(plugins): tangle, gauge, panel + M1-M10 matrix`. **STOP** and ask the human to review `artifacts/phase2/contact_sheet.png` (optionally run the ≤ $0.50 gap check printed in `CHECKPOINT_1_READY.md` — human-only) and create `.checkpoints/CP1_APPROVED`.

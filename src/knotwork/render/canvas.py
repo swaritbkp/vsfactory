@@ -48,7 +48,7 @@ def font_sha256(path: str | Path) -> str:
 def _shade_colors(rgb: RGB) -> tuple[RGB, RGB]:
     """(darker rim, lighter core) colours for harness shading; both stay inside the stroke."""
     rim = tuple(int(c * 0.62) for c in rgb)
-    core = tuple(int(c + (255 - c) * 0.38) for c in rgb)
+    core = tuple(int(c + (255 - c) * 0.22) for c in rgb)
     return (rim[0], rim[1], rim[2]), (core[0], core[1], core[2])
 
 
@@ -67,11 +67,21 @@ def as_points(pts: Any) -> FloatArray:
 
 
 def _stroke(
-    draw: ImageDraw.ImageDraw, pts: FloatArray, width: float, fill: Any, scale: float, snap: bool
+    draw: ImageDraw.ImageDraw,
+    pts: FloatArray,
+    width: float,
+    fill: Any,
+    scale: float,
+    snap: bool,
+    caps: bool = True,
 ) -> None:
-    """Exact-width polyline = polygon strip per segment + round joins (disks at vertices)."""
+    """Exact-width polyline = polygon strip per segment + round joins (disks at vertices).
+
+    ``caps=False`` gives flat (butt) ends: only interior vertices get a round join."""
     p = pts * scale
-    r = width * scale / 2.0
+    # PIL fills pixels whose centres lie on the polygon edge, so 1x layers use (w - 1) / 2 to cover
+    # exactly ~w pixels (matching the anti-aliased beauty stroke footprint).
+    r = width * scale / 2.0 if not snap else max(width - 1.0, 0.0) / 2.0
 
     def fix(xy: FloatArray) -> list[tuple[float, float]]:
         if snap:
@@ -85,7 +95,7 @@ def _stroke(
             continue
         nv = np.array([-d[1], d[0]]) / n * r
         draw.polygon(fix(np.array([a + nv, b + nv, b - nv, a - nv])), fill=fill)
-    for x, y in p:
+    for x, y in p if caps else p[1:-1]:
         box = np.array([[x - r, y - r], [x + r, y + r]])
         q = fix(box)
         if q[1][0] >= q[0][0] and q[1][1] >= q[0][1]:
@@ -216,14 +226,16 @@ class LayeredCanvas:
         for draw, fill in self._layers(oid, mask, idbuf):
             _stroke(draw, p, float(width_px), fill, 1.0, snap=True)
 
-    def _beauty_stroke(self, p: FloatArray, width: float, rgb: RGB, shade: Shade) -> None:
+    def _beauty_stroke(
+        self, p: FloatArray, width: float, rgb: RGB, shade: Shade, caps: bool = True
+    ) -> None:
         if shade == "harness" and width >= 4.0:
             rim, core = _shade_colors(rgb)
-            _stroke(self._bdraw, p, width, rim, self.ss, snap=False)
-            _stroke(self._bdraw, p, width - 2.0, rgb, self.ss, snap=False)
-            _stroke(self._bdraw, p, max(1.0, width * 0.28), core, self.ss, snap=False)
+            _stroke(self._bdraw, p, width, rim, self.ss, snap=False, caps=caps)
+            _stroke(self._bdraw, p, width - 2.0, rgb, self.ss, snap=False, caps=caps)
+            _stroke(self._bdraw, p, max(1.0, width * 0.2), core, self.ss, snap=False, caps=caps)
         else:
-            _stroke(self._bdraw, p, width, rgb, self.ss, snap=False)
+            _stroke(self._bdraw, p, width, rgb, self.ss, snap=False, caps=caps)
 
     def raw_beauty_polyline(self, pts: Any, width_px: float, rgb: RGB) -> None:
         """Ink on the beauty layer only: no object, no mask, no id (fault injection M7)."""
@@ -337,15 +349,16 @@ class LayeredCanvas:
         style = self._objs[top_oid].style
         rgb: RGB = style.get("rgb", self._color(top_oid, None))
         shade: Shade = style.get("shade", "flat")
-        under = _sub_run(p, c, radius_px)
-        over = _sub_run(p, c, radius_px + width_px + halo_px)
-        if len(under) == 0 or len(over) == 0:
+        run = _sub_run(p, c, radius_px)
+        if len(run) < 2:
             return
+        # Flat-ended background halo, then the top wire redrawn over exactly the same run: nothing
+        # outside `radius_px` of this crossing is touched, so nearby crossings keep their layering.
         halo_w = float(width_px + 2 * halo_px)
-        _stroke(self._bdraw, under, halo_w, self.background, self.ss, snap=False)
-        self._beauty_stroke(over, float(width_px), rgb, shade)
-        _stroke(self._idraw, under, halo_w, 0, 1.0, snap=True)
-        _stroke(self._idraw, over, float(width_px), top_oid, 1.0, snap=True)
+        _stroke(self._bdraw, run, halo_w, self.background, self.ss, snap=False, caps=False)
+        self._beauty_stroke(run, float(width_px), rgb, shade, caps=False)
+        _stroke(self._idraw, run, halo_w, 0, 1.0, snap=True, caps=False)
+        _stroke(self._idraw, run, float(width_px), top_oid, 1.0, snap=True)
 
     # ------------------------------------------------------------------ output
     def beauty_array(self) -> npt.NDArray[np.uint8]:
@@ -434,3 +447,28 @@ def _to_radius(inside: FloatArray, outside: FloatArray, c: FloatArray, radius: f
         else:
             hi_t = t
     return np.asarray(inside + (outside - inside) * lo_t, dtype=np.float64)
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def render_cfg(profile: dict[str, Any]) -> dict[str, Any]:
+    """The render settings a plugin stores in its scene payload (background, font, size)."""
+    r = profile["render"]
+    return {
+        "background_rgb": [int(v) for v in r["background_rgb"]],
+        "font_path": str(r["font_path"]),
+        "font_sha256": str(r["font_sha256"]),
+        "canvas_px": int(r["canvas_px"]),
+        "supersample": int(r["supersample"]),
+    }
+
+
+def make_canvas(cfg: dict[str, Any]) -> LayeredCanvas:
+    """Canvas from `render_cfg` output; relative font paths resolve against the repository root."""
+    font = Path(cfg["font_path"])
+    if not font.is_absolute():
+        font = REPO_ROOT / font
+    bg = cfg["background_rgb"]
+    return LayeredCanvas(int(cfg["canvas_px"]), int(cfg["supersample"]), (int(bg[0]), int(bg[1]), int(bg[2])),
+                         font, cfg["font_sha256"])  # fmt: skip

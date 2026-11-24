@@ -33,10 +33,11 @@
       "Bash(rm -rf artifacts/:*)",
       "Bash(rm -f artifacts/:*)",
       "Bash(python3:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(git push origin main)",
+      "Bash(git push)"
     ],
     "deny": [
-      "Bash(git push:*)",
       "Bash(git reset --hard:*)",
       "Bash(rm -rf /:*)",
       "Bash(curl:*)",
@@ -50,7 +51,9 @@
       "Write(./.checkpoints/GAPCHECK_APPROVED)",
       "Bash(uv run python scripts/gap_check.py:*)",
       "Bash(python3 scripts/gap_check.py:*)",
-      "Bash(echo ok > .checkpoints:*)"
+      "Bash(echo ok > .checkpoints:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)"
     ]
   }
 }

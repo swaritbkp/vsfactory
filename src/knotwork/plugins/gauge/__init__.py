@@ -1,1 +1,5 @@
-"""Gauge plugin: analog single-needle dials (families G1_READ, G2_ZONE). Built in Phase 2."""
+"""Gauge plugin: analog dials (untrusted; SPEC 8.2)."""
+
+from knotwork.plugins.gauge.plugin import PLUGIN, GaugePlugin, TwinUnavailable, fault_effective
+
+__all__ = ["PLUGIN", "GaugePlugin", "TwinUnavailable", "fault_effective"]

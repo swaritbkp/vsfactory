@@ -1,1 +1,5 @@
-"""Panel plugin: tangle cables into gauge ports (P1-P5, T_GASLIGHT). Built in Phase 2."""
+"""Panel plugin: sockets -> tangle -> gauges composition (untrusted; SPEC 8.3)."""
+
+from knotwork.plugins.panel.plugin import PLUGIN, PanelPlugin, TwinUnavailable, fault_effective
+
+__all__ = ["PLUGIN", "PanelPlugin", "TwinUnavailable", "fault_effective"]
