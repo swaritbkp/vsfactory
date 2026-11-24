@@ -33,7 +33,7 @@ def rapid(img: U8) -> tuple[str, float]:
     if not _ENGINE:
         from rapidocr_onnxruntime import RapidOCR
 
-        _ENGINE.append(RapidOCR())
+        _ENGINE.append(RapidOCR(intra_op_num_threads=1, inter_op_num_threads=1))
     res, _ = _ENGINE[0](img, use_det=True, use_cls=False, use_rec=True)
     if not res:
         return "", 0.0

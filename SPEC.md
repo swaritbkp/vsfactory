@@ -918,8 +918,36 @@ spec leaves open. Never silently change a threshold.
   with a 4-px background margin (plain 0.75× renders gave < 0.05 margins for P/R/F and 1/10).
 * D-14: `TRACE` ending on an unlabelled terminal returns its `terminal_id`; `GAUGE_OF` accepts a port's
   `terminal_id` or its OCR'd label (so `GAUGE_OF($s0)` composes with `TRACE`); the witness samples the
-  needle-tip colour 3 px inward of the PCA far end (a 5×5 patch on the last pixel straddles background).
-* D-15: The needle hides part of a tick label when it points within ~2.5 units of that tick (labels sit at
-  0.62 R on the needle's path); plugins keep needle values clear of tick values so labels stay OCR-legible.
+  needle-tip colour inward of the PCA far end (a 5×5 patch on the last pixel straddles background; D-22).
+* D-15: Tick numerals sit on face-coloured numeral plates (part of the label object: mask + id) drawn over
+  the needle and extending 10 px past the glyphs, so a needle passing a numeral never enters that
+  numeral's 768-px OCR crop (without plates the needle corner was read as an extra glyph, e.g. `20V`).
   M9 (pivot moved by (14, −9)) is only observable when that shift has a component perpendicular to the
-  needle above the kernel limit `max(3, 0.03 R)`; `fault_effective(M9)` therefore checks that geometry.
+  needle above the kernel limit `max(3, 0.03 R)`; `fault_effective(M9)` checks exactly that geometry.
+* D-16: `sample_scene` receives optional hints in the profile dict: `_family` (T2 target counts, G2 zone,
+  panel target/premise truth/ARGMAX margin/red count are sampled so answers are balanced and well posed)
+  and `_split` (test/sealed use `benchmark_color_regimes`). Plugins reject and resample internally.
+* D-17: M4 widens the chosen crossing's column by max(6, k), k bringing the nominal S-curve crossing to
+  ~16°: with dy ≤ 1.3 w (needed for legible crossings) ×6 alone usually leaves ~40°. Effective iff the
+  shapely angle of the widened layout is < 20°.
+* D-18: Tangle layout details: reduced words come from an odd–even transposition (parallel bubble) sort
+  (≤ n packed columns); commuting letters share a column; an ID slot is two barrier columns and a twin
+  fills it with a slot-bound R-II pair so no other column moves; every strand gets 24-px straight leads;
+  the horseshoe falls back to the strip when its radial budget cannot keep dy ≥ max(3.6 strokes, 34 px)
+  (n ≥ 8–9). Panel braids use the reduced word plus an optional R-II pair (no ID slots).
+* D-19: Panel geometry: dials (R = 120) in a right-hand column (staggered for 4 gauges); each port is on
+  the dial's left rim with its box 8 px from the dial mask (exactly `GAUGE_OF`'s 8-px dilation reach, and
+  ≥ 1 cable stroke of clearance); the gauge label `Gk` under the dial is the port's label (TRACE answers
+  `Gk`); cables reach ports/pads by Manhattan routing in ordered channels (provably crossing-free);
+  distractor cables start and end at unlabelled pads; panel numerals at 0.47 R; cable stroke 7 px.
+* D-20: Renderer: 1× (mask/id) strokes use half-width (w − 1)/2 because PIL fills pixels on polygon edges
+  (otherwise a "2 px" M5 stroke measures 4 px); crossing halos have flat ends and the top wire is redrawn
+  over exactly the halo run (round caps let a redraw overwrite a neighbouring crossing's top).
+* D-21: A twin edit that cannot be constructed (e.g. no ID slot next to the query strand) is retried and
+  is not a candidate; `false_quarantine_rate` counts rendered candidates only. Gauge D2 is the shapely
+  needle-polygon reading; panel D2 is omitted (optional, SPEC 2.3).
+* D-22: The witness samples the needle-tip colour 6 px inward of the PCA far end (3 px picked up Lanczos
+  ringing at the tip edge on 120-px panel dials).
+* D-23: The kernel's RapidOCR engine runs with one intra-/inter-op thread: identical reduction order on
+  every machine (determinism independent of core count) and no oversubscription when generation runs one
+  process per core. Worker pools also pin BLAS/OpenMP to one thread each.
