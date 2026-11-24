@@ -1,0 +1,92 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "beacon_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Beacon Url"
+    },
+    "canary": {
+      "pattern": "^KNOTWORK-CANARY-[0-9a-f]{32}$",
+      "title": "Canary",
+      "type": "string"
+    },
+    "emission_mask_commit": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Emission Mask Commit",
+      "type": "string"
+    },
+    "fetched_at_utc": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Fetched At Utc"
+    },
+    "protocol_commit": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Protocol Commit",
+      "type": "string"
+    },
+    "randomness_hex": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Randomness Hex",
+      "type": "string"
+    },
+    "receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Receipt Id",
+      "type": "string"
+    },
+    "root_seed": {
+      "exclusiveMaximum": 340282366920938463463374607431768211456,
+      "minimum": 0,
+      "title": "Root Seed",
+      "type": "integer"
+    },
+    "round": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Round"
+    },
+    "source": {
+      "enum": [
+        "drand",
+        "nist",
+        "offline"
+      ],
+      "title": "Source",
+      "type": "string"
+    }
+  },
+  "required": [
+    "receipt_id",
+    "protocol_commit",
+    "source",
+    "randomness_hex",
+    "root_seed",
+    "emission_mask_commit",
+    "canary"
+  ],
+  "title": "FreshnessReceipt",
+  "type": "object"
+}

@@ -1,0 +1,37 @@
+{
+  "additionalProperties": false,
+  "description": "Plugin-side scene description. `payload` is opaque to knotcore and never read by it.",
+  "properties": {
+    "params": {
+      "additionalProperties": true,
+      "title": "Params",
+      "type": "object"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "plugin": {
+      "title": "Plugin",
+      "type": "string"
+    },
+    "plugin_version": {
+      "title": "Plugin Version",
+      "type": "string"
+    },
+    "seed_path": {
+      "title": "Seed Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plugin",
+    "plugin_version",
+    "seed_path",
+    "params",
+    "payload"
+  ],
+  "title": "SceneIR",
+  "type": "object"
+}

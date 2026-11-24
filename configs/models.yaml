@@ -1,0 +1,88 @@
+# OpenRouter model slots for the 3-VLM diagnostic benchmark (SPEC.md section 12).
+# Paid calls happen ONLY with: knot bench --live --budget-usd <= budget.hard_cap_usd
+# AND .checkpoints/CP2_APPROVED present AND OPENROUTER_API_KEY set.
+# Slugs and prices MUST be re-confirmed by the human at [HUMAN-CHECKPOINT-2]
+# (`knot bench --live --budget-usd 8 --dry-run` prints the preflight estimate).
+config_version: 1
+
+endpoint: https://openrouter.ai/api/v1/chat/completions
+models_endpoint: https://openrouter.ai/api/v1/models
+
+budget:
+  hard_cap_usd: 8.00            # absolute ceiling; CLI refuses any --budget-usd above this
+  planned_usd: 6.00             # expected spend for the full run
+  per_call_safety_margin: 1.25  # preflight multiplies estimated cost by this
+  stop_when_remaining_usd_below: 0.10
+
+routing:
+  provider:
+    data_collection: deny       # OpenRouter provider preference: never route to providers that train on prompts
+    allow_fallbacks: true
+  usage:
+    include: true               # ask OpenRouter to return usage.cost per response
+
+request_defaults:
+  temperature: 0.0
+  max_tokens: 512               # room for reasoning VLMs to finish before the final "ANSWER:" line
+  reasoning_effort: null        # null = omit; per-slot override (low|medium|high) -> body.reasoning.effort
+  timeout_s: 90
+  max_retries: 3
+  concurrency: 4
+  image_detail: high
+  image_long_side_px: 768       # images are sent at consumption resolution
+
+# Three tiers. Slugs and prices change often: at [HUMAN-CHECKPOINT-2] run
+#   uv run knot bench --live --budget-usd 8 --dry-run --data <dir> --out artifacts/phase5/preflight
+# (prints every slot's slug and estimated cost, no network) and confirm each slug exists and accepts
+# image input at https://openrouter.ai/models before approving. Edit slug/prices here if needed.
+slots:
+  - slot: vlm_a                 # frontier reasoning VLM (closed)
+    tier: frontier_reasoning
+    slug: openai/gpt-5.4
+    est_usd_per_mtok_in: 2.50
+    est_usd_per_mtok_out: 15.00
+    max_tokens: 1024
+    reasoning_effort: low
+  - slot: vlm_b                 # fast, cheap closed VLM (also the default for the CP1 gap check)
+    tier: fast_closed
+    slug: google/gemini-2.5-flash
+    est_usd_per_mtok_in: 0.30
+    est_usd_per_mtok_out: 2.50
+    max_tokens: 512
+    reasoning_effort: low
+  - slot: vlm_c                 # current open-weight VLM
+    tier: open_weight
+    slug: qwen/qwen3-vl-235b-a22b-instruct
+    est_usd_per_mtok_in: 0.30
+    est_usd_per_mtok_out: 1.20
+    max_tokens: 512
+    reasoning_effort: null
+
+plan:
+  tracks: [tangle, panel]
+  staircase_max_trials_per_track: 50
+  ablation_trials: 40            # color unique vs mono matched pairs
+  twin_trials: 30                # base + causal + nuisance triples
+  gaslight_trials: 30
+  composition_trials: 40         # READ, TRACE, READ(TRACE) each
+  est_tokens_in_per_call: 1300   # 768 px image + prompt
+  est_tokens_out_per_call: 300   # reasoning text + ANSWER line (preflight estimate only)
+
+# Simulated VLMs for offline `knot bench --client mock` (SPEC.md section 12.6). Ground-truth
+# parameters let the Phase-5 gate prove the statistics pipeline RECOVERS known values.
+mock_slots:
+  - slot: mock_a
+    p_cross: 0.04               # per-crossing track-switch probability
+    read_sigma_frac: 0.010      # gauge reading noise, fraction of scale span
+    gaslight_accept: 0.20       # P(accepts a false premise)
+    color_bonus: 0.30           # P(uses colour shortcut) when colours are unique
+  - slot: mock_b
+    p_cross: 0.08
+    read_sigma_frac: 0.020
+    gaslight_accept: 0.45
+    color_bonus: 0.50
+  - slot: mock_c
+    p_cross: 0.15
+    read_sigma_frac: 0.035
+    gaslight_accept: 0.70
+    color_bonus: 0.70

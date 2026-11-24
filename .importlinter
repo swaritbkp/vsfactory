@@ -1,0 +1,44 @@
+[importlinter]
+root_package = knotwork
+include_external_packages = True
+
+[importlinter:contract:knotcore-isolation]
+name = knotcore (trusted pixel kernel) must never import untrusted or higher-level Knotwork code
+type = forbidden
+source_modules =
+    knotwork.knotcore
+forbidden_modules =
+    knotwork.plugins
+    knotwork.pipeline
+    knotwork.freshness
+    knotwork.probes
+    knotwork.diversity
+    knotwork.export
+    knotwork.bench
+    knotwork.report
+    knotwork.scaffold
+    knotwork.net
+    knotwork.cli
+
+[importlinter:contract:knotcore-no-network-no-geometry]
+name = knotcore must not import network, UI, ML-probe or scene-geometry libraries
+type = forbidden
+source_modules =
+    knotwork.knotcore
+forbidden_modules =
+    httpx
+    requests
+    urllib3
+    shapely
+    streamlit
+    sklearn
+    matplotlib
+    pandas
+    pyarrow
+
+[importlinter:contract:plugins-independent]
+name = tangle and gauge plugins must be mutually independent (only panel may compose them)
+type = independence
+modules =
+    knotwork.plugins.tangle
+    knotwork.plugins.gauge

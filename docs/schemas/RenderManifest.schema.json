@@ -1,0 +1,422 @@
+{
+  "$defs": {
+    "GaugeEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "claimed_center": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Claimed Center",
+          "type": "array"
+        },
+        "claimed_radius": {
+          "exclusiveMinimum": 0,
+          "title": "Claimed Radius",
+          "type": "number"
+        },
+        "dial_obj": {
+          "maximum": 65535,
+          "minimum": 1,
+          "title": "Dial Obj",
+          "type": "integer"
+        },
+        "gauge_id": {
+          "pattern": "^[a-z]+/gauge:[A-Za-z0-9_]+$",
+          "title": "Gauge Id",
+          "type": "string"
+        },
+        "needle_obj": {
+          "maximum": 65535,
+          "minimum": 1,
+          "title": "Needle Obj",
+          "type": "integer"
+        },
+        "port_terminal": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Port Terminal"
+        },
+        "ticks": {
+          "items": {
+            "$ref": "#/$defs/TickEntry"
+          },
+          "minItems": 2,
+          "title": "Ticks",
+          "type": "array"
+        },
+        "zones": {
+          "items": {
+            "$ref": "#/$defs/ZoneEntry"
+          },
+          "title": "Zones",
+          "type": "array"
+        }
+      },
+      "required": [
+        "gauge_id",
+        "dial_obj",
+        "needle_obj",
+        "ticks",
+        "claimed_center",
+        "claimed_radius"
+      ],
+      "title": "GaugeEntry",
+      "type": "object"
+    },
+    "Kind": {
+      "enum": [
+        "strand",
+        "terminal",
+        "label",
+        "dial",
+        "needle",
+        "tick",
+        "tick_minor",
+        "zone_arc",
+        "occluder",
+        "decor"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "ObjectEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "box": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PixelBox"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "color_rgb": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Color Rgb",
+          "type": "array"
+        },
+        "font_px": {
+          "anyOf": [
+            {
+              "maximum": 96,
+              "minimum": 6,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Font Px"
+        },
+        "kind": {
+          "$ref": "#/$defs/Kind"
+        },
+        "label_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label Text"
+        },
+        "mask": {
+          "pattern": "^masks/obj_\\d{5}\\.png$",
+          "title": "Mask",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[a-z]+/[a-z_]+:[A-Za-z0-9_]+$",
+          "title": "Name",
+          "type": "string"
+        },
+        "obj_id": {
+          "maximum": 65535,
+          "minimum": 1,
+          "title": "Obj Id",
+          "type": "integer"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent"
+        }
+      },
+      "required": [
+        "obj_id",
+        "name",
+        "kind",
+        "mask",
+        "color_rgb"
+      ],
+      "title": "ObjectEntry",
+      "type": "object"
+    },
+    "PixelBox": {
+      "additionalProperties": false,
+      "description": "Half-open integer pixel box [x0, x1) x [y0, y1) in 1024-px canvas coordinates.",
+      "properties": {
+        "x0": {
+          "title": "X0",
+          "type": "integer"
+        },
+        "x1": {
+          "title": "X1",
+          "type": "integer"
+        },
+        "y0": {
+          "title": "Y0",
+          "type": "integer"
+        },
+        "y1": {
+          "title": "Y1",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x0",
+        "y0",
+        "x1",
+        "y1"
+      ],
+      "title": "PixelBox",
+      "type": "object"
+    },
+    "TerminalEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "box": {
+          "$ref": "#/$defs/PixelBox"
+        },
+        "label_obj": {
+          "anyOf": [
+            {
+              "maximum": 65535,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label Obj"
+        },
+        "role": {
+          "enum": [
+            "start",
+            "end",
+            "port"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "terminal_id": {
+          "pattern": "^[a-z]+/terminal:[A-Za-z0-9_]+$",
+          "title": "Terminal Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "terminal_id",
+        "role",
+        "box"
+      ],
+      "title": "TerminalEntry",
+      "type": "object"
+    },
+    "TickEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "label_obj": {
+          "maximum": 65535,
+          "minimum": 1,
+          "title": "Label Obj",
+          "type": "integer"
+        },
+        "tick_obj": {
+          "maximum": 65535,
+          "minimum": 1,
+          "title": "Tick Obj",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "tick_obj",
+        "label_obj"
+      ],
+      "title": "TickEntry",
+      "type": "object"
+    },
+    "ZoneEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/ZoneName"
+        },
+        "zone_obj": {
+          "maximum": 65535,
+          "minimum": 1,
+          "title": "Zone Obj",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "zone_obj",
+        "name"
+      ],
+      "title": "ZoneEntry",
+      "type": "object"
+    },
+    "ZoneName": {
+      "enum": [
+        "green",
+        "amber",
+        "red"
+      ],
+      "title": "ZoneName",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "background_rgb": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Background Rgb",
+      "type": "array"
+    },
+    "beauty": {
+      "const": "beauty.png",
+      "default": "beauty.png",
+      "title": "Beauty",
+      "type": "string"
+    },
+    "canvas": {
+      "default": [
+        1024,
+        1024
+      ],
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Canvas",
+      "type": "array"
+    },
+    "font_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Font Sha256",
+      "type": "string"
+    },
+    "gauges": {
+      "items": {
+        "$ref": "#/$defs/GaugeEntry"
+      },
+      "title": "Gauges",
+      "type": "array"
+    },
+    "id_buffer": {
+      "const": "id_buffer.png",
+      "default": "id_buffer.png",
+      "title": "Id Buffer",
+      "type": "string"
+    },
+    "objects": {
+      "items": {
+        "$ref": "#/$defs/ObjectEntry"
+      },
+      "minItems": 1,
+      "title": "Objects",
+      "type": "array"
+    },
+    "plugin": {
+      "title": "Plugin",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "supersample": {
+      "default": 2,
+      "title": "Supersample",
+      "type": "integer"
+    },
+    "terminals": {
+      "items": {
+        "$ref": "#/$defs/TerminalEntry"
+      },
+      "title": "Terminals",
+      "type": "array"
+    }
+  },
+  "required": [
+    "plugin",
+    "background_rgb",
+    "font_sha256",
+    "objects"
+  ],
+  "title": "RenderManifest",
+  "type": "object"
+}

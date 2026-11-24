@@ -1,0 +1,163 @@
+{
+  "$defs": {
+    "Answer": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical": {
+          "title": "Canonical",
+          "type": "string"
+        },
+        "tolerance": {
+          "default": 0.0,
+          "minimum": 0.0,
+          "title": "Tolerance",
+          "type": "number"
+        },
+        "type": {
+          "$ref": "#/$defs/AnswerType"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/PremiseValue"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "type",
+        "value",
+        "canonical"
+      ],
+      "title": "Answer",
+      "type": "object"
+    },
+    "AnswerType": {
+      "enum": [
+        "label",
+        "int",
+        "float",
+        "zone",
+        "premise"
+      ],
+      "title": "AnswerType",
+      "type": "string"
+    },
+    "PremiseValue": {
+      "additionalProperties": false,
+      "properties": {
+        "premise_holds": {
+          "title": "Premise Holds",
+          "type": "boolean"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "premise_holds",
+        "value"
+      ],
+      "title": "PremiseValue",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "agent_timeout_sec": {
+      "default": 300.0,
+      "title": "Agent Timeout Sec",
+      "type": "number"
+    },
+    "bundle_id": {
+      "pattern": "^kw-[0-9a-f]{20}$",
+      "title": "Bundle Id",
+      "type": "string"
+    },
+    "canary": {
+      "pattern": "^KNOTWORK-CANARY-[0-9a-f]{32}$",
+      "title": "Canary",
+      "type": "string"
+    },
+    "category": {
+      "const": "visual-reasoning",
+      "default": "visual-reasoning",
+      "title": "Category",
+      "type": "string"
+    },
+    "difficulty": {
+      "enum": [
+        "easy",
+        "medium",
+        "hard"
+      ],
+      "title": "Difficulty",
+      "type": "string"
+    },
+    "expected": {
+      "$ref": "#/$defs/Answer"
+    },
+    "image_relpath": {
+      "const": "environment/image.png",
+      "default": "environment/image.png",
+      "title": "Image Relpath",
+      "type": "string"
+    },
+    "instruction_md": {
+      "title": "Instruction Md",
+      "type": "string"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "task_name": {
+      "pattern": "^knotwork/[a-z0-9-]+$",
+      "title": "Task Name",
+      "type": "string"
+    },
+    "verifier_timeout_sec": {
+      "default": 120.0,
+      "title": "Verifier Timeout Sec",
+      "type": "number"
+    }
+  },
+  "required": [
+    "task_name",
+    "bundle_id",
+    "instruction_md",
+    "expected",
+    "difficulty",
+    "tags",
+    "canary"
+  ],
+  "title": "HarborTask",
+  "type": "object"
+}

@@ -1,0 +1,168 @@
+{
+  "$defs": {
+    "Answer": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical": {
+          "title": "Canonical",
+          "type": "string"
+        },
+        "tolerance": {
+          "default": 0.0,
+          "minimum": 0.0,
+          "title": "Tolerance",
+          "type": "number"
+        },
+        "type": {
+          "$ref": "#/$defs/AnswerType"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/PremiseValue"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "type",
+        "value",
+        "canonical"
+      ],
+      "title": "Answer",
+      "type": "object"
+    },
+    "AnswerType": {
+      "enum": [
+        "label",
+        "int",
+        "float",
+        "zone",
+        "premise"
+      ],
+      "title": "AnswerType",
+      "type": "string"
+    },
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "args": {
+          "items": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Args",
+          "type": "array"
+        },
+        "claim_id": {
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "expected": {
+          "$ref": "#/$defs/Answer"
+        },
+        "op": {
+          "$ref": "#/$defs/Op"
+        }
+      },
+      "required": [
+        "claim_id",
+        "op",
+        "args",
+        "expected"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "Op": {
+      "enum": [
+        "TRACE",
+        "CROSS",
+        "ONTOP",
+        "READ",
+        "COUNT",
+        "CMP",
+        "ARGMAX",
+        "ZONE",
+        "READ_ALL",
+        "GAUGE_OF"
+      ],
+      "title": "Op",
+      "type": "string"
+    },
+    "PremiseValue": {
+      "additionalProperties": false,
+      "properties": {
+        "premise_holds": {
+          "title": "Premise Holds",
+          "type": "boolean"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "premise_holds",
+        "value"
+      ],
+      "title": "PremiseValue",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "claims": {
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Claims",
+      "type": "array"
+    },
+    "plugin": {
+      "title": "Plugin",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plugin",
+    "claims"
+  ],
+  "title": "ClaimSet",
+  "type": "object"
+}

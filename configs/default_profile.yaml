@@ -1,0 +1,99 @@
+# Knotwork default generation profile. Normative semantics: SPEC.md sections 6-8.
+# Every value here is consumed by code; do not add keys without updating SPEC.md + tests.
+profile_version: 1
+
+render:
+  canvas_px: 1024               # beauty / masks / id_buffer side length
+  supersample: 2                # beauty drawn at 2048 px then Lanczos-downsampled
+  consumption_px: 768           # VLM consumption resolution (legibility guard)
+  background_rgb: [246, 244, 238]
+  font_path: assets/fonts/DejaVuSans.ttf
+  font_sha256: ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280
+  label_font_px: 26             # at 1024 px; must OCR at 768 px
+  halo_px: 5                    # background gap each side of the top wire at a crossing
+  halo_radius_px: 22            # half-length of the redrawn top-wire patch at a crossing
+  canvas_margin_px: 24          # nothing (masks, boxes) may touch this border band
+
+kernel:
+  witness:
+    ring_px: 4                  # exterior ring width for contrast sampling
+    min_contrast: 0.12          # |L_interior - L_ring| on [0,1] Rec.709 luminance
+    ink_delta: 40               # max-channel |beauty - background| counted as ink
+    ink_dilate_px: 3            # id_buffer>0 dilation that explains ink (AA fringe)
+    max_unexplained_area_px: 30 # connected unexplained ink component area limit
+  legibility:
+    min_stroke_px_at_consumption: 2.0
+    min_crossing_angle_deg: 25.0
+    min_crossing_spacing_strokes: 4.0
+    min_terminal_clearance_strokes: 1.0
+    min_visible_crossing_frac: 0.6
+  ocr:
+    engine: rapidocr            # rapidocr | template (template = deterministic fallback)
+    upscale: 3
+    pad_px: 40
+    use_det: true
+    min_confidence: 0.5
+  gauge:
+    max_center_offset_px: 3.0   # or 0.03 * radius, whichever is larger
+    tolerance_guard_k: 2.0      # tolerance multiplier on resolution-derived sigma
+  count:
+    min_visible_px: 200
+
+tangle:
+  strands: [3, 10]              # inclusive range of n
+  braid_length: [4, 18]         # generators before R-II insertions
+  identity_slots: [2, 4]        # empty columns reserved for twin edits
+  r2_distractor_pairs: [0, 3]
+  layouts: {strip: 0.6, horseshoe: 0.4}
+  styles: {schematic: 0.5, harness: 0.5}
+  color_regimes: {unique: 0.2, partial: 0.3, mono: 0.5}
+  benchmark_color_regimes: [mono] # probes/bench (split=test) use only these
+  stroke_px: [7, 11]
+  jitter_amp_px: [0, 14]
+  families: {T1_TRACE: 0.34, T2_CROSS: 0.33, T3_ONTOP: 0.33}
+  start_labels: ACDEFGHKMNPRTUVWY
+  t2_target_count: [0, 6]       # T2 answers sampled uniformly from this range
+
+gauge:
+  dials_per_scene: [1, 1]
+  radius_px: [300, 380]
+  sweep_deg: 270
+  start_deg: 225                # value-min angle, measured CCW from +x, needle sweeps CW
+  scales:
+    linear: {labels: ["00", "20", "40", "60", "80"], vmin: 0, vmax: 80}
+    offset: {labels: ["10", "30", "50", "70", "90"], vmin: 10, vmax: 90}
+  scale_mix: {linear: 0.5, offset: 0.5}
+  minor_ticks_per_major: 4
+  zone_layout: [green, amber, red]
+  value_grid: 1                 # needle values are integers
+  families: {G1_READ: 0.6, G2_ZONE: 0.4}
+  grade_tolerance_frac: 0.02    # grading tolerance floor = 2% of span
+
+panel:
+  gauges: [2, 4]
+  sockets_per_gauge: 1
+  extra_strands: [0, 3]          # distractor cables that end at blank pads
+  families:
+    P1_READ_TRACE: 0.25
+    P2_ZONE_TRACE: 0.15
+    P3_ARGMAX_PORT: 0.15
+    P4_COUNT_ZONE: 0.15
+    P5_PREMISE_CONTROL: 0.15
+    T_GASLIGHT: 0.15            # exact: round_half_up(0.15 * n) items per run
+  argmax_min_margin_tol: 3.0     # top-2 readings must differ by >= 3 x tolerance
+
+twins:
+  causal_max_pixel_frac: 0.05
+  nuisance_min_pixel_frac: 0.02
+
+generation:
+  max_attempts_per_item: 5
+  questions_per_scene: 1
+
+freshness:
+  protocol_files: [src/knotwork/knotcore/contracts.py, configs/default_profile.yaml]
+  drand_url: https://api.drand.sh/public/latest
+  nist_url: https://beacon.nist.gov/beacon/2.0/pulse/last
+  emission_salt_path: .secrets/emission_salt
+  burn_ledger_path: freshness/burn_ledger.jsonl
+  sealed_fraction: 0.2

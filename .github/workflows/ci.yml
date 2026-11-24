@@ -1,0 +1,69 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      KNOTWORK_NETWORK: deny
+      PYTHONHASHSEED: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: uv sync (locked)
+        run: uv sync --locked
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format --check
+        run: uv run ruff format --check .
+
+      - name: lint-imports (knotcore isolation)
+        run: uv run lint-imports
+
+      - name: mypy (strict kernel)
+        run: uv run mypy
+
+      - name: pytest (offline, no API keys)
+        run: uv run pytest -q
+
+      - name: knot selftest --seeds-only (determinism KAT)
+        run: uv run knot selftest --seeds-only
+
+      - name: Phase gates (CI subset driven by .ci_phase)
+        run: |
+          PHASE=$(cat .ci_phase 2>/dev/null || echo 0)
+          echo "highest completed phase: $PHASE"
+          uv run python scripts/verify_phase.py --phase 0
+          if [ "$PHASE" -ge 2 ]; then uv run knot mutate --fault all --n 2 --out artifacts/ci/mutate.json; fi
+          if [ "$PHASE" -ge 3 ]; then uv run knot selftest; fi
+          if [ "$PHASE" -ge 4 ]; then uv run python scripts/verify_phase.py --phase 4; fi
+
+      - name: Upload gate reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-reports
+          path: |
+            artifacts/gates/
+            artifacts/ci/
+            artifacts/selftest/report.json
+          if-no-files-found: ignore

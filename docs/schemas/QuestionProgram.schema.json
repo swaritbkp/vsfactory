@@ -1,0 +1,188 @@
+{
+  "$defs": {
+    "AnswerType": {
+      "enum": [
+        "label",
+        "int",
+        "float",
+        "zone",
+        "premise"
+      ],
+      "title": "AnswerType",
+      "type": "string"
+    },
+    "Family": {
+      "enum": [
+        "T1_TRACE",
+        "T2_CROSS",
+        "T3_ONTOP",
+        "G1_READ",
+        "G2_ZONE",
+        "P1_READ_TRACE",
+        "P2_ZONE_TRACE",
+        "P3_ARGMAX_PORT",
+        "P4_COUNT_ZONE",
+        "P5_PREMISE_CONTROL",
+        "T_GASLIGHT"
+      ],
+      "title": "Family",
+      "type": "string"
+    },
+    "Op": {
+      "enum": [
+        "TRACE",
+        "CROSS",
+        "ONTOP",
+        "READ",
+        "COUNT",
+        "CMP",
+        "ARGMAX",
+        "ZONE",
+        "READ_ALL",
+        "GAUGE_OF"
+      ],
+      "title": "Op",
+      "type": "string"
+    },
+    "Premise": {
+      "additionalProperties": false,
+      "properties": {
+        "claimed_zone": {
+          "$ref": "#/$defs/ZoneName"
+        },
+        "holds": {
+          "title": "Holds",
+          "type": "boolean"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "claimed_zone",
+        "holds"
+      ],
+      "title": "Premise",
+      "type": "object"
+    },
+    "ProgramStep": {
+      "additionalProperties": false,
+      "properties": {
+        "args": {
+          "items": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Args",
+          "type": "array"
+        },
+        "op": {
+          "$ref": "#/$defs/Op"
+        },
+        "step_id": {
+          "pattern": "^s\\d+$",
+          "title": "Step Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "step_id",
+        "op",
+        "args"
+      ],
+      "title": "ProgramStep",
+      "type": "object"
+    },
+    "ZoneName": {
+      "enum": [
+        "green",
+        "amber",
+        "red"
+      ],
+      "title": "ZoneName",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "answer_type": {
+      "$ref": "#/$defs/AnswerType"
+    },
+    "difficulty": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Difficulty",
+      "type": "object"
+    },
+    "family": {
+      "$ref": "#/$defs/Family"
+    },
+    "options": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Options"
+    },
+    "premise": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Premise"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "program_id": {
+      "title": "Program Id",
+      "type": "string"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/ProgramStep"
+      },
+      "minItems": 1,
+      "title": "Steps",
+      "type": "array"
+    },
+    "text": {
+      "minLength": 8,
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "program_id",
+    "family",
+    "steps",
+    "text",
+    "answer_type"
+  ],
+  "title": "QuestionProgram",
+  "type": "object"
+}

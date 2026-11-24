@@ -1,0 +1,144 @@
+{
+  "$defs": {
+    "ErrorCode": {
+      "description": "Declared in priority order: index 0 wins QuarantineRecord.primary_code.",
+      "enum": [
+        "E_SCHEMA",
+        "E_DIGEST_MISMATCH",
+        "E_FONT",
+        "E_OOB",
+        "E_LABEL_MISMATCH",
+        "E_UNEXPLAINED_INK",
+        "E_BEAUTY_MISMATCH",
+        "E_OCCLUDED_CROSSING",
+        "E_TANGENT_CROSSING",
+        "E_ILLEGIBLE_RES",
+        "E_NEEDLE_OFFCENTER",
+        "E_ZORDER",
+        "E_SCALE_MISMATCH",
+        "E_CROSSING_SPACING",
+        "E_TERMINAL_CLEARANCE",
+        "E_OCR_FAIL",
+        "E_TRACE_NO_TERMINAL",
+        "E_TRACE_AMBIGUOUS",
+        "E_ZONE_UNRESOLVED",
+        "E_AMBIGUOUS_ARGMAX",
+        "E_CLAIM_MISMATCH",
+        "E_D1_D3_MISMATCH",
+        "E_D1_D2_MISMATCH",
+        "E_TWIN_INVALID"
+      ],
+      "title": "ErrorCode",
+      "type": "string"
+    },
+    "Family": {
+      "enum": [
+        "T1_TRACE",
+        "T2_CROSS",
+        "T3_ONTOP",
+        "G1_READ",
+        "G2_ZONE",
+        "P1_READ_TRACE",
+        "P2_ZONE_TRACE",
+        "P3_ARGMAX_PORT",
+        "P4_COUNT_ZONE",
+        "P5_PREMISE_CONTROL",
+        "T_GASLIGHT"
+      ],
+      "title": "Family",
+      "type": "string"
+    },
+    "FaultCode": {
+      "enum": [
+        "M1",
+        "M2",
+        "M3",
+        "M4",
+        "M5",
+        "M6",
+        "M7",
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "title": "FaultCode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": {
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "codes": {
+      "items": {
+        "$ref": "#/$defs/ErrorCode"
+      },
+      "minItems": 1,
+      "title": "Codes",
+      "type": "array"
+    },
+    "detail": {
+      "title": "Detail",
+      "type": "string"
+    },
+    "family": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Family"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "injected_fault": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FaultCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "plugin": {
+      "title": "Plugin",
+      "type": "string"
+    },
+    "primary_code": {
+      "$ref": "#/$defs/ErrorCode"
+    },
+    "seed_path": {
+      "title": "Seed Path",
+      "type": "string"
+    },
+    "stage": {
+      "enum": [
+        "schema",
+        "render",
+        "witness",
+        "legibility",
+        "kernel",
+        "certify",
+        "twin"
+      ],
+      "title": "Stage",
+      "type": "string"
+    }
+  },
+  "required": [
+    "candidate_id",
+    "plugin",
+    "seed_path",
+    "stage",
+    "codes",
+    "primary_code",
+    "detail"
+  ],
+  "title": "QuarantineRecord",
+  "type": "object"
+}
