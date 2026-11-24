@@ -30,7 +30,9 @@ from knotwork.knotcore.contracts import (
 from knotwork.knotcore.seeds import SeedTree
 from knotwork.plugins.gauge.plugin import (
     float_answer,
+    ordinal,
     pick_value,
+    pick_value_binned,
     restyle_dial,
     sample_dial,
     tol_units,
@@ -137,7 +139,12 @@ class PanelPlugin:
             socket_strands = sorted(int(x) for x in rng.choice(n, size=k, replace=False))
             exits, _ = braid.compose(n, word)
             pattern = [exits[j] in socket_strands for j in range(n)]
-            centers = compose.dial_slots(k)
+            mirror = bool(rng.random() < 0.5)
+            centers, dx = compose.shifted_slots(k, rng)
+            span = plan["dy"] * (n - 1)
+            plan["y_top"] = (
+                float(rng.uniform(150.0, 874.0 - span)) if span < 724.0 else plan["y_top"]
+            )
             ports = [compose.port_xy(c) for c in centers]
             pads = compose.pad_slots(rng, [p[1] for p in ports], pattern)
             if pads is None:
@@ -150,7 +157,7 @@ class PanelPlugin:
                     gidx.append(pi)
                     pi += 1
                 else:
-                    dests.append([compose.pad_x(k), pads[qi]])
+                    dests.append([compose.pad_x(k) + dx, pads[qi]])
                     kinds.append("pad")
                     gidx.append(-1)
                     qi += 1
@@ -158,8 +165,14 @@ class PanelPlugin:
             picks = [letters[int(i)] for i in rng.choice(len(letters), size=k, replace=False)]
             dials = [
                 sample_dial(
-                    rng, gprof, f"g{i + 1}", centers[i], compose.DIAL_R, None, PANEL_LABEL_FRAC
-                )
+                    rng,
+                    gprof,
+                    f"g{i + 1}",
+                    (compose.mirror_x(centers[i][0]) if mirror else centers[i][0], centers[i][1]),
+                    compose.DIAL_R,
+                    None,
+                    PANEL_LABEL_FRAC,
+                )  # fmt: skip
                 for i in range(k)
             ]
             regime = _pick(rng, regimes)
@@ -174,8 +187,10 @@ class PanelPlugin:
                 "dest_gauge": gidx, "dials": dials, "render": render_cfg(profile), "grade_tol": tol,
                 "surface": realism.sample_surface(rng, "brushed"), "panel_id": int(rng.integers(1, 99)),
                 "argmax_margin": float(prof["argmax_min_margin_tol"]) * tol, "target": None, "claimed": None,
+                "mirror": mirror, "relief": realism.relief_panels(rng),
             }  # fmt: skip
             pay["render"]["background_rgb"] = list(ENCLOSURES[int(rng.integers(len(ENCLOSURES)))])
+            pay["_ordinal"] = profile.get("_ordinal")
             if not self._condition(pay, family, rng, gprof):
                 continue
             lay = Layout(
@@ -200,9 +215,13 @@ class PanelPlugin:
             *(f.value for f in PREMISE),
         ):
             pay["target"] = socket_labels[int(rng.integers(len(socket_labels)))]
-            if family != Family.P1_READ_TRACE.value:
+            if family == Family.P1_READ_TRACE.value:
                 g = next(d for d in pay["dials"] if d["name"] == target_gauge(pay)["name"])
-                zone = str(ZONES[int(rng.integers(3))])
+                g["value"] = float(pick_value_binned(rng, g, tol, decile=ordinal(pay)))
+            else:
+                g = next(d for d in pay["dials"] if d["name"] == target_gauge(pay)["name"])
+                o, draw = ordinal(pay), int(rng.integers(3))
+                zone = str(ZONES[draw if o is None else o % 3])
                 v = pick_value(rng, g, tol, zone=zone)
                 if v is None:
                     return False
@@ -210,7 +229,8 @@ class PanelPlugin:
                 if family in (f.value for f in PREMISE):
                     holds = family == Family.P5_PREMISE_CONTROL.value
                     others = [z for z in ZONES if z != zone]
-                    pay["claimed"] = zone if holds else others[int(rng.integers(2))]
+                    pick = int(rng.integers(2)) if o is None else (o // 3) % 2
+                    pay["claimed"] = zone if holds else others[pick]
         elif family == Family.P3_ARGMAX_PORT.value:
             for _ in range(60):
                 if argmax_ok(pay):
@@ -247,10 +267,14 @@ class PanelPlugin:
             c.text(
                 lab, (cx, cy + compose.DIAL_R + bezel_width(compose.DIAL_R) + 20.0), f"G{i + 1}", 26
             )
-            row = c.mask_array(g.dial_obj)[int(round(cy))]
-            x1 = int(np.nonzero(row)[0].min()) - compose.PORT_GAP
+            row = np.nonzero(c.mask_array(g.dial_obj)[int(round(cy))])[0]
             tid = f"panel/terminal:port_g{i + 1}"
-            box = PixelBox(x0=x1 - 20, y0=int(round(cy)) - 10, x1=x1, y1=int(round(cy)) + 10)
+            if pay.get("mirror"):  # port on the right rim
+                x0 = int(row.max()) + 1 + compose.PORT_GAP
+                box = PixelBox(x0=x0, y0=int(round(cy)) - 10, x1=x0 + 20, y1=int(round(cy)) + 10)
+            else:
+                x1 = int(row.min()) - compose.PORT_GAP
+                box = PixelBox(x0=x1 - 20, y0=int(round(cy)) - 10, x1=x1, y1=int(round(cy)) + 10)
             terms.append(TerminalEntry(terminal_id=tid, role="port", box=box, label_obj=lab))
             gauges.append(g.model_copy(update={"port_terminal": tid}))
         colors = [tuple(x) for x in pay["colors"]]
@@ -263,7 +287,7 @@ class PanelPlugin:
         terms += add_terminal_labels(c, "panel", "start", starts, outward, names, texts)
         pads = [j for j, kind in enumerate(pay["dest_kind"]) if kind == "pad"]
         terms += add_terminal_labels(c, "panel", "end", [np.asarray(dests[j]) for j in pads],
-                                     [np.array([1.0, 0.0])] * len(pads), [f"pad{j}" for j in pads], [None] * len(pads))  # fmt: skip
+                                     [np.array([-1.0 if pay.get("mirror") else 1.0, 0.0])] * len(pads), [f"pad{j}" for j in pads], [None] * len(pads))  # fmt: skip
         del fault
         realism.add_surface(
             c, pay["surface"], ("label", "needle"), lambda cv: halo_mask(crossings, cv.size)
@@ -434,17 +458,23 @@ def enclosure(c: Any, pay: dict[str, Any], starts: list[np.ndarray]) -> None:
     bg = c.background
     ys = [float(p[1]) for p in starts]
     top, bot = min(ys) - 26.0, max(ys) + 26.0
+    mx = compose.mirror_x if pay.get("mirror") else (lambda x: x)
+
+    def poly(pts: list[tuple[float, float]]) -> list[tuple[float, float]]:
+        return [(mx(x), y) for x, y in pts]
+
+    realism.draw_relief(c, pay.get("relief", []), bool(pay.get("mirror")))
     rail = tuple(int(v * 0.91) for v in bg)
-    c.raw_beauty_polygon([(54.0, top), (126.0, top), (126.0, bot), (54.0, bot)], rail)
+    c.raw_beauty_polygon(poly([(54.0, top), (126.0, top), (126.0, bot), (54.0, bot)]), rail)
     for x in (56.0, 123.0):
         c.raw_beauty_polygon(
-            [(x - 1.5, top), (x + 1.5, top), (x + 1.5, bot), (x - 1.5, bot)],
+            poly([(x - 1.5, top), (x + 1.5, top), (x + 1.5, bot), (x - 1.5, bot)]),
             tuple(int(v * 0.97) for v in bg),
         )
     for y in sorted(ys)[:-1]:
         mid = y + (sorted(ys)[sorted(ys).index(y) + 1] - y) / 2
         c.raw_beauty_polygon(
-            [(54.0, mid - 1.0), (126.0, mid - 1.0), (126.0, mid + 1.0), (54.0, mid + 1.0)],
+            poly([(54.0, mid - 1.0), (126.0, mid - 1.0), (126.0, mid + 1.0), (54.0, mid + 1.0)]),
             tuple(int(v * 0.86) for v in bg),
         )
     for name, (y0, text) in {"placard_top": (34.0, f"CONTROL PANEL  CP-{pay['panel_id']:02d}"),
@@ -452,15 +482,15 @@ def enclosure(c: Any, pay: dict[str, Any], starts: list[np.ndarray]) -> None:
         oid = c.new_object(f"panel/decor:{name}", "decor", (64, 66, 70))
         c.polygon(
             oid,
-            [(70.0, y0), (330.0, y0), (330.0, y0 + 40.0), (70.0, y0 + 40.0)],
+            poly([(70.0, y0), (330.0, y0), (330.0, y0 + 40.0), (70.0, y0 + 40.0)]),
             beauty_rgb=(56, 60, 66),
         )
         c.polygon(
             oid,
-            [(73.0, y0 + 3), (327.0, y0 + 3), (327.0, y0 + 37.0), (73.0, y0 + 37.0)],
+            poly([(73.0, y0 + 3), (327.0, y0 + 3), (327.0, y0 + 37.0), (73.0, y0 + 37.0)]),
             beauty_rgb=(214, 210, 196),
         )
-        c.text(oid, (200.0, y0 + 20.0), text, 14, beauty_rgb=(40, 40, 44))
+        c.text(oid, (mx(200.0), y0 + 20.0), text, 14, beauty_rgb=(40, 40, 44))
 
 
 def _label(v: str) -> Answer:

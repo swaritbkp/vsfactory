@@ -76,7 +76,7 @@ def run_slot(job: dict[str, Any]) -> dict[str, Any]:
     unavailable = twin_unavailable(name)
     receipt = FreshnessReceipt.model_validate(job["receipt"])
     slot = SeedTree(receipt.root_seed).child(name, "slot", i)
-    prof = dict(profile, _family=family, _split=job["split"])
+    prof = dict(profile, _family=family, _split=job["split"], _ordinal=job.get("ordinal"))
     work = Path(job["work"]) / f"slot{i:05d}"
     quarantine: list[dict[str, Any]] = []
     n_cand = 0
@@ -157,7 +157,10 @@ def run_generate(
     twins: bool,
     families: list[str] | None,
     workers: int,
+    plan: list[str] | None = None,
 ) -> int:
+    """SPEC 8.4. ``plan`` (not exposed by the CLI) fixes the slot -> family list explicitly; the
+    golden selftest uses it for exactly two items per family."""
     t0 = time.perf_counter()
     prof = load_profile(profile)
     receipt = build_receipt(fetch(beacon, seed, prof), prof)
@@ -168,9 +171,14 @@ def run_generate(
         (out / f).unlink(missing_ok=True)
     work = out / ".work"
     shutil.rmtree(work, ignore_errors=True)
-    plan = schedule(plugin, n, prof, families, receipt.root_seed)
+    if plan is not None and len(plan) != n:
+        raise ValueError(f"plan has {len(plan)} slots, expected {n}")
+    plan = (
+        list(plan) if plan is not None else schedule(plugin, n, prof, families, receipt.root_seed)
+    )
     burned = sorted(_burned(prof)) if split in ("test", "sealed") else []
-    jobs = [{"plugin": plugin, "slot": i, "family": plan[i], "profile": prof, "split": split, "twins": twins,
+    ordinals = [plan[:i].count(plan[i]) for i in range(n)]  # k-th slot of its family (D-34)
+    jobs = [{"plugin": plugin, "slot": i, "family": plan[i], "ordinal": ordinals[i], "profile": prof, "split": split, "twins": twins,
              "receipt": receipt.model_dump(mode="json"), "work": str(work), "burned": burned} for i in range(n)]  # fmt: skip
     results = sorted(run_jobs(jobs, run_slot, workers), key=lambda r: r["slot"])
     index: list[dict[str, Any]] = []
@@ -197,7 +205,7 @@ def run_generate(
         "plugin": plugin, "n_requested": n, "n_base_certified": sum(r["ok"] for r in results), "n_bundles": len(index),
         "n_candidates": n_cand, "n_quarantined": len(quarantine),
         "false_quarantine_rate": round(len(quarantine) / n_cand, 6) if n_cand else 0.0,
-        "families_expected": sorted(set(plan)), "by_family": dict(sorted(by_family.items())),
+        "families_expected": sorted(set(plan)), "schedule": plan, "by_family": dict(sorted(by_family.items())),
         "by_code": dict(sorted(by_code.items())), "seconds": round(time.perf_counter() - t0, 1),
         "workers": workers,
     }  # fmt: skip

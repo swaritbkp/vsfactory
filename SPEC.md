@@ -978,3 +978,69 @@ spec leaves open. Never silently change a threshold.
   and printed placards are `decor` objects away from terminals; the DIN rail behind the sockets is
   background relief (no object near a terminal box, which `E_TERMINAL_CLEARANCE` forbids); panel dial
   slots moved so bezels and `Gk` labels stay on the canvas; ports sit 8 px from the bezel.
+* D-27: Layout diversity so the Phase 3 pHash dedup gate (Hamming <= 4 pairs / n <= 0.01 on 600 items)
+  can hold; all changes are untrusted render/plugin code (knotcore unchanged). Gauge: the dial centre is
+  sampled anywhere on the canvas (bezel >= 40 px from the edge), `gauge.radius_px` 300-380 -> 110-240
+  (large centred dials were near-identical under a 64-bit pHash: 1.36 dup pairs per item), numerals sit
+  at `0.47 + (R - 120) * 0.15 / 140` R (clipped to [0.47, 0.62]) so their plates stay clear of the needle
+  tip on small dials, and seeded scene furniture is added: a painted mounting plate (decor object, 85 %),
+  a process stem / elbow / header pipe (decor object), 1-2 recessed housing relief panels and four mid-dark
+  housing tints. Panel: the whole composition is mirrored left <-> right with p = 0.5 (ports move to the
+  right rim, pads/labels/rail/placards mirror), the dial column shifts by a common random (dx, dy) inside
+  per-k bounds, the socket block shifts vertically, and 1-2 relief sub-panels are painted. Relief panels
+  are beauty-only background darkened 14-30 levels (inside D-24 rule (a), never an object near a
+  terminal). Measured on 200-300 item samples: gauge 0.003, panel 0.000, tangle 0.003 dup pairs per item.
+* D-28: READ answers are balanced over the 10 equal-width bins of the printed scale: for `G1_READ` and the
+  traced gauge of `P1_READ_TRACE` a scale decile is drawn uniformly, then an admissible value inside it
+  (values stay >= 3 tol from zone boundaries and scale ends). Uniform-over-admissible sampling failed the
+  SPEC 11.2 chi-square (p = 4.5e-5 on 180 G1 items) because the boundary exclusions deplete deciles.
+* D-29: Shortcut-probe details SPEC 11.2 leaves open. Targets: label answers -> option index; T2 / COUNT ->
+  the integer (chance 1/7 and 1/(n_gauges+1)); zones -> the word; floats -> decile of the queried gauge's
+  printed scale (chance = family majority-decile frequency); premise -> `<yes|no>|decile` (chance = 1/2 x
+  majority-decile frequency). Learned probes (`gbdt_image_stats`, `text_only`) are trained per family, with
+  `P5_PREMISE_CONTROL` and `T_GASLIGHT` pooled (their answers differ only in premise truth, which is the
+  thing being tested), 5-fold GroupKFold by `scene_id`, seeds `("probe", name, fold)`. `straight_across`
+  uses the manifest's slot order of start and end terminals (= their geometric order in both layouts).
+  `color_match` centres the 9x9 patch where a 9x9 window holds the most ink in a 3-16 px band around the
+  terminal box (on the entering stroke, not its anti-aliased edge). Panel `nearest` / `color_match` pick a
+  gauge and predict the majority training-fold target among items of the same family whose heuristic picked
+  the same gauge label (the gauge's true value is never read); the report also gives `trace_hit_rate`.
+  Every probe entry carries its own `n` and the mean per-item `chance` of the items it applies to.
+* D-30: Exporters. Harbor `difficulty` = tertiles per plugin of `10 x program depth + scene size (strands
+  or gauges) + crossings in CROSS evidence`; `tests/verify.py` = verbatim `grading.py` + two constants
+  (`GRADER_SHA256`, `BUNDLE_ID`) + `main()`; `test.sh` falls back to `python` when `python3` is absent.
+  Sealed items (split test/sealed, emission mask) are skipped by the Harbor exporter (a Harbor task needs
+  its oracle) and carry `answer_commitment` (with `answer`/`answer_json` null) in HF and RLVR. HF/RLVR
+  images are the 768-px consumption PNGs. `knot new-plugin` scaffolds a COUNT ("how many discs") plugin
+  that reuses the `P4_COUNT_ZONE` family id (a new family would be a contracts change).
+* D-31: Golden selftest layout: `artifacts/selftest/data/<plugin>/` (one `knot generate` run per plugin
+  with an explicit slot plan of exactly two items per family, seed 1234, twins on) plus a combined
+  `data/index.jsonl` whose `dir`s are prefixed with the plugin. `run_generate` gained an optional `plan`
+  argument (not exposed by the CLI). The golden compares per slot {family, role, bundle_id, canonical
+  answer, verdict, id-buffer digest, digest of the mask digests} and the kernel sha256.
+* D-32: Diversity tokens `(family, n_strands | n_gauges, layout, style)` come from the scene params,
+  re-sampled exactly from the dataset receipt root and the bundle seed path (checked against `scene_id`);
+  gauges use the scale kind as their layout token. The recolor baseline tints every `*_rgb` payload field
+  (x U(0.75, 1.25) per channel) and permutes + tints cable colour lists of one base scene; nothing else
+  changes.
+* D-33: Bench specifics. The panel staircase asks the TRACE-only question ("Which gauge (G1-Gk) ...") on
+  P1 images, so the SPEC 12.2 formula with m = n_gauges describes it exactly. The staircase level range
+  is `[1, min(cap, max level present in the pool)]`; a level whose items are used up is refilled
+  (reshuffled) and an empty level draws from the nearest non-empty one; `expected_level` (mock only) is
+  clipped to the same range (a k* beyond the measurable range cannot be reached by any staircase).
+  Composition chance for numeric answers = min(1, 2 tol / span). Block sizes = `models.yaml plan` x
+  `max_trials / 50`; derived items (unique-colour re-renders for the ablation; causal + nuisance twins)
+  are re-built from seed paths and re-certified once and shared by all models. The mock's switched trace
+  guesses uniformly among the options for label questions and reads a random other gauge in READ(TRACE).
+  Replay entries elide the base64 image (stored as its sha256); the request body also carries `seed`.
+  `knotwork.net.apost_json` is the async gateway used by the OpenRouter client.
+* D-34: Exact answer balance from a per-family slot ordinal. `generate` passes `_ordinal` (the slot's
+  index among same-family slots of the schedule) as a profile hint and records the slot schedule in
+  `stats.json` (`schedule`) so scenes re-build exactly (diversity, bench derivations). Plugins use it
+  only where answers would otherwise be balanced in expectation alone: T1 cycles n over 3..10 and, within
+  each n, the answer position (the queried strand is the one ending there); T2 cycles the target count
+  0..6; T3 lists the top strand at option index `ordinal mod 2`; G2 / P2 / premise families cycle the
+  needle zone; G1 / P1 cycle the scale decile (D-28); gaslight items alternate the false claimed zone.
+  On the first 600-item split, sampling noise alone (e.g. n = 3 T1 items answered by option 0 in 16 of 25)
+  let `text_only` and a constant-majority predictor clear chance by more than the pooled Wilson margin
+  allows. Without the hint (mutate, twins, unit tests) plugins sample as before.

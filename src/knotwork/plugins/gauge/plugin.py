@@ -23,8 +23,9 @@ from knotwork.knotcore.contracts import (
 )
 from knotwork.knotcore.seeds import SeedTree
 from knotwork.plugins.gauge import geom
-from knotwork.plugins.gauge.render import M8_SWEEP, M9_SHIFT, draw_dial
+from knotwork.plugins.gauge.render import M8_SWEEP, M9_SHIFT, bezel_width, draw_dial
 from knotwork.plugins.gauge.scale import ZONES, admissible, sample_zones, zone_of
+from knotwork.plugins.gauge.stem import draw_plate, draw_stem, sample_plate, sample_stem
 from knotwork.render import realism
 from knotwork.render.canvas import make_canvas, render_cfg
 
@@ -32,10 +33,13 @@ from knotwork.render.canvas import make_canvas, render_cfg
 BEZELS = [(178, 182, 188), (62, 64, 70), (182, 156, 100), (114, 118, 126)]
 #: aged-enamel / off-white dial faces (light faces keep dark numerals OCR- and template-readable)
 FACES = [(250, 249, 244), (246, 241, 226), (241, 238, 229), (252, 252, 250)]
-#: instrument housing / wall tones (light: every palette colour keeps >= 0.2 luminance contrast)
-TINTS = [(214, 216, 218), (206, 210, 214), (220, 216, 206), (210, 214, 208)]
+#: instrument housing / wall tones, light to mid-dark (the dial face carries every read-out)
+TINTS = [(214, 216, 218), (206, 210, 214), (220, 216, 206), (210, 214, 208),
+         (156, 160, 164), (128, 134, 126), (104, 108, 116), (180, 172, 152)]  # fmt: skip
 UNITS = ["bar", "psi", "kPa", "MPa", "°C"]
 GID = "gauge/gauge:g1"
+CANVAS = 1024.0
+DIAL_MARGIN_PX = 40.0  # bezel clearance from the canvas edge (outside the 24-px margin band)
 PROMPTS = {
     Family.G1_READ: "What value does the gauge needle point to?",
     Family.G2_ZONE: "Is the gauge needle in the green, amber, or red zone?",
@@ -71,6 +75,33 @@ def pick_value(rng: np.random.Generator, d: dict[str, Any], tol_units: float, zo
     if away_from is not None:
         vals = [v for v in vals if abs(v - away_from) >= min_move]
     return int(vals[int(rng.integers(len(vals)))]) if vals else None
+
+
+def ordinal(profile: dict[str, Any], k: int = 1) -> int | None:
+    """This slot's index among same-family slots of the run (generator hint, D-34), or None."""
+    o = profile.get("_ordinal")
+    return None if o is None else int(o) // k
+
+
+def pick_value_binned(
+    rng: np.random.Generator,
+    d: dict[str, Any],
+    tol_units: float,
+    bins: int = 10,
+    decile: int | None = None,
+) -> int:
+    """Admissible value whose scale decile is uniform (D-28): a decile is drawn first, then a value
+    inside it, so READ answers are balanced over equal-width bins of the printed scale even though
+    the needle keeps clear of zone boundaries and scale ends."""
+    lo, hi = float(d["vmin"]), float(d["vmax"])
+    groups: list[list[int]] = [[] for _ in range(bins)]
+    for v in values_for(d, tol_units):
+        groups[min(bins - 1, int(bins * (v - lo) / (hi - lo)))].append(v)
+    nonempty = [g for g in groups if g]
+    if decile is not None and groups[decile % bins]:
+        nonempty = [groups[decile % bins]]  # exact decile balance from the slot ordinal (D-34)
+    g = nonempty[int(rng.integers(len(nonempty)))]
+    return int(g[int(rng.integers(len(g)))])
 
 
 def sample_dial(rng: np.random.Generator, prof: dict[str, Any], name: str, center: tuple[float, float],
@@ -133,13 +164,25 @@ class GaugePlugin:
     def sample_scene(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR:
         """``profile["_family"] == "G2_ZONE"`` samples the needle zone uniformly (balanced answers)."""
         prof, rng = profile["gauge"], seeds.rng()
+        draw = int(rng.integers(3))
+        o = ordinal(profile)
         zone = (
-            str(ZONES[int(rng.integers(3))])
+            str(ZONES[draw if o is None else o % 3])
             if profile.get("_family") == Family.G2_ZONE.value
             else None
         )
         radius = float(rng.uniform(prof["radius_px"][0], prof["radius_px"][1]))
-        d = sample_dial(rng, prof, "g1", (512.0, 512.0), radius, zone)
+        # the dial floats on the housing (D-27): a fixed centre made every scene a pHash near-duplicate
+        reach = radius + bezel_width(radius) + DIAL_MARGIN_PX
+        cx, cy = (float(rng.uniform(reach, CANVAS - reach)) for _ in range(2))
+        # numerals move toward the hub on small dials (as on panel dials) so their plates stay
+        # clear of the needle tip and the tick band (D-27)
+        frac = float(np.clip(0.47 + (radius - 120.0) * 0.15 / 140.0, 0.47, 0.62))
+        d = sample_dial(rng, prof, "g1", (cx, cy), radius, zone, frac)
+        if profile.get("_family") == Family.G1_READ.value:
+            d["value"] = float(
+                pick_value_binned(rng, d, tol_units(prof, d), decile=ordinal(profile))
+            )
         pay: dict[str, Any] = {
             "dial": d,
             "render": render_cfg(profile),
@@ -147,6 +190,9 @@ class GaugePlugin:
         }
         pay["render"]["background_rgb"] = list(TINTS[int(rng.integers(len(TINTS)))])
         pay["surface"] = realism.sample_surface(rng, "brushed")
+        pay["stem"] = sample_stem(rng, d, radius + bezel_width(radius), CANVAS)
+        pay["plate"] = sample_plate(rng, d, radius + bezel_width(radius), CANVAS)
+        pay["relief"] = realism.relief_panels(rng)
         return SceneIR(plugin=self.name, plugin_version=self.version, seed_path=seeds.path_str,
                        params={"scale": d["scale"], "radius": radius}, payload=pay)  # fmt: skip
 
@@ -154,7 +200,11 @@ class GaugePlugin:
         self, scene: SceneIR, out_dir: Path, fault: FaultCode | None = None
     ) -> RenderManifest:
         c = make_canvas(scene.payload["render"])
+        realism.draw_relief(c, scene.payload.get("relief", []))
+        draw_plate(c, "gauge", scene.payload.get("plate"))
         realism.corner_screws(c, "gauge")
+        if "stem" in scene.payload:
+            draw_stem(c, "gauge", scene.payload["stem"])
         g = draw_dial(c, "gauge", scene.payload["dial"], fault)
         realism.add_surface(c, scene.payload["surface"])
         return c.finish(out_dir, self.name, gauges=[g])

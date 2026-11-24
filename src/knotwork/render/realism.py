@@ -174,6 +174,29 @@ def screw(c: Any, prefix: str, name: str, center: tuple[float, float], radius: f
     return oid
 
 
+def relief_panels(rng: np.random.Generator) -> list[list[float]]:
+    """1-2 recessed sub-panels of the housing (D-27): background-relief rectangles darkened by
+    14-30 levels -- inside the finish's background tolerance (rule (a) of D-24), so they add layout
+    variety without adding objects near any terminal."""
+    out = []
+    for _ in range(int(rng.integers(1, 3))):
+        x0, y0 = float(rng.uniform(40.0, 620.0)), float(rng.uniform(40.0, 620.0))
+        x1 = float(rng.uniform(min(x0 + 240.0, 984.0), 984.0))
+        y1 = float(rng.uniform(min(y0 + 240.0, 984.0), 984.0))
+        out.append([x0, y0, x1, y1, float(rng.integers(14, 31))])
+    return out
+
+
+def draw_relief(c: Any, rects: list[list[float]], mirror: bool = False) -> None:
+    """Paint relief rectangles on the beauty only (optionally mirrored left <-> right)."""
+    n = float(c.size)
+    for x0, y0, x1, y1, delta in rects:
+        if mirror:
+            x0, x1 = n - x1, n - x0
+        tone = tuple(max(0, int(v) - int(delta)) for v in c.background)
+        c.raw_beauty_polygon([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], tone)
+
+
 def corner_screws(c: Any, prefix: str, inset: float = 36.0, radius: float = 11.0) -> list[int]:
     n = float(c.size)
     pts = [(inset, inset), (n - inset, inset), (inset, n - inset), (n - inset, n - inset)]

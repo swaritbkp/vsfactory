@@ -95,11 +95,19 @@ class TanglePlugin:
         prof, rng = profile["tangle"], seeds.rng()
         family = profile.get("_family")
         target = int(rng.integers(prof["t2_target_count"][0], prof["t2_target_count"][1] + 1))
+        o = profile.get("_ordinal")
+        lo_n, hi_n = int(prof["strands"][0]), int(prof["strands"][1])
+        span_n = hi_n - lo_n + 1
+        if o is not None and family == Family.T2_CROSS.value:  # exact T2 balance (D-34)
+            t_lo, t_hi = prof["t2_target_count"]
+            target = int(t_lo) + int(o) % (int(t_hi) - int(t_lo) + 1)
         regimes = prof["color_regimes"]
         if profile.get("_split") in ("test", "sealed"):
             regimes = {r: 1.0 for r in prof["benchmark_color_regimes"]}
         for _ in range(MAX_LAYOUT_TRIES):
-            n = int(rng.integers(prof["strands"][0], prof["strands"][1] + 1))
+            n = int(rng.integers(lo_n, hi_n + 1))
+            if o is not None and family == Family.T1_TRACE.value:
+                n = lo_n + int(o) % span_n  # n cycles; the answer position cycles within each n
             perm, word = braid.sample_word(n, rng, tuple(prof["braid_length"]), tuple(prof["r2_distractor_pairs"]),
                                            tuple(prof["identity_slots"]))  # fmt: skip
             counts = braid.crossing_counts(n, word)
@@ -130,6 +138,11 @@ class TanglePlugin:
             else:
                 cols = [MONO] * n
             pay["colors"], pay["color_regime"] = [list(hex_rgb(h)) for h in cols], regime
+            pay["relief"] = realism.relief_panels(rng)
+            if o is not None:
+                pay["answer_slot"] = (
+                    (int(o) // span_n) % n if family == Family.T1_TRACE.value else int(o) % 2
+                )
             return SceneIR(plugin=self.name, plugin_version=self.version, seed_path=seeds.path_str,
                            params={"n_strands": n, "layout": params["kind"], "style": pay["style"],
                                    "color_regime": regime}, payload=pay)  # fmt: skip
@@ -146,6 +159,7 @@ class TanglePlugin:
         if fault is FaultCode.M4:
             weights = m4_weights(pay)
         lay = lay_of(pay, weights)
+        realism.draw_relief(c, pay.get("relief", []))
         realism.corner_screws(c, "tangle")
         terms = render_tangle(c, pay, lay.paths, lay.crossings, fault)
         crossings = lay.crossings
@@ -185,6 +199,9 @@ class TanglePlugin:
         pid = f"tangle/{family.value}/{seeds.digest()[:16]}"
         if family is Family.T1_TRACE:
             s = int(rng.integers(n))
+            if "answer_slot" in pay:  # the strand ending at the balanced answer position (D-34)
+                ends = braid.end_position(n, word)
+                s = next(x for x in range(n) if ends[x] == int(pay["answer_slot"]) % n)
             text = PROMPTS[family].format(S=labels[s])
             steps: list[dict[str, Any]] = [
                 {"step_id": "s0", "op": "TRACE", "args": [start_tid(labels[s])]}
@@ -211,6 +228,10 @@ class TanglePlugin:
             a, b = b, a
         m = len(braid.pair_crossings(n, word, a, b))
         k = int(rng.integers(m))
+        if "answer_slot" in pay:  # list the top strand at the balanced option index (D-34)
+            top = _ordered(n, word, a, b)[k].over
+            if (top == a) != (int(pay["answer_slot"]) % 2 == 0):
+                a, b = b, a  # crossings are in word order for either strand order: k is unchanged
         text = PROMPTS[family].format(A=labels[a], B=labels[b], m=m, k=k + 1)
         steps = [
             {

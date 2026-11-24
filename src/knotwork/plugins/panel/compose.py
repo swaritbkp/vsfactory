@@ -31,8 +31,26 @@ def dial_slots(k: int) -> list[tuple[float, float]]:
     return [(630.0, 200.0), (870.0, 400.0), (630.0, 640.0), (870.0, 830.0)]
 
 
+#: per-k (dx range, dy range) of the dial column shift (D-27): dials, G labels and pads stay on canvas
+#: and clear of the routing channels
+SLOT_SHIFT = {2: ((-90.0, 0.0), (-95.0, 75.0)), 3: ((-90.0, 0.0), (-40.0, 8.0)),
+              4: ((-15.0, 0.0), (-40.0, 4.0))}  # fmt: skip
+CANVAS = 1024.0
+
+
+def shifted_slots(k: int, rng: np.random.Generator) -> tuple[list[tuple[float, float]], float]:
+    """Dial centres moved by one common random (dx, dy), and that dx (pads move with the column)."""
+    (ax, bx), (ay, by) = SLOT_SHIFT[min(k, 4)]
+    dx, dy = float(rng.uniform(ax, bx)), float(rng.uniform(ay, by))
+    return [(x + dx, y + dy) for x, y in dial_slots(k)], dx
+
+
 def pad_x(k: int) -> float:
     return 480.0 if k == 4 else 600.0
+
+
+def mirror_x(x: float) -> float:
+    return CANVAS - x
 
 
 def port_xy(center: tuple[float, float]) -> tuple[float, float]:
@@ -117,4 +135,9 @@ def build_paths(
     lay = layout.build(n, word, pay["braid"])
     exits, _ = braid.compose(n, word)
     dests = [tuple(d) for d in pay["dests"]]
-    return route(lay.paths, exits, dests), lay.crossings, dests
+    paths, crossings = route(lay.paths, exits, dests), lay.crossings
+    if pay.get("mirror"):  # whole composition mirrored left <-> right (D-27)
+        paths = [np.column_stack([CANVAS - p[:, 0], p[:, 1]]) for p in paths]
+        crossings = [dict(c, center=[mirror_x(c["center"][0]), c["center"][1]]) for c in crossings]
+        dests = [(mirror_x(x), y) for x, y in dests]
+    return paths, crossings, dests

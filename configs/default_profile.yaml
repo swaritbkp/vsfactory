@@ -56,7 +56,7 @@ tangle:
 
 gauge:
   dials_per_scene: [1, 1]
-  radius_px: [300, 380]
+  radius_px: [110, 240]          # dial centre is sampled inside the canvas (D-27)
   sweep_deg: 270
   start_deg: 225                # value-min angle, measured CCW from +x, needle sweeps CW
   scales:
