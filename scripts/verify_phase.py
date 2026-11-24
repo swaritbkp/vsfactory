@@ -211,11 +211,26 @@ def run(
     cwd: Path = REPO,
     ok_codes: tuple[int, ...] = (0,),
 ) -> subprocess.CompletedProcess[str]:
-    full_env = {**os.environ, "KNOTWORK_NETWORK": "deny", "PYTHONHASHSEED": "0", **(env or {})}
+    full_env = {
+        **os.environ,
+        "KNOTWORK_NETWORK": "deny",
+        "PYTHONHASHSEED": "0",
+        "PYTHONUTF8": "1",
+        "PYTHONIOENCODING": "utf-8",
+        **(env or {}),
+    }
     full_env.pop("OPENROUTER_API_KEY", None)
     try:
         cp = subprocess.run(
-            cmd, cwd=cwd, env=full_env, capture_output=True, text=True, timeout=timeout, check=False
+            cmd,
+            cwd=cwd,
+            env=full_env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+            check=False,
         )
     except FileNotFoundError as exc:
         raise GateFailure(f"command not found: {cmd[0]} ({exc})") from None
@@ -359,7 +374,7 @@ def gate_pytest(phases: list[int]) -> Callable[[], str]:
 def gate_font() -> str:
     import yaml
 
-    prof = yaml.safe_load((REPO / "configs/default_profile.yaml").read_text())
+    prof = yaml.safe_load((REPO / "configs/default_profile.yaml").read_text(encoding="utf-8"))
     want = prof["render"]["font_sha256"]
     got = hashlib.sha256(FONT.read_bytes()).hexdigest()
     require(got == want, f"font sha256 {got} != profile {want}")
@@ -702,7 +717,7 @@ def bench_split() -> Path:
             extra=f"{plugin}:{BENCH_SPLIT_N}:split=test:seed=101",
         )
         stamp = out / ".gate_digest"
-        if stamp.is_file() and stamp.read_text() == digest:
+        if stamp.is_file() and stamp.read_text(encoding="utf-8") == digest:
             continue
         shutil.rmtree(out, ignore_errors=True)
         knot(
@@ -722,7 +737,7 @@ def bench_split() -> Path:
             str(out),
             timeout=14400,
         )
-        stamp.write_text(digest)
+        stamp.write_text(digest, encoding="utf-8")
     return root
 
 
@@ -807,7 +822,7 @@ def gate_verify_and_tamper() -> str:
             ds = Path(tmp) / kind
             dst = ds / index[0]["dir"]
             shutil.copytree(src, dst)
-            (ds / "index.jsonl").write_text(json.dumps(index[0]) + "\n")
+            (ds / "index.jsonl").write_text(json.dumps(index[0]) + "\n", encoding="utf-8")
             if kind == "pixel":
                 import numpy as np
                 from PIL import Image
@@ -816,12 +831,12 @@ def gate_verify_and_tamper() -> str:
                 arr[arr.shape[0] // 2, arr.shape[1] // 2] ^= 1
                 Image.fromarray(arr).save(dst / "id_buffer.png")
             else:
-                t = json.loads((dst / "task.json").read_text())
+                t = json.loads((dst / "task.json").read_text(encoding="utf-8"))
                 t["answer"]["canonical"] = t["answer"]["canonical"] + "X"
-                (dst / "task.json").write_text(json.dumps(t))
+                (dst / "task.json").write_text(json.dumps(t), encoding="utf-8")
             rep_path = Path(tmp) / f"{kind}.json"
             knot("verify", str(ds), "--out", str(rep_path), ok_codes=(1,))
-            rep = json.loads(rep_path.read_text())
+            rep = json.loads(rep_path.read_text(encoding="utf-8"))
             codes = {c for f in rep["failures"] for c in f["codes"]}
             require(
                 rep["ok"] is False and "E_DIGEST_MISMATCH" in codes,
@@ -870,12 +885,12 @@ def gate_export() -> str:
             require((task / rel).is_file(), f"{task.name}: missing {rel}")
         import tomllib
 
-        toml = tomllib.loads((task / "task.toml").read_text())
+        toml = tomllib.loads((task / "task.toml").read_text(encoding="utf-8"))
         require(
             toml.get("schema_version") == "1.4" and "verifier" in toml and "agent" in toml,
             f"{task.name}: bad task.toml",
         )
-        expected = json.loads((task / "tests" / "expected.json").read_text())
+        expected = json.loads((task / "tests" / "expected.json").read_text(encoding="utf-8"))
         for mode in ("oracle", "wrong", "missing"):
             with tempfile.TemporaryDirectory() as tmp:
                 app, logs = Path(tmp) / "app", Path(tmp) / "logs"
@@ -893,15 +908,17 @@ def gate_export() -> str:
                     else:
                         shutil.copy(task / "solution" / "answer.json", app / "answer.json")
                 elif mode == "wrong":
-                    (app / "answer.json").write_text(json.dumps({"answer": _wrong(expected)}))
+                    (app / "answer.json").write_text(
+                        json.dumps({"answer": _wrong(expected)}), encoding="utf-8"
+                    )
                 cmd = (
                     [bash, str(task / "tests" / "test.sh")]
                     if bash
                     else [PY, str(task / "tests" / "verify.py")]
                 )
                 run(cmd, env=env)
-                reward = json.loads((logs / "reward.json").read_text())["reward"]
-                txt = float((logs / "reward.txt").read_text().strip())
+                reward = json.loads((logs / "reward.json").read_text(encoding="utf-8"))["reward"]
+                txt = float((logs / "reward.txt").read_text(encoding="utf-8").strip())
                 want = 1.0 if mode == "oracle" else 0.0
                 require(
                     reward == txt == want, f"{task.name} {mode}: reward {reward}/{txt} != {want}"
@@ -975,7 +992,7 @@ def gate_scaffold() -> str:
 def gate_ci_yaml() -> str:
     import yaml
 
-    doc = yaml.safe_load((REPO / ".github/workflows/ci.yml").read_text())
+    doc = yaml.safe_load((REPO / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
     text = json.dumps(doc)
     for needle in (
         "uv sync",
@@ -1009,7 +1026,9 @@ def gate_bench_mock() -> str:
     )
     truths = {
         m["slot"]: m
-        for m in yaml.safe_load((REPO / "configs/models.yaml").read_text())["mock_slots"]
+        for m in yaml.safe_load((REPO / "configs/models.yaml").read_text(encoding="utf-8"))[
+            "mock_slots"
+        ]
     }
     bad = []
     for slot, row in rep["models"].items():

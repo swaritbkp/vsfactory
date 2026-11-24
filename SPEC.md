@@ -903,3 +903,7 @@ spec leaves open. Never silently change a threshold.
   exists for CP1; it cannot reach the CP2 budget path.
 * D-4: Probes and bench use `split=test` items rendered in the `mono` colour regime so colour carries no
   answer information; colour effects are measured separately by the matched colour ablation.
+* D-10: Windows portability (gate-script bug fix, semantics unchanged): `scripts/verify_phase.py` runs
+  children with `PYTHONUTF8=1`/`PYTHONIOENCODING=utf-8`, decodes their output as UTF-8
+  (`errors="replace"`), and reads/writes every text file as UTF-8 instead of the locale codepage (cp1252
+  on Windows). No threshold or check changed. The repository's GitHub name is `vsfactory`.
