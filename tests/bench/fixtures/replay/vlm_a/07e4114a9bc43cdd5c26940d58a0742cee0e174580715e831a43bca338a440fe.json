@@ -1,0 +1,18 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_sha256": "6da0f643b74d282e849dcf0706d334072e2635a4092f535ba33e348941ad59b4",
+  "model": "openai/gpt-5.4",
+  "prompt": "What value does gauge G2 read?\nEnd your reply with a final line of the form 'ANSWER: <number>'.",
+  "seed": 0,
+  "slot": "vlm_a"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: 32.7",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}

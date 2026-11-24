@@ -1,0 +1,225 @@
+{
+ "claims": [
+  {
+   "args": [
+    "panel/terminal:start_x2"
+   ],
+   "claim_id": "trace_x2",
+   "expected": {
+    "canonical": "panel/terminal:end_pad0",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "panel/terminal:end_pad0"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "panel/terminal:start_Y"
+   ],
+   "claim_id": "trace_Y",
+   "expected": {
+    "canonical": "G1",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "G1"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "panel/terminal:start_F"
+   ],
+   "claim_id": "trace_F",
+   "expected": {
+    "canonical": "G2",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "G2"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "panel/terminal:start_x0"
+   ],
+   "claim_id": "trace_x0",
+   "expected": {
+    "canonical": "panel/terminal:end_pad3",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "panel/terminal:end_pad3"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "panel/terminal:start_x0",
+    "*"
+   ],
+   "claim_id": "cross_x0",
+   "expected": {
+    "canonical": "3",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 3
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "panel/terminal:start_x0",
+    "panel/terminal:start_Y",
+    0
+   ],
+   "claim_id": "ontop_x0_Y_0",
+   "expected": {
+    "canonical": "panel/terminal:start_x0",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "panel/terminal:start_x0"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "panel/terminal:start_x0",
+    "panel/terminal:start_x2",
+    0
+   ],
+   "claim_id": "ontop_x0_x2_0",
+   "expected": {
+    "canonical": "panel/terminal:start_x0",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "panel/terminal:start_x0"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "panel/terminal:start_x0",
+    "panel/terminal:start_F",
+    0
+   ],
+   "claim_id": "ontop_x0_F_0",
+   "expected": {
+    "canonical": "F",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "F"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "panel/terminal:start_Y",
+    "*"
+   ],
+   "claim_id": "cross_Y",
+   "expected": {
+    "canonical": "2",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 2
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "panel/terminal:start_Y",
+    "panel/terminal:start_x2",
+    0
+   ],
+   "claim_id": "ontop_Y_x2_0",
+   "expected": {
+    "canonical": "panel/terminal:start_x2",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "panel/terminal:start_x2"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "panel/terminal:start_x2",
+    "*"
+   ],
+   "claim_id": "cross_x2",
+   "expected": {
+    "canonical": "2",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 2
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "panel/terminal:start_F",
+    "*"
+   ],
+   "claim_id": "cross_F",
+   "expected": {
+    "canonical": "1",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 1
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "panel/gauge:g1"
+   ],
+   "claim_id": "read_g1",
+   "expected": {
+    "canonical": "44",
+    "tolerance": 0.0,
+    "type": "float",
+    "value": 44.0
+   },
+   "op": "READ"
+  },
+  {
+   "args": [
+    "panel/gauge:g1"
+   ],
+   "claim_id": "zone_g1",
+   "expected": {
+    "canonical": "green",
+    "tolerance": 0.0,
+    "type": "zone",
+    "value": "green"
+   },
+   "op": "ZONE"
+  },
+  {
+   "args": [
+    "panel/gauge:g2"
+   ],
+   "claim_id": "read_g2",
+   "expected": {
+    "canonical": "33",
+    "tolerance": 0.0,
+    "type": "float",
+    "value": 33.0
+   },
+   "op": "READ"
+  },
+  {
+   "args": [
+    "panel/gauge:g2"
+   ],
+   "claim_id": "zone_g2",
+   "expected": {
+    "canonical": "green",
+    "tolerance": 0.0,
+    "type": "zone",
+    "value": "green"
+   },
+   "op": "ZONE"
+  }
+ ],
+ "plugin": "panel"
+}

@@ -1,0 +1,18 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_sha256": "6da0f643b74d282e849dcf0706d334072e2635a4092f535ba33e348941ad59b4",
+  "model": "qwen/qwen3-vl-235b-a22b-instruct",
+  "prompt": "Which gauge (G1-G2) is the cable from socket F plugged into?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+  "seed": 0,
+  "slot": "vlm_c"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: G2",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}

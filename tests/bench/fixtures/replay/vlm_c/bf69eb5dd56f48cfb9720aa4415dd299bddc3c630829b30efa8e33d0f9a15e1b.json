@@ -1,0 +1,18 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_sha256": "98af84197ba8e9ac120c7dbdf37c4ad00d170e885aa32d17afc3021c9b8106df",
+  "model": "qwen/qwen3-vl-235b-a22b-instruct",
+  "prompt": "The image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal E. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+  "seed": 0,
+  "slot": "vlm_c"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: 1",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}

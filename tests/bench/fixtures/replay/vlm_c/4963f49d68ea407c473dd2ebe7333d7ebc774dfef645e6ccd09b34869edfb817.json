@@ -1,0 +1,18 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_sha256": "9e1ca27c54de7d0742b7b637b2d057de42a959169a67d8e367adf48f65fbb537",
+  "model": "qwen/qwen3-vl-235b-a22b-instruct",
+  "prompt": "What value does gauge G1 read?\nEnd your reply with a final line of the form 'ANSWER: <number>'.",
+  "seed": 0,
+  "slot": "vlm_c"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: 18.5",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}

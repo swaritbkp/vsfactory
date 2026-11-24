@@ -1,0 +1,821 @@
+{
+ "answer": {
+  "canonical": "no; 16",
+  "tolerance": 1.6,
+  "type": "premise",
+  "value": {
+   "premise_holds": false,
+   "value": 16.0
+  }
+ },
+ "bundle_id": "kw-d84e850a75667f435a36",
+ "canary": "KNOTWORK-CANARY-b6e0a521ea6145919c99c35f00c71b6f",
+ "certificate": {
+  "agree": true,
+  "bundle_id": "kw-d84e850a75667f435a36",
+  "checks": [
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.5024533211564735,
+    "name": "contrast",
+    "obj_id": 61,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.4984692468217166,
+    "name": "contrast",
+    "obj_id": 62,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.5075619022462327,
+    "name": "contrast",
+    "obj_id": 63,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.48726227682180623,
+    "name": "contrast",
+    "obj_id": 64,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.6834505481517297,
+    "name": "contrast",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.6786151342453042,
+    "name": "contrast",
+    "obj_id": 35,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.6646091724310884,
+    "name": "contrast",
+    "obj_id": 53,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.028431320604440036,
+    "name": "crossing_color",
+    "obj_id": 62,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.03269996374169501,
+    "name": "crossing_color",
+    "obj_id": 62,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.027575182031331053,
+    "name": "crossing_color",
+    "obj_id": 64,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.025447244776429068,
+    "name": "crossing_color",
+    "obj_id": 64,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.000594514727499218,
+    "name": "needle_tip_color",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.0022198520576908742,
+    "name": "needle_tip_color",
+    "obj_id": 35,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.0036407398253419654,
+    "name": "needle_tip_color",
+    "obj_id": 53,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_UNEXPLAINED_INK",
+    "metric": 4.0,
+    "name": "unexplained_ink",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 30.0
+   },
+   {
+    "code": "E_OOB",
+    "metric": 0.0,
+    "name": "oob_mask",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 0.0
+   },
+   {
+    "code": "E_OOB",
+    "metric": 0.0,
+    "name": "oob_box",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 0.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 6.0,
+    "name": "stroke_768",
+    "obj_id": 61,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 6.0,
+    "name": "stroke_768",
+    "obj_id": 62,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 6.0,
+    "name": "stroke_768",
+    "obj_id": 63,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 6.0,
+    "name": "stroke_768",
+    "obj_id": 64,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 8.746427842267952,
+    "name": "stroke_768",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 8.746427842267952,
+    "name": "stroke_768",
+    "obj_id": 35,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 8.077747210701755,
+    "name": "stroke_768",
+    "obj_id": 53,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 1000000000.0,
+    "name": "crossing_spacing",
+    "obj_id": 61,
+    "passed": true,
+    "threshold": 32.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.33049298463209,
+    "name": "crossing_angle",
+    "obj_id": 62,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.53391699782863,
+    "name": "crossing_angle",
+    "obj_id": 62,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.53391699782863,
+    "name": "crossing_angle",
+    "obj_id": 62,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.53391699782863,
+    "name": "crossing_angle",
+    "obj_id": 62,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 69.56854249492426,
+    "name": "crossing_spacing",
+    "obj_id": 62,
+    "passed": true,
+    "threshold": 32.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.33049298463209,
+    "name": "crossing_angle",
+    "obj_id": 63,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 1000000000.0,
+    "name": "crossing_spacing",
+    "obj_id": 63,
+    "passed": true,
+    "threshold": 32.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.53391699782863,
+    "name": "crossing_angle",
+    "obj_id": 64,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.53391699782863,
+    "name": "crossing_angle",
+    "obj_id": 64,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.53391699782863,
+    "name": "crossing_angle",
+    "obj_id": 64,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 69.56854249492426,
+    "name": "crossing_spacing",
+    "obj_id": 64,
+    "passed": true,
+    "threshold": 32.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 8.0,
+    "name": "terminal_clearance",
+    "obj_id": 63,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 8.0,
+    "name": "terminal_clearance",
+    "obj_id": 64,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 8.0,
+    "name": "terminal_clearance",
+    "obj_id": 62,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 61,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 62,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 63,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 64,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 61,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 20,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 21,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 22,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 23,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 24,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 37,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 38,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 39,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 40,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 41,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 42,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 55,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 56,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 57,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 58,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 59,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 60,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 65,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 66,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 67,
+    "passed": true,
+    "threshold": 1.0
+   }
+  ],
+  "claims_checked": 18,
+  "claims_failed": 0,
+  "codes": [],
+  "d1": {
+   "canonical": "no; 16",
+   "tolerance": 0.0,
+   "type": "premise",
+   "value": {
+    "premise_holds": false,
+    "value": 16.0
+   }
+  },
+  "d2": null,
+  "d3": {
+   "canonical": "no; 16.0361",
+   "tolerance": 0.9383310062831375,
+   "type": "premise",
+   "value": {
+    "premise_holds": false,
+    "value": 16.036055758304556
+   }
+  },
+  "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+  "kernel_version": "1.0.0",
+  "ocr_engine": "rapidocr",
+  "steps": [
+   {
+    "codes": [],
+    "evidence": {
+     "end_terminal": "panel/terminal:port_g3",
+     "ocr_text": "G3",
+     "path_px": 6026
+    },
+    "inputs": [
+     "panel/terminal:start_U"
+    ],
+    "op": "TRACE",
+    "output": "G3",
+    "step_id": "s0"
+   },
+   {
+    "codes": [],
+    "evidence": {
+     "port": "panel/terminal:port_g3"
+    },
+    "inputs": [
+     "G3"
+    ],
+    "op": "GAUGE_OF",
+    "output": "panel/gauge:g3",
+    "step_id": "s1"
+   },
+   {
+    "codes": [],
+    "evidence": {
+     "R": 130.45473569332916,
+     "axis_offset": 0.21400740682309927,
+     "center": [
+      193.0,
+      820.0
+     ],
+     "hi": 20,
+     "length": 128.24735486213092,
+     "limit": 3.9136420707998747,
+     "lo": 0,
+     "phi_needle": 54.029141361895086,
+     "theta_needle": 170.87445528626242,
+     "ticks": [
+      {
+       "ocr": "00",
+       "phi": 0.0,
+       "r": 100.86185403808521,
+       "theta": 224.9035966481575,
+       "v": 0
+      },
+      {
+       "ocr": "20",
+       "phi": 67.38457657696173,
+       "r": 101.24645129695537,
+       "theta": 157.51902007119577,
+       "v": 20
+      },
+      {
+       "ocr": "40",
+       "phi": 134.6199564923997,
+       "r": 101.00123761617974,
+       "theta": 90.28364015575782,
+       "v": 40
+      },
+      {
+       "ocr": "60",
+       "phi": 202.28151851662622,
+       "r": 100.57653465156827,
+       "theta": 22.622078131531293,
+       "v": 60
+      },
+      {
+       "ocr": "80",
+       "phi": 270.0096212856747,
+       "r": 100.55819968329634,
+       "theta": 314.8939753624828,
+       "v": 80
+      }
+     ],
+     "tip": [
+      97.42008410333297,
+      804.8636189794712
+     ],
+     "tol": 0.9383310062831375
+    },
+    "inputs": [
+     "panel/gauge:g3"
+    ],
+    "op": "READ",
+    "output": [
+     16.036055758304556,
+     0.9383310062831375
+    ],
+    "step_id": "s2"
+   },
+   {
+    "codes": [],
+    "evidence": {
+     "phi_needle": 54.029141361895086,
+     "zones": {
+      "amber": [
+       151.55370214676054,
+       219.34364938484794
+      ],
+      "green": [
+       -0.09640335184249693,
+       151.89441994014368
+      ],
+      "red": [
+       219.19300351065783,
+       270.2639427115447
+      ]
+     }
+    },
+    "inputs": [
+     "panel/gauge:g3"
+    ],
+    "op": "ZONE",
+    "output": "green",
+    "step_id": "s3"
+   }
+  ],
+  "verdict": "CERTIFIED"
+ },
+ "family": "T_GASLIGHT",
+ "files": {
+  "beauty.png": "d7b40365f1953d0aff7362cafcfb9cbc310bdd1f2739c9d10aca5654de8da323",
+  "claims.json": "04aebe715525447b6efbb4e210593f59900c2f627b848922b1a6d489bf716e30",
+  "id_buffer.png": "c5ae250fa28b9b4a452fad9538fae9d9c2cf0068aa611369a53d7f166ce5bada",
+  "manifest.json": "06e4a7955aa0284b7e9f23023a668f7b6c323d89d04bfd9c6b2fa070ee6a759c",
+  "masks/obj_00001.png": "a88b9e24e74c8ce98fbffc29e69d14bd4af26977832d5a58811635466ec6e1ab",
+  "masks/obj_00002.png": "ad37035ca69718201751bde3c326b424a8867abf3ec6bf0cfc66c62ad887363d",
+  "masks/obj_00003.png": "923490b307953fca3d100c6e9c9c4a10dca125799b26e59bd8b2393a32a8b250",
+  "masks/obj_00004.png": "526dbb84ed9378000c07b41ad6bcea4874519d296be18b8806ae82da8a143036",
+  "masks/obj_00005.png": "dbec43ec9b135390e1123b0ffea223947db3481fd7b1cdb95315039dabc685ca",
+  "masks/obj_00006.png": "7731ac7b3f754c571cebc882ea001ea6bd51d964778ef8a810159b16dc385dcb",
+  "masks/obj_00007.png": "2d0b9add02d45bcd4aabf06737de957afba2599262a5f71118afb095598e64a3",
+  "masks/obj_00008.png": "ab023032cc1d668d5c7d5e7b0968aa8e381a04823450b918119073c42c0e4c00",
+  "masks/obj_00009.png": "95c7dcb517abdc702c401e0c9bae1271fd1073d6cc19c232e6ab16b22fa2489b",
+  "masks/obj_00010.png": "5d9ccfece6a7efad9f048fec5726ef532ed4bfcabfa04ed87fefa7a72f526f84",
+  "masks/obj_00011.png": "dca9b09ccba307eb5253d6d7b13d56d01ef9bb807931b18e441be4440e3cdb0e",
+  "masks/obj_00012.png": "b3348d88053c889e3850b651b1a0a92a3486439b1cebdaf0ace719f4dd804757",
+  "masks/obj_00013.png": "00927658a84d32964e96f7c33a01031ece664923e516cee4d26f591814785e2d",
+  "masks/obj_00014.png": "ea1176694eb64f68847c5d6a8b8a010dcb50caae586229182128f3e4573b8096",
+  "masks/obj_00015.png": "557abd58ab9c6495142859bd8396f417d1fb15e047eeaf7f6993f17b5eb01bab",
+  "masks/obj_00016.png": "dd3cdbcfecc2d0c94980e3093ebd86606ac918895d2ac3af73040598b126007a",
+  "masks/obj_00017.png": "ae47151f9681b525297891d21ef5fde54a6b72053b50795c2b2572c9d01c4871",
+  "masks/obj_00018.png": "0ac8463a6520a5cc99f6332ce4f5cc43cfee65d1e7eae150e941f1ec5ff89d13",
+  "masks/obj_00019.png": "46eee864b6faea08837868b17f8d27a40d073dfb08b265e5ebfab6891328bc67",
+  "masks/obj_00020.png": "7309d302679f830a1c86e81295d70c7eeaa0b7aaf85901b753e59e4a514488bc",
+  "masks/obj_00021.png": "12b4c6d77738986fb30b7fb5b597b6ab34d5ae49a786a912cdfbdebc8eed235b",
+  "masks/obj_00022.png": "dc5f67b9267388daeda8c94c79457962d067a79ac875d6b97e893b434fd469c9",
+  "masks/obj_00023.png": "f17d4b9611dd7759d59f17eeb4b078d6743404e1265d6b1d110a1f2183635072",
+  "masks/obj_00024.png": "91d7fd5a18e1e3a3bcdf75ee1cf7fb0601e59713c7677f33e10814e67e0b90df",
+  "masks/obj_00025.png": "43e9f082fb5274be48dd5d73315846a3cfda079236686adf79755fa8a740eb99",
+  "masks/obj_00026.png": "8f46ae1243afc54986bbdb40ed4177345ac479f3c10ba5a3ac71c952255adf27",
+  "masks/obj_00027.png": "f2b79bb70a5ed1969585abdb0584ba9d7a87ce0964e46f89687c1a9beb07ed1f",
+  "masks/obj_00028.png": "b0805dfd95c19be7f96a213bf82089a8b44ea745bd4d294e8e915842ce8976d6",
+  "masks/obj_00029.png": "73ee7e491445863fedeb014df02050d4897178eeec2896fb0be9746740807e2e",
+  "masks/obj_00030.png": "29fbc3fd2fd10dfa208e8a38e3a2e0d9cbafb15570b44f9f0d63e4abc31e4e1f",
+  "masks/obj_00031.png": "e3786f8b0d16697231a89fc6f5eec08ea371e06e25d124b3dbc426e610fa1c77",
+  "masks/obj_00032.png": "17f9f9ce26f83538234094c7ac86fc53b5cf150aaac3d92ba0eebe3cfc7e86ea",
+  "masks/obj_00033.png": "dc86ad482b58461ac84e84cd1f7fdbb4d4fd2aa88f828477d8a3df6d6bc142ff",
+  "masks/obj_00034.png": "2833ebe49132633c48afb1103a4091d16d442c501542fb3a6521327e8146d74e",
+  "masks/obj_00035.png": "1a07c951612c082f1b73c9f57c69cf36ee5a83eca70d5f0c10bf975650229ef7",
+  "masks/obj_00036.png": "e3194282630634993ea66cb711d490ff48ca46181b7ddaa1d75b6af8a5e5d8ad",
+  "masks/obj_00037.png": "a04db18b86e834e4abfb5229fde144864882ac77d1a62a45ec0fea210c3ab8e2",
+  "masks/obj_00038.png": "41a4432e0612909267aa53a0b94149b7ed38ed440bf4914899c95e1f502dce6f",
+  "masks/obj_00039.png": "50d3771014a92493fb7c538e1faa9c4dc41cbbc74d0353c28edc38892b7d64b1",
+  "masks/obj_00040.png": "5b8c6b801550c3f98d1f76527f35532361968abaa74cac2cf6ad35d1ded59993",
+  "masks/obj_00041.png": "7894ca9ad7e3a0f8254d822403a5edc8e33a547f6630eee88920dbf460a58f01",
+  "masks/obj_00042.png": "0d7d97acbd1f8d0ba5b26c376b08eef4587348c82e05a6e53eb3bb2cf4f65dd8",
+  "masks/obj_00043.png": "9f6bd8c71e2955c457ba4121816cba92396e9385ea1fa560fad775d9cd6f2c12",
+  "masks/obj_00044.png": "e50b39569eba067e6b9a13b43ba12c2409182301fb7927641559b8d4e685b3a6",
+  "masks/obj_00045.png": "c2b0d6c7cc7c487ca21a5b7325ab1ddfc60096a6ed04578b6803b4d4d616f72a",
+  "masks/obj_00046.png": "a4cb84c798d5e14f6d69704a708c11435a44f0d4045677887c20128f8c816f80",
+  "masks/obj_00047.png": "578c7880cd9ead56b0d70adb21f77418b770fe998373173c0dde2f5589fc6234",
+  "masks/obj_00048.png": "6efd0b70a27c47b5341c4693958382d46281514b63cf5084f5c5630943e08813",
+  "masks/obj_00049.png": "c06c274ce46a7e985e3ac6e6f60fb0ed47663bb68d9ea0808a30667a308e78ec",
+  "masks/obj_00050.png": "350fbcd1a2016d03b19d988f4f9fd85b1be19d471f58ce01bdec2bd25473c03d",
+  "masks/obj_00051.png": "e222655efd8ca17ec7f1ddf701467762e6ba8b44f91118cebec99b56bfdf4d20",
+  "masks/obj_00052.png": "f24f7eb6eea283644337ebba9d740aa5a08a06b87df7639f9e5bf291f417bce3",
+  "masks/obj_00053.png": "beaf0bcce0336f7e11a7206d50027f2d3d1251c52f909b127db8d23cf05cc698",
+  "masks/obj_00054.png": "31b93ae769c3adb5930c0935788c3821f898d326bef3761b1404c1e40014ed1f",
+  "masks/obj_00055.png": "2a917dd90dae42fd4ae662f1d42251e9869c13613ade048a7e0b93d9148c27d2",
+  "masks/obj_00056.png": "078d49bf542dd7ac83c9d7782cf73f9e3d30bb4231d633feb0d1efaca812c506",
+  "masks/obj_00057.png": "20c53c0480e6c88bb53956e599b2ad3e9e2b663301dcf56a980d5e3292f5bfb0",
+  "masks/obj_00058.png": "a8f95282e676492ede9e626b73bfd864a5456a406de3ba524aab3bcf360732ca",
+  "masks/obj_00059.png": "ee1f20acecc39fcdf62ea053cac9b497d16905402067d03495d42e6d5173b97a",
+  "masks/obj_00060.png": "b2dd681ca147c66475f6faa2897c8c72fa2cc55b8e50264eea4e9b97ade78dfe",
+  "masks/obj_00061.png": "9e5364fb3e5725f715625c4fdbdeab53bad009399a9dc36289b34ccee4ead6e6",
+  "masks/obj_00062.png": "5d13728d9beb00e964c8164765d0ea22a1c61fddcded247e8248723166ba2050",
+  "masks/obj_00063.png": "8eb3a35c76aaddd9c6d50d8ccd22380f7e60d90c7e83af114e11895a72a2cf6a",
+  "masks/obj_00064.png": "dac118a943f03c9f61611f17b1a837c81cba5fba0be1a1781b5235d400ca25ec",
+  "masks/obj_00065.png": "2dec72c13a2b944804e5be05657c19a54327dd08f380ca15f9ce1eb0896e1119",
+  "masks/obj_00066.png": "df78a509c68e95065e30e04c017c2b17f73254899f5da6c7e53375dff99c6249",
+  "masks/obj_00067.png": "3b93cee70089586314c962df19022484f9b96690d0a7b4146b466e7641db7b91"
+ },
+ "freshness_receipt_id": "b004170509504e23b5ec32dd4d491a0c7a8a88223b1164aa47c603aa97e6ba6f",
+ "plugin": "panel",
+ "question": {
+  "answer_type": "premise",
+  "difficulty": {
+   "n_gauges": 3.0,
+   "span": 80.0
+  },
+  "family": "T_GASLIGHT",
+  "options": null,
+  "premise": {
+   "claimed_zone": "amber",
+   "holds": false,
+   "text": "the gauge connected to socket U is in the amber zone"
+  },
+  "program_id": "panel/T_GASLIGHT/767a1dd88cd56024",
+  "steps": [
+   {
+    "args": [
+     "panel/terminal:start_U"
+    ],
+    "op": "TRACE",
+    "step_id": "s0"
+   },
+   {
+    "args": [
+     "$s0"
+    ],
+    "op": "GAUGE_OF",
+    "step_id": "s1"
+   },
+   {
+    "args": [
+     "$s1"
+    ],
+    "op": "READ",
+    "step_id": "s2"
+   },
+   {
+    "args": [
+     "$s1"
+    ],
+    "op": "ZONE",
+    "step_id": "s3"
+   }
+  ],
+  "text": "Since the gauge connected to socket U is in the amber zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'."
+ },
+ "scene_id": "c99db1dca785df8a0cb17ea1d08b7c20fafe4fe406affb44b388d3a99bf9d7cc",
+ "schema_version": "1.0.0",
+ "seed_path": "s:panel/s:slot/i:3/s:attempt/i:0",
+ "split": "test",
+ "twins": {
+  "base_id": null,
+  "causal_id": null,
+  "edit": null,
+  "nuisance_id": null,
+  "pixel_diff_frac": null,
+  "role": "base"
+ }
+}

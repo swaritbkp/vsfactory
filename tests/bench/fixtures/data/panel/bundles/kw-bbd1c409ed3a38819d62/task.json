@@ -1,0 +1,765 @@
+{
+ "answer": {
+  "canonical": "30",
+  "tolerance": 1.6,
+  "type": "float",
+  "value": 30.0
+ },
+ "bundle_id": "kw-bbd1c409ed3a38819d62",
+ "canary": "KNOTWORK-CANARY-b6e0a521ea6145919c99c35f00c71b6f",
+ "certificate": {
+  "agree": true,
+  "bundle_id": "kw-bbd1c409ed3a38819d62",
+  "checks": [
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.470711704358472,
+    "name": "contrast",
+    "obj_id": 43,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.4395613714365909,
+    "name": "contrast",
+    "obj_id": 44,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.4500534681586368,
+    "name": "contrast",
+    "obj_id": 45,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.4567455173010374,
+    "name": "contrast",
+    "obj_id": 46,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.4747481291268023,
+    "name": "contrast",
+    "obj_id": 47,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.6792625315851664,
+    "name": "contrast",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.6577866875723191,
+    "name": "contrast",
+    "obj_id": 35,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.025195181437351083,
+    "name": "crossing_color",
+    "obj_id": 47,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.03228936135546717,
+    "name": "crossing_color",
+    "obj_id": 45,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.03941660441925304,
+    "name": "crossing_color",
+    "obj_id": 46,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.03133485202558639,
+    "name": "crossing_color",
+    "obj_id": 47,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.030046601045194188,
+    "name": "crossing_color",
+    "obj_id": 47,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.03530607892905688,
+    "name": "crossing_color",
+    "obj_id": 46,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.0011296993348882123,
+    "name": "needle_tip_color",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.0001977326083374975,
+    "name": "needle_tip_color",
+    "obj_id": 35,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_UNEXPLAINED_INK",
+    "metric": 1.0,
+    "name": "unexplained_ink",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 30.0
+   },
+   {
+    "code": "E_OOB",
+    "metric": 0.0,
+    "name": "oob_mask",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 0.0
+   },
+   {
+    "code": "E_OOB",
+    "metric": 0.0,
+    "name": "oob_box",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 0.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 6.0,
+    "name": "stroke_768",
+    "obj_id": 43,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 6.0,
+    "name": "stroke_768",
+    "obj_id": 44,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 6.0,
+    "name": "stroke_768",
+    "obj_id": 45,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 6.0,
+    "name": "stroke_768",
+    "obj_id": 46,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 6.0,
+    "name": "stroke_768",
+    "obj_id": 47,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 9.486832980505138,
+    "name": "stroke_768",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 9.0,
+    "name": "stroke_768",
+    "obj_id": 35,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.53391699782863,
+    "name": "crossing_angle",
+    "obj_id": 43,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 1000000000.0,
+    "name": "crossing_spacing",
+    "obj_id": 43,
+    "passed": true,
+    "threshold": 32.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.739284968738474,
+    "name": "crossing_angle",
+    "obj_id": 44,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.2960539669619,
+    "name": "crossing_angle",
+    "obj_id": 44,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.33049298463209,
+    "name": "crossing_angle",
+    "obj_id": 44,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 71.81118318204295,
+    "name": "crossing_spacing",
+    "obj_id": 44,
+    "passed": true,
+    "threshold": 32.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.739284968738474,
+    "name": "crossing_angle",
+    "obj_id": 45,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.739284968738474,
+    "name": "crossing_angle",
+    "obj_id": 45,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 111.74011537017776,
+    "name": "crossing_spacing",
+    "obj_id": 45,
+    "passed": true,
+    "threshold": 32.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.33049298463209,
+    "name": "crossing_angle",
+    "obj_id": 46,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.33049298463209,
+    "name": "crossing_angle",
+    "obj_id": 46,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 111.32590180780466,
+    "name": "crossing_spacing",
+    "obj_id": 46,
+    "passed": true,
+    "threshold": 32.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.33049298463209,
+    "name": "crossing_angle",
+    "obj_id": 47,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.2960539669619,
+    "name": "crossing_angle",
+    "obj_id": 47,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.739284968738474,
+    "name": "crossing_angle",
+    "obj_id": 47,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 55.53391699782863,
+    "name": "crossing_angle",
+    "obj_id": 47,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 72.81118318204295,
+    "name": "crossing_spacing",
+    "obj_id": 47,
+    "passed": true,
+    "threshold": 32.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 8.0,
+    "name": "terminal_clearance",
+    "obj_id": 43,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 8.0,
+    "name": "terminal_clearance",
+    "obj_id": 46,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 43,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 44,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 45,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 46,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 47,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 47,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 45,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
+    "name": "terminal_clearance",
+    "obj_id": 44,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 20,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 21,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 22,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 23,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 24,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 37,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 38,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 39,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 40,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 41,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 42,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 48,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 49,
+    "passed": true,
+    "threshold": 1.0
+   }
+  ],
+  "claims_checked": 20,
+  "claims_failed": 0,
+  "codes": [],
+  "d1": {
+   "canonical": "30",
+   "tolerance": 0.0,
+   "type": "float",
+   "value": 30.0
+  },
+  "d2": null,
+  "d3": {
+   "canonical": "30.0215",
+   "tolerance": 0.9397180002790746,
+   "type": "float",
+   "value": 30.02153893820684
+  },
+  "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+  "kernel_version": "1.0.0",
+  "ocr_engine": "rapidocr",
+  "steps": [
+   {
+    "codes": [],
+    "evidence": {
+     "end_terminal": "panel/terminal:port_g1",
+     "ocr_text": "G1",
+     "path_px": 6427
+    },
+    "inputs": [
+     "panel/terminal:start_R"
+    ],
+    "op": "TRACE",
+    "output": "G1",
+    "step_id": "s0"
+   },
+   {
+    "codes": [],
+    "evidence": {
+     "port": "panel/terminal:port_g1"
+    },
+    "inputs": [
+     "G1"
+    ],
+    "op": "GAUGE_OF",
+    "output": "panel/gauge:g1",
+    "step_id": "s1"
+   },
+   {
+    "codes": [],
+    "evidence": {
+     "R": 130.45473569332916,
+     "axis_offset": 0.009723333775742304,
+     "center": [
+      191.0,
+      326.0
+     ],
+     "hi": 40,
+     "length": 128.7081212523257,
+     "limit": 3.9136420707998747,
+     "lo": 20,
+     "phi_needle": 101.12005790672873,
+     "theta_needle": 123.87994209327127,
+     "ticks": [
+      {
+       "ocr": "00",
+       "phi": 0.0,
+       "r": 101.1162697096763,
+       "theta": 225.0,
+       "v": 0
+      },
+      {
+       "ocr": "20",
+       "phi": 67.38013505195957,
+       "r": 101.1162697096763,
+       "theta": 157.61986494804043,
+       "v": 20
+      },
+      {
+       "ocr": "40",
+       "phi": 134.71494872241618,
+       "r": 100.50124377339814,
+       "theta": 90.28505127758383,
+       "v": 40
+      },
+      {
+       "ocr": "60",
+       "phi": 202.40510374202333,
+       "r": 100.6304912231982,
+       "theta": 22.594896257976682,
+       "v": 60
+      },
+      {
+       "ocr": "80",
+       "phi": 270.2010369978346,
+       "r": 100.76333658628023,
+       "theta": 314.7989630021654,
+       "v": 80
+      }
+     ],
+     "tip": [
+      137.11997368768343,
+      245.77483833006227
+     ],
+     "tol": 0.9397180002790746
+    },
+    "inputs": [
+     "panel/gauge:g1"
+    ],
+    "op": "READ",
+    "output": [
+     30.02153893820684,
+     0.9397180002790746
+    ],
+    "step_id": "s2"
+   }
+  ],
+  "verdict": "CERTIFIED"
+ },
+ "family": "P1_READ_TRACE",
+ "files": {
+  "beauty.png": "6a52fe7d63a7a1884d86aa166466c1548b9b2b39785ef39a10379afda879d7e5",
+  "claims.json": "ee83e231e98edb12cc8c7451aa4892d1f5f1a40bc82854ea76d65f96eee5efec",
+  "id_buffer.png": "3b5f2897e64687ba31d9cf50e1931def0d76f1b02abf97c47f963812dc69afe0",
+  "manifest.json": "9387a68132049be3a39845f0eeaef966e902cbeab8503f820eafd7ffdf198d38",
+  "masks/obj_00001.png": "a88b9e24e74c8ce98fbffc29e69d14bd4af26977832d5a58811635466ec6e1ab",
+  "masks/obj_00002.png": "ad37035ca69718201751bde3c326b424a8867abf3ec6bf0cfc66c62ad887363d",
+  "masks/obj_00003.png": "923490b307953fca3d100c6e9c9c4a10dca125799b26e59bd8b2393a32a8b250",
+  "masks/obj_00004.png": "526dbb84ed9378000c07b41ad6bcea4874519d296be18b8806ae82da8a143036",
+  "masks/obj_00005.png": "dbec43ec9b135390e1123b0ffea223947db3481fd7b1cdb95315039dabc685ca",
+  "masks/obj_00006.png": "7731ac7b3f754c571cebc882ea001ea6bd51d964778ef8a810159b16dc385dcb",
+  "masks/obj_00007.png": "783d0a1cc1d950328dd34d4aa9c74d905e856fecfca1ea5dc877e4a706d9de73",
+  "masks/obj_00008.png": "aa2b7f755500ded2d76b05fb2f8c6e67b6faa424540f98c68e6b78fc7ff9fb47",
+  "masks/obj_00009.png": "a62138cd517096fd5a13ed5cb96e84723d3b5208ec36f42c572112377314b4ff",
+  "masks/obj_00010.png": "d4c006dd4c6a05bb8df5ff25357fb134053f8a1e8577e846779ba11e9a8c8584",
+  "masks/obj_00011.png": "97ff9de338683d4fb62ceb50051da84771e4d0505cdedf6f1010e90459125978",
+  "masks/obj_00012.png": "737b1bc073c5a749aec937d943165def9d54e07b14fb412727513e1de9297184",
+  "masks/obj_00013.png": "ce1c72db92af0b00dc6bdd969facbf3c4afebbcd6b6b58e8bb8b746dc4d6d1d5",
+  "masks/obj_00014.png": "26a44bb75927c98e531d8048079a85151efe782266948620a56c14a1e2a84542",
+  "masks/obj_00015.png": "f0757e0b290fff5a868f51f9ab4170a11535b5bbbf1ccf0ea83e329b811aab89",
+  "masks/obj_00016.png": "dcb43820da4d6c816287d29638ed24af131464337bd45c45b1d7b4787155657d",
+  "masks/obj_00017.png": "18b205b0891b187d3931a286c5d774a9aa3ef663b4b0f1f5ff3555a25783ab65",
+  "masks/obj_00018.png": "b17aecafa039fec8422069594c958f7e3548204321299d10a66142fb1c6b240e",
+  "masks/obj_00019.png": "0b92d1ed0bce24fefecf75e5acbe8c06c103e5f289cc3669bb433712115d2a47",
+  "masks/obj_00020.png": "2050d9c3d009a5a1459f251b0b824b0a161df27e7904299c2893fdab6c546fcf",
+  "masks/obj_00021.png": "efc545bfce1d89260e626e57c92c6f8caac108fb3ca8b43367eb81cce64f4840",
+  "masks/obj_00022.png": "d096399adccb5c6dd45577d09ad59cac392cb9d057e626fee36266fda869e40e",
+  "masks/obj_00023.png": "48a437bc7306ffb00c156c3d186b19071aaa9a750c530635aa3fd7f498a1362a",
+  "masks/obj_00024.png": "ed9784aee1ab2fe9690e6b59656f33319d9c7c13aed7590a1986879d7c9cb76f",
+  "masks/obj_00025.png": "ef614f4e6249340cd358c4892e67473ab4016ec99e22850ea892a73295880ed5",
+  "masks/obj_00026.png": "8c58e2cc75abc4bbece0700089bacfb47ce8609aa08fd79bb6f875780451ab7d",
+  "masks/obj_00027.png": "51b76ce32522612681c7b3f22ec99294993ea9d9e8b77c5679197254b07fddb9",
+  "masks/obj_00028.png": "d55e9b1b7a2d6fab4c729dd04e8ea94ac9b9019abcec720c26230ec1c7ff73a9",
+  "masks/obj_00029.png": "162b59682d3b0f7345d8f9c352626b90793557fa21ce92a8c531ad16d8e1c8eb",
+  "masks/obj_00030.png": "001dd033c79904cc706d19df8af3fcea39ec3ff3babd8da9176f50ad34f151f9",
+  "masks/obj_00031.png": "2dd159828fc1d6ec23a2afda8fae9b04f1393d70d51b568fc5a582ef5ee832f6",
+  "masks/obj_00032.png": "5fde8c0edfc1de75f4638b4c17a6b6334fca54d4c381d27189e78f2b20aac29b",
+  "masks/obj_00033.png": "2b59c98280c741877122352677f4ddeb8100c5f1542ad27e9f00a2e8c5bba222",
+  "masks/obj_00034.png": "e5ac0b9ec9270a6ed60cfaee52ad663bceeef23408b31d7808841d4bb20cdd76",
+  "masks/obj_00035.png": "9b1eb0cdb314a1d28a7e7f731f694475a5a2b8ad9d332bde771e69a32d2ff2c5",
+  "masks/obj_00036.png": "2f17ef893f40889046fcfe4d752df414c1a901c499dec2e5b5b9a8c28412677a",
+  "masks/obj_00037.png": "332a2ce403200e6b0d9348aba0317bfa1396233b8b84ba11fb0dc9497fed1aae",
+  "masks/obj_00038.png": "f6cd40316bd811988a3b441fbfa96829b52e8417cf9306487e12ac60c2b810ea",
+  "masks/obj_00039.png": "b5969f7891490c0ed1e475f5da55fc3af55a0ad27fb6fb09db1e271573a9fbcc",
+  "masks/obj_00040.png": "861e1a47904dcd0626c0ba88530476b6ae9dfa8188988c901275345c1686f119",
+  "masks/obj_00041.png": "2563506b8ed3d4d43847b9f0a60391bd0a96d4ab312dc34eb714ce07b314d239",
+  "masks/obj_00042.png": "9b5cd218b158c90f122a0f8439304b6bca95beee733b43dae7f13c65ce79420d",
+  "masks/obj_00043.png": "40654144bf1df20e73a6fe85b1efd22beeb346b06616ce225b2969a3029de3b9",
+  "masks/obj_00044.png": "84e12d6cc77a222f6a9b8a758c1f323e68dc59bbd5583d90bbab6d5671a301f1",
+  "masks/obj_00045.png": "1a04c641586c8b0f775c80f9fd747a501761b540f36628b28ddc0a4ec92142b2",
+  "masks/obj_00046.png": "89de0fb123c01ea1c9238aab3d2803a46103c3537eee9379a47a59d34ec9b326",
+  "masks/obj_00047.png": "b3b8ef14ee3baa6c498109d24f4475b64042edcc8056b452ae7ae0b20c5f71a3",
+  "masks/obj_00048.png": "626c750dc4743249eec0162f0ff06eb037579abc21940c32493b473c8a07e9c9",
+  "masks/obj_00049.png": "eff74ccc1c5d84ec1baaf312eaec58b2ab47ee0867f35c82e34629ff22f06a37"
+ },
+ "freshness_receipt_id": "b004170509504e23b5ec32dd4d491a0c7a8a88223b1164aa47c603aa97e6ba6f",
+ "plugin": "panel",
+ "question": {
+  "answer_type": "float",
+  "difficulty": {
+   "n_gauges": 2.0,
+   "span": 80.0
+  },
+  "family": "P1_READ_TRACE",
+  "options": null,
+  "premise": null,
+  "program_id": "panel/P1_READ_TRACE/9941e6e6203b42a8",
+  "steps": [
+   {
+    "args": [
+     "panel/terminal:start_R"
+    ],
+    "op": "TRACE",
+    "step_id": "s0"
+   },
+   {
+    "args": [
+     "$s0"
+    ],
+    "op": "GAUGE_OF",
+    "step_id": "s1"
+   },
+   {
+    "args": [
+     "$s1"
+    ],
+    "op": "READ",
+    "step_id": "s2"
+   }
+  ],
+  "text": "Follow the cable from socket R to the gauge it is plugged into. What value does that gauge read?\nEnd your reply with a final line of the form 'ANSWER: <number>'."
+ },
+ "scene_id": "d90ccb72b9351c431731cb1e9ba9a523f16bc7501deeace2419d42e54f1a415a",
+ "schema_version": "1.0.0",
+ "seed_path": "s:panel/s:slot/i:4/s:attempt/i:0",
+ "split": "test",
+ "twins": {
+  "base_id": null,
+  "causal_id": null,
+  "edit": null,
+  "nuisance_id": null,
+  "pixel_diff_frac": null,
+  "role": "base"
+ }
+}

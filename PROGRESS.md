@@ -9,6 +9,9 @@ until the Phase 5 budget review).
 | 0 | bootstrap, layered renderer, contracts, isolation, seeds | PASSED | `28991f3` |
 | 1 | knotcore trusted pixel kernel (819 / 850 executable LOC, 1218 / 1350 total) | PASSED | `8a18d93` |
 | 2 | tangle / gauge / panel plugins, generate, twins, mutate M1–M10, contact sheet | PASSED | see git log |
+| 3 | freshness, probes, diversity, golden selftest, file-only verify | FAILED on `p3.probes` only (BLOCKERS 3.6) | see git log |
+| 4 | Harbor / HF / RLVR exporters, `new-plugin` scaffold, CI | all p4 gates PASS; pytest fix re-verified in Phase 5 run (4.5 not re-run as a whole) | see git log |
+| 5 | staircase, mock / replay / OpenRouter clients, budget, stats, `knot bench` (offline) | FAILED on `p5.bench_mock` staircase tolerance only (BLOCKERS 5.6) | see git log |
 
 ## Phase 0
 * `render/canvas.py`: 2× supersampled beauty (Lanczos to 1024), non-AA amodal masks, modal uint16 id
@@ -41,3 +44,23 @@ Gate re-run: PASSED, knotcore untouched (819 / 850 executable LOC).
 * Gate: 254 tests; first-try rejection tangle 0.000 / gauge 0.000 / panel 0.024; 90 valid twin triples;
   determinism across worker counts; M1-M10 caught with exact codes (clean controls 0.000 rejected).
 * Contact sheet 2314x3780 with wrapped captions. Decisions D-24 ... D-26.
+
+## Phase 3 (gate: all PASS except `p3.probes`)
+* pytest (phases 0-3) 299 passed; golden selftest 10/10 checks, byte-identical reports; verify 66/66 clean, pixel and
+  answer tampering -> E_DIGEST_MISMATCH; freshness receipt + canary propagation; Vendi ratio tangle 3.73x, gauge 2.13x,
+  panel 2.95x; pHash dup rate tangle 0.002, gauge 0.010, panel 0.000; knotcore untouched (819 / 850).
+* Sampler fixes in untrusted code only: layout variety (D-27), decile-balanced reads (D-28), exact answer balance
+  from a per-family slot ordinal (D-34). Remaining probe failures: premise-family SPEC conflict + tangle T1/T3 residual
+  (BLOCKERS 3.6). Decisions D-27 ... D-34.
+
+## Phase 4
+* Harbor: 66 tasks, oracle 1.0 / wrong 0.0 / missing 0.0 on 20 via the real solve.sh / test.sh; HF parquet 66 rows,
+  RLVR oracle 1.0 / wrong 0.0; scaffold compiles, passes its 3 tests, knotcore sha unchanged; ci.yml steps present
+  (job timeout raised to 150 min for the larger suite).
+
+## Phase 5 (offline only; no API key, zero network calls)
+* pytest (phases 0-5) 344 passed, 1 skipped. Mock bench on the 600/plugin split: per-crossing MLE p_hat 0.047 / 0.076 /
+  0.173 for true 0.04 / 0.08 / 0.15 (CIs contain truth); composition gap CIs contain 0; panel staircases within
+  tolerance; tangle staircases for mock_a / mock_b outside +-1.5 levels (BLOCKERS 5.6). Replay of committed fixtures:
+  0 network calls. Preflight (default plan, 50 trials): $5.06 for 1260 calls; $5 option (`--max-trials 40`): $4.05
+  for 1008 calls. Stopped at [HUMAN-CHECKPOINT-2].

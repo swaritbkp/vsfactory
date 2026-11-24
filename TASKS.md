@@ -187,42 +187,42 @@ Legend: `[ ]` todo · `[x]` done · `[!]` blocked (see `BLOCKERS.md`) · `[~]` s
 
 ## Phase 3 — Freshness, shortcut audit, diversity, golden selftest, file-only verify
 
-- [ ] **3.1 Network gateway + drand/NIST beacons**
+- [x] **3.1 Network gateway + drand/NIST beacons**
   - Files: `src/knotwork/net.py`, `src/knotwork/freshness/beacon.py`, `tests/freshness/test_beacon.py`
   - Verification Command: `uv run pytest tests/freshness/test_beacon.py -q`
   - Done Criteria: `net.get_json` refuses unless `KNOTWORK_NETWORK` permits; drand/NIST parsed from `httpx.MockTransport` fixtures; `knot generate --beacon drand` path covered with mocks; no real network.
 
-- [ ] **3.2 Emission mask, burn ledger, receipt**
+- [x] **3.2 Emission mask, burn ledger, receipt**
   - Files: `src/knotwork/freshness/{emission,ledger,receipt}.py`, `tests/freshness/test_emission_ledger.py`
   - Verification Command: `uv run pytest tests/freshness -q`
   - Done Criteria: HMAC mask fraction ≈ `sealed_fraction` (±3 % on 5000 ids); commitments verify; ledger append-only and consulted by `generate --split test`; `receipt_id` excludes `fetched_at_utc`.
 
-- [ ] **3.3 Shortcut probes** (§11.2)
+- [x] **3.3 Shortcut probes** (§11.2)
   - Files: `src/knotwork/probes/{heuristics,gbdt,text_only,stats}.py`, `tests/probes/test_probes.py`
   - Verification Command: `uv run pytest tests/probes/test_probes.py -q`
   - Done Criteria: each probe beats chance on a deliberately leaky synthetic dataset (proves it has power) and Wilson/χ²/pHash helpers match reference values.
 
-- [ ] **3.4 `knot probe`**
+- [x] **3.4 `knot probe`**
   - Files: `src/knotwork/probes/run.py`, `tests/probes/test_probe_cli.py`
   - Verification Command: `uv run pytest tests/probes/test_probe_cli.py -q`
   - Done Criteria: ProbeReport schema per §11.2 on a small generated dataset; GroupKFold by `scene_id`.
 
-- [ ] **3.5 `knot diversity` (Vendi)** (§11.4)
+- [x] **3.5 `knot diversity` (Vendi)** (§11.4)
   - Files: `src/knotwork/diversity.py`, `tests/probes/test_diversity.py`
   - Verification Command: `uv run pytest tests/probes/test_diversity.py -q`
   - Done Criteria: VS(identical items) = 1 ± 1e-6; VS(orthonormal items) = n ± 1e-6; report per §11.4.
 
-- [ ] **3.6 Benchmark split and shortcut tuning**
+- [!] **3.6 Benchmark split and shortcut tuning**
   - Files: generator code as needed (never kernel thresholds)
   - Verification Command: `uv run python scripts/verify_phase.py --phase 3 --keep-going`
   - Done Criteria: gates `p3.probes` and `p3.diversity` pass on 600 base items/plugin (`split=test`, mono, `--no-twins`); generation of the split finishes in one sitting (OCR at 768 px only, crop-hash cache warm across items in each worker). If a probe leaks, fix the sampler (balance, placement, label assignment) and record a decision in SPEC §16.
 
-- [ ] **3.7 Golden selftest**
+- [x] **3.7 Golden selftest**
   - Files: `src/knotwork/pipeline/selftest.py`, `tests/golden/golden.json`, `tests/pipeline/test_selftest.py`
   - Verification Command: `uv run knot selftest --update-golden && uv run knot selftest && uv run pytest tests/pipeline/test_selftest.py -q`
   - Done Criteria: SelftestReport `ok: true`; golden committed; second run byte-identical report.
 
-- [ ] **3.8 File-only `knot verify`**
+- [x] **3.8 File-only `knot verify`**
   - Files: `src/knotwork/pipeline/verify.py`, `tests/pipeline/test_verify.py`
   - Verification Command: `uv run knot verify artifacts/selftest/data && uv run pytest tests/pipeline/test_verify.py -q`
   - Done Criteria: VerifyReport per §9.1; tampering detected; AST test proves `verify.py` does not import `knotwork.plugins`.
@@ -236,22 +236,22 @@ Legend: `[ ]` todo · `[x]` done · `[!]` blocked (see `BLOCKERS.md`) · `[~]` s
 
 ## Phase 4 — Dual exporters, plugin scaffold, CI
 
-- [ ] **4.1 Harbor exporter** (§13.1)
+- [x] **4.1 Harbor exporter** (§13.1)
   - Files: `src/knotwork/export/harbor.py`
   - Verification Command: `uv run python -c "import knotwork.export.harbor"`
   - Done Criteria: writes the exact folder layout; `tests/verify.py` = verbatim `knotcore/grading.py` source + main; `task.toml` parses with `tomllib`.
 
-- [ ] **4.2 HF parquet + RLVR exporters** (§13.2)
+- [x] **4.2 HF parquet + RLVR exporters** (§13.2)
   - Files: `src/knotwork/export/hf.py`, `src/knotwork/export/rlvr.py`
   - Verification Command: `uv run python -c "import knotwork.export.hf, knotwork.export.rlvr"`
   - Done Criteria: columns exactly per §13.2; dataset card with configs; sealed answers → commitments.
 
-- [ ] **4.3 `knot export` + oracle pytest**
+- [x] **4.3 `knot export` + oracle pytest**
   - Files: `src/knotwork/export/run.py`, `tests/export/test_harbor_oracle.py`, `tests/export/test_hf_rlvr.py`
   - Verification Command: `uv run pytest tests/export -q`
   - Done Criteria: oracle = 1.0, wrong = 0.0, missing = 0.0 for every exported family; parquet round-trips; RLVR grade_prediction oracle/wrong.
 
-- [ ] **4.4 `knot new-plugin` scaffold**
+- [x] **4.4 `knot new-plugin` scaffold**
   - Files: `src/knotwork/scaffold/new_plugin.py`, `src/knotwork/scaffold/templates/*`, `tests/scaffold/test_new_plugin.py`
   - Verification Command: `uv run pytest tests/scaffold -q`
   - Done Criteria: generated package satisfies `TaskPlugin`, has a passing test, and knotcore sha is unchanged.
@@ -265,32 +265,32 @@ Legend: `[ ]` todo · `[x]` done · `[!]` blocked (see `BLOCKERS.md`) · `[~]` s
 
 ## Phase 5 — Psychometric staircase, VLM clients, statistics → [HUMAN-CHECKPOINT-2]
 
-- [ ] **5.1 1-up-2-down staircase** (§12.2)
+- [x] **5.1 1-up-2-down staircase** (§12.2)
   - Files: `src/knotwork/bench/staircase.py`, `tests/bench/test_staircase.py`
   - Verification Command: `uv run pytest tests/bench/test_staircase.py -q`
   - Done Criteria: with a simulated observer of known psychometric curve the threshold lands within 1.5 levels of the 70.7 % level in ≥ 90 % of 200 seeded runs.
 
-- [ ] **5.2 Prompts, client interface, mock VLMs** (§12.1, §12.4)
+- [x] **5.2 Prompts, client interface, mock VLMs** (§12.1, §12.4)
   - Files: `src/knotwork/bench/{prompts,client_base,client_mock}.py`, `tests/bench/test_mock_client.py`
   - Verification Command: `uv run pytest tests/bench/test_mock_client.py -q`
   - Done Criteria: deterministic per seed; error model exactly as §12.4.
 
-- [ ] **5.3 Replay + OpenRouter clients (mocked transport only)**
+- [x] **5.3 Replay + OpenRouter clients (mocked transport only)**
   - Files: `src/knotwork/bench/{client_replay,client_openrouter}.py`, `tests/bench/test_openrouter_mock.py`
   - Verification Command: `uv run pytest tests/bench/test_openrouter_mock.py -q`
   - Done Criteria: with `httpx.MockTransport`: body has `provider.data_collection == "deny"` and `usage.include`; auth header; 429 retry; response cached before return; replay miss raises `ReplayMiss`; zero real sockets.
 
-- [ ] **5.4 Budget + statistics** (§12.3, §12.5)
+- [x] **5.4 Budget + statistics** (§12.3, §12.5)
   - Files: `src/knotwork/bench/{budget,stats}.py`, `tests/bench/test_stats_budget.py`
   - Verification Command: `uv run pytest tests/bench/test_stats_budget.py -q`
   - Done Criteria: MLE recovers p on simulated data (|p̂ − p| < 0.02 at n = 2000); bootstrap seeded and reproducible; Abbott formula; budget stops before exceeding cap.
 
-- [ ] **5.5 `knot bench` runner + fixtures**
+- [x] **5.5 `knot bench` runner + fixtures**
   - Files: `src/knotwork/bench/run.py`, `tests/bench/fixtures/data/`, `tests/bench/fixtures/replay/`, `tests/bench/test_bench_cli.py`
   - Verification Command: `uv run pytest tests/bench -q`
   - Done Criteria: mock, replay and `--live --dry-run` modes produce reports per §12.6/§12.5; fixtures committed (small dataset from `knot generate`, replay files generated by the mock client written in replay format).
 
-- [ ] **5.6 Phase 5 gate → [HUMAN-CHECKPOINT-2]**
+- [!] **5.6 Phase 5 gate → [HUMAN-CHECKPOINT-2]**
   - Files: `.ci_phase`, `artifacts/phase5/CHECKPOINT_2_READY.md`
   - Verification Command: `uv run python scripts/verify_phase.py --phase 5`
   - Done Criteria: PASSED; `.ci_phase` = 5; commit `feat(bench): staircase + diagnostic harness`. **STOP** and show the human the preflight cost; wait for `.checkpoints/CP2_APPROVED` or `.checkpoints/CP2_SKIPPED`.

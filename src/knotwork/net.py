@@ -56,3 +56,20 @@ def post_json(
         resp = client.post(url, json=body, headers=headers)
         resp.raise_for_status()
         return resp.json()
+
+
+async def apost_json(
+    url: str, body: Any, headers: dict[str, str], timeout: float = 90.0, transport: Any = None
+) -> tuple[int, Any]:
+    """Async POST after the policy check. Returns (status_code, decoded JSON or None); never raises
+    on HTTP status so callers can retry 429/5xx (SPEC 12.4)."""
+    check(url)
+    import httpx
+
+    async with httpx.AsyncClient(timeout=timeout, transport=transport) as client:
+        resp = await client.post(url, json=body, headers=headers)
+        try:
+            data = resp.json()
+        except ValueError:
+            data = None
+        return resp.status_code, data

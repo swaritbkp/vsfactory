@@ -1,0 +1,26 @@
+{
+ "by_code": {},
+ "by_family": {
+  "T1_TRACE": 6
+ },
+ "false_quarantine_rate": 0.0,
+ "families_expected": [
+  "T1_TRACE"
+ ],
+ "n_base_certified": 6,
+ "n_bundles": 6,
+ "n_candidates": 6,
+ "n_quarantined": 0,
+ "n_requested": 6,
+ "plugin": "tangle",
+ "schedule": [
+  "T1_TRACE",
+  "T1_TRACE",
+  "T1_TRACE",
+  "T1_TRACE",
+  "T1_TRACE",
+  "T1_TRACE"
+ ],
+ "seconds": 71.7,
+ "workers": 0
+}

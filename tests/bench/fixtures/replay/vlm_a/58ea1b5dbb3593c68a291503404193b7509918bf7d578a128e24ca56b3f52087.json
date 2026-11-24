@@ -1,0 +1,18 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_sha256": "2d142aa28c891e74b4ea1ac6c66ce22916c70ca722dcd1848a7caa8890430445",
+  "model": "openai/gpt-5.4",
+  "prompt": "Since the gauge connected to socket U is in the amber zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+  "seed": 0,
+  "slot": "vlm_a"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: no; 16.4",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}
