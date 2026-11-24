@@ -24,12 +24,15 @@ from knotwork.knotcore.contracts import (
 )
 from knotwork.knotcore.seeds import SeedTree
 from knotwork.plugins.tangle import braid, geom, layout
-from knotwork.plugins.tangle.render import hex_rgb, render_tangle
+from knotwork.plugins.tangle.render import halo_mask, hex_rgb, render_tangle
+from knotwork.render import realism
 from knotwork.render.canvas import make_canvas, render_cfg
 
 PALETTE = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#882255",
            "#117733", "#332288", "#000000", "#8C510A", "#01665E"]  # fmt: skip
 MONO = "#2F2F2F"
+#: matte industrial backplates (light enough that every palette colour keeps >= 0.2 luminance contrast)
+PLATES = [(226, 226, 220), (222, 224, 226), (230, 226, 216), (218, 222, 218)]
 FORMAT = {AnswerType.LABEL: "ANSWER: <label>", AnswerType.INT: "ANSWER: <integer>"}
 PROMPTS = {
     Family.T1_TRACE: "The image shows cables running from lettered terminals to numbered terminals. "
@@ -106,9 +109,10 @@ class TanglePlugin:
             params = sample_geometry(rng, n, word, prof, _pick(rng, prof["layouts"]), stroke)
             if params is None:
                 continue
-            pay = {"n": n, "word": [list(x) if x else None for x in word], "perm": perm, "stroke": stroke,
+            pay: dict[str, Any] = {"n": n, "word": [list(x) if x else None for x in word], "perm": perm, "stroke": stroke,
                    "layout": params, "style": _pick(rng, prof["styles"]), "t2_target": target,
-                   "render": render_cfg(profile)}  # fmt: skip
+                   "render": render_cfg(profile), "surface": realism.sample_surface(rng, "powder")}  # fmt: skip
+            pay["render"]["background_rgb"] = list(PLATES[int(rng.integers(len(PLATES)))])
             if geom.validate(lay_of(pay), n, stroke) is not None:
                 continue
             letters = list(prof["start_labels"])
@@ -142,7 +146,10 @@ class TanglePlugin:
         if fault is FaultCode.M4:
             weights = m4_weights(pay)
         lay = lay_of(pay, weights)
+        realism.corner_screws(c, "tangle")
         terms = render_tangle(c, pay, lay.paths, lay.crossings, fault)
+        crossings = lay.crossings
+        realism.add_surface(c, pay["surface"], ("label",), lambda cv: halo_mask(crossings, cv.size))
         return c.finish(out_dir, self.name, terminals=terms)
 
     # ------------------------------------------------------------------ claims / questions
@@ -283,6 +290,9 @@ class TanglePlugin:
             trial["layout"]["jitter_amps"] = (rng.dirichlet([1.0, 1.0, 1.0]) * amp).tolist()
             trial["layout"]["jitter_phases"] = rng.uniform(0, 2 * math.pi, 3).tolist()
             trial["style"] = "harness" if pay["style"] == "schematic" else "schematic"
+            trial["surface"] = realism.sample_surface(rng, "powder")  # new lighting / grime / grain
+            plates = [p for p in PLATES if list(p) != pay["render"]["background_rgb"]]
+            trial["render"]["background_rgb"] = list(plates[int(rng.integers(len(plates)))])
             if rng.random() < 0.5:
                 slots = _slots(
                     n, word_of(trial), lambda pos, i: not {pos[i], pos[i + 1]} & involved, rng

@@ -25,7 +25,7 @@ from knotwork.pipeline.generate import load_profile
 from knotwork.pipeline.io import read_json, read_jsonl
 from knotwork.render.canvas import REPO_ROOT
 
-CELL, CAP, GAP, LEFT, TOP, COLS = 400, 40, 10, 230, 70, 5
+CELL, CAP, GAP, LEFT, TOP, COLS = 400, 48, 14, 230, 70, 5
 TAB20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120), (44, 160, 44), (152, 223, 138),
          (214, 39, 40), (255, 152, 150), (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),
          (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199), (188, 189, 34), (219, 219, 141),
@@ -194,6 +194,27 @@ def build(
     return meta
 
 
+def fit_lines(
+    d: ImageDraw.ImageDraw, text: str, f: ImageFont.FreeTypeFont, width: int
+) -> list[str]:
+    """At most two lines within ``width`` px: break at ' | ' separators, ellipsize the rest."""
+    parts, lines, cur = text.split(" | "), [], ""
+    for part in parts:
+        trial = f"{cur} | {part}" if cur else part
+        if d.textlength(trial, font=f) <= width or not cur:
+            cur = trial
+        else:
+            lines.append(cur)
+            cur = part
+    lines.append(cur)
+    out = lines[:2]
+    for i, line in enumerate(out):
+        while d.textlength(line, font=f) > width and len(line) > 4:
+            line = line[:-2] + "…"
+        out[i] = line
+    return out
+
+
 def _compose(grid: list[tuple[str, list[tuple[str, Image.Image, str]]]], out: Path) -> None:
     w = LEFT + COLS * (CELL + GAP) + GAP
     h = TOP + len(grid) * (CELL + CAP + GAP) + GAP
@@ -201,14 +222,15 @@ def _compose(grid: list[tuple[str, list[tuple[str, Image.Image, str]]]], out: Pa
     d = ImageDraw.Draw(sheet)
     d.text((GAP, 18), "Knotwork contact sheet - every caption and overlay is computed from the bundle files",
            fill=(20, 20, 20), font=font(30))  # fmt: skip
-    f20, f16 = font(22), font(17)
+    f20, f16 = font(22), font(16)
     for r, (name, cells) in enumerate(grid):
         y = TOP + r * (CELL + CAP + GAP)
         d.text((GAP, y + CELL // 2 - 12), name, fill=(20, 20, 20), font=f20)
         for c, (_, img, cap) in enumerate(cells):
             x = LEFT + GAP + c * (CELL + GAP)
             sheet.paste(_thumb(img), (x, y))
-            d.text((x + 2, y + CELL + 6), cap[:52], fill=(20, 20, 20), font=f16)
+            for k, line in enumerate(fit_lines(d, cap, f16, CELL - 4)):
+                d.text((x + 2, y + CELL + 4 + 21 * k), line, fill=(20, 20, 20), font=f16)
     out.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(out)
 

@@ -29,16 +29,15 @@ from knotwork.knotcore.contracts import (
 )
 from knotwork.knotcore.seeds import SeedTree
 from knotwork.plugins.gauge.plugin import (
-    BEZELS,
-    TINTS,
     float_answer,
     pick_value,
+    restyle_dial,
     sample_dial,
     tol_units,
     values_for,
     zone_answer,
 )
-from knotwork.plugins.gauge.render import draw_dial
+from knotwork.plugins.gauge.render import bezel_width, draw_dial
 from knotwork.plugins.gauge.scale import ZONES, zone_of
 from knotwork.plugins.panel import compose
 from knotwork.plugins.panel.programs import PREMISE, program, socket_tid
@@ -49,12 +48,16 @@ from knotwork.plugins.tangle.render import (
     LABEL_RGB,
     add_terminal_labels,
     draw_cables,
+    halo_mask,
     hex_rgb,
     unit,
 )
+from knotwork.render import realism
 from knotwork.render.canvas import make_canvas, render_cfg
 
 MAX_TRIES = 400
+#: powder-coated enclosure tones (every palette colour keeps >= 0.2 luminance contrast)
+ENCLOSURES = [(200, 204, 206), (196, 200, 198), (206, 202, 194), (192, 198, 204)]
 #: Tick labels sit nearer the hub on the small panel dials so ticks stay out of their OCR crops.
 PANEL_LABEL_FRAC = 0.47
 
@@ -169,8 +172,10 @@ class PanelPlugin:
                 "style": _pick(rng, tprof["styles"]), "colors": [list(hex_rgb(h)) for h in cols], "color_regime": regime,
                 "sockets": {str(s): picks[r] for r, s in enumerate(socket_strands)}, "dests": dests, "dest_kind": kinds,
                 "dest_gauge": gidx, "dials": dials, "render": render_cfg(profile), "grade_tol": tol,
+                "surface": realism.sample_surface(rng, "brushed"), "panel_id": int(rng.integers(1, 99)),
                 "argmax_margin": float(prof["argmax_min_margin_tol"]) * tol, "target": None, "claimed": None,
             }  # fmt: skip
+            pay["render"]["background_rgb"] = list(ENCLOSURES[int(rng.integers(len(ENCLOSURES)))])
             if not self._condition(pay, family, rng, gprof):
                 continue
             lay = Layout(
@@ -232,13 +237,16 @@ class PanelPlugin:
         pay = scene.payload
         c = make_canvas(pay["render"])
         paths, crossings, dests = compose.build_paths(pay)
+        enclosure(c, pay, [p[0] for p in paths])
         gauges, terms = [], []
         for i, d in enumerate(pay["dials"]):
             g = draw_dial(c, "panel", d)
             cx, cy = d["center"]
             lab = c.new_object(f"panel/label:gauge_G{i + 1}", "label", LABEL_RGB, parent="panel/labels:gauges",
                                label_text=f"G{i + 1}")  # fmt: skip
-            c.text(lab, (cx, cy + compose.DIAL_R + 24.0), f"G{i + 1}", 26)
+            c.text(
+                lab, (cx, cy + compose.DIAL_R + bezel_width(compose.DIAL_R) + 20.0), f"G{i + 1}", 26
+            )
             row = c.mask_array(g.dial_obj)[int(round(cy))]
             x1 = int(np.nonzero(row)[0].min()) - compose.PORT_GAP
             tid = f"panel/terminal:port_g{i + 1}"
@@ -257,6 +265,9 @@ class PanelPlugin:
         terms += add_terminal_labels(c, "panel", "end", [np.asarray(dests[j]) for j in pads],
                                      [np.array([1.0, 0.0])] * len(pads), [f"pad{j}" for j in pads], [None] * len(pads))  # fmt: skip
         del fault
+        realism.add_surface(
+            c, pay["surface"], ("label", "needle"), lambda cv: halo_mask(crossings, cv.size)
+        )
         return c.finish(out_dir, self.name, terminals=terms, gauges=gauges)
 
     # ------------------------------------------------------------------ claims / questions
@@ -408,12 +419,48 @@ class PanelPlugin:
         pay, rng = copy.deepcopy(scene.payload), seeds.rng()
         pay["style"] = "harness" if pay["style"] == "schematic" else "schematic"
         for d in pay["dials"]:
-            d["bezel_rgb"] = list(
-                [b for b in BEZELS if list(b) != d["bezel_rgb"]][int(rng.integers(len(BEZELS) - 1))]
-            )
-        tints = [t for t in TINTS if list(t) != pay["render"]["background_rgb"]]
+            restyle_dial(d, rng)
+        pay["surface"] = realism.sample_surface(rng, "brushed")
+        tints = [t for t in ENCLOSURES if list(t) != pay["render"]["background_rgb"]]
         pay["render"]["background_rgb"] = list(tints[int(rng.integers(len(tints)))])
         return _scene(scene, pay)
+
+
+def enclosure(c: Any, pay: dict[str, Any], starts: list[np.ndarray]) -> None:
+    """Control-panel furniture: corner screws, printed placards (decor objects, away from every
+    terminal) and a DIN rail with block separators behind the sockets (background relief kept inside
+    the finish's background tolerance)."""
+    realism.corner_screws(c, "panel")
+    bg = c.background
+    ys = [float(p[1]) for p in starts]
+    top, bot = min(ys) - 26.0, max(ys) + 26.0
+    rail = tuple(int(v * 0.91) for v in bg)
+    c.raw_beauty_polygon([(54.0, top), (126.0, top), (126.0, bot), (54.0, bot)], rail)
+    for x in (56.0, 123.0):
+        c.raw_beauty_polygon(
+            [(x - 1.5, top), (x + 1.5, top), (x + 1.5, bot), (x - 1.5, bot)],
+            tuple(int(v * 0.97) for v in bg),
+        )
+    for y in sorted(ys)[:-1]:
+        mid = y + (sorted(ys)[sorted(ys).index(y) + 1] - y) / 2
+        c.raw_beauty_polygon(
+            [(54.0, mid - 1.0), (126.0, mid - 1.0), (126.0, mid + 1.0), (54.0, mid + 1.0)],
+            tuple(int(v * 0.86) for v in bg),
+        )
+    for name, (y0, text) in {"placard_top": (34.0, f"CONTROL PANEL  CP-{pay['panel_id']:02d}"),
+                             "placard_bottom": (950.0, "PRESSURE MONITOR   24 V DC")}.items():  # fmt: skip
+        oid = c.new_object(f"panel/decor:{name}", "decor", (64, 66, 70))
+        c.polygon(
+            oid,
+            [(70.0, y0), (330.0, y0), (330.0, y0 + 40.0), (70.0, y0 + 40.0)],
+            beauty_rgb=(56, 60, 66),
+        )
+        c.polygon(
+            oid,
+            [(73.0, y0 + 3), (327.0, y0 + 3), (327.0, y0 + 37.0), (73.0, y0 + 37.0)],
+            beauty_rgb=(214, 210, 196),
+        )
+        c.text(oid, (200.0, y0 + 20.0), text, 14, beauty_rgb=(40, 40, 44))
 
 
 def _label(v: str) -> Answer:

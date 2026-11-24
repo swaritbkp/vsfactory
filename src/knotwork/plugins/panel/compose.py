@@ -13,6 +13,7 @@ from typing import Any
 
 import numpy as np
 
+from knotwork.plugins.gauge.render import bezel_width
 from knotwork.plugins.tangle import braid, layout
 
 DIAL_R = 120.0
@@ -27,7 +28,7 @@ def dial_slots(k: int) -> list[tuple[float, float]]:
         return [(860.0, 300.0), (860.0, 724.0)]
     if k == 3:
         return [(860.0, 200.0), (860.0, 512.0), (860.0, 824.0)]
-    return [(630.0, 200.0), (880.0, 420.0), (630.0, 640.0), (880.0, 860.0)]
+    return [(630.0, 200.0), (870.0, 400.0), (630.0, 640.0), (870.0, 830.0)]
 
 
 def pad_x(k: int) -> float:
@@ -36,7 +37,7 @@ def pad_x(k: int) -> float:
 
 def port_xy(center: tuple[float, float]) -> tuple[float, float]:
     """Port box centre left of the dial (box right edge PORT_GAP + 1 px left of the rim)."""
-    return center[0] - DIAL_R - PORT_GAP - 10.0, center[1]
+    return center[0] - DIAL_R - bezel_width(DIAL_R) - PORT_GAP - 10.0, center[1]
 
 
 def braid_plan(n: int, word: list[braid.Letter], stroke: float) -> dict[str, Any] | None:

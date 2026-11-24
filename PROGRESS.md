@@ -31,3 +31,13 @@ Gate `artifacts/gates/phase2.json`: PASSED.
 * Mutate M1–M10: 100 % caught with the exact expected code (4 injections each); clean false-quarantine 0.05.
 * Contact sheet `artifacts/phase2/contact_sheet.png` (2290x3680) -> [HUMAN-CHECKPOINT-1].
 * Decisions D-15 … D-23 in SPEC section 16.
+
+## Phase 2 visual-realism upgrade (pre-Checkpoint 1)
+Gate re-run: PASSED, knotcore untouched (819 / 850 executable LOC).
+* Renders: seeded photographic finish (lighting, powder-coat/brushed grain, smudges, dust, sensor grain);
+  bevelled metal bezels, aged enamel faces, dense minor/medium ticks, counterweighted pointer with
+  contact shadow and pivot cap, curved-glass glare and rim grime; cylindrical cable jackets with drop
+  shadows, heat-shrink sleeves and ferrules; panel enclosure with screws, placards and a DIN rail.
+* Gate: 254 tests; first-try rejection tangle 0.000 / gauge 0.000 / panel 0.024; 90 valid twin triples;
+  determinism across worker counts; M1-M10 caught with exact codes (clean controls 0.000 rejected).
+* Contact sheet 2314x3780 with wrapped captions. Decisions D-24 ... D-26.

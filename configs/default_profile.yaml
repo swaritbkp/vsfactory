@@ -63,7 +63,7 @@ gauge:
     linear: {labels: ["00", "20", "40", "60", "80"], vmin: 0, vmax: 80}
     offset: {labels: ["10", "30", "50", "70", "90"], vmin: 10, vmax: 90}
   scale_mix: {linear: 0.5, offset: 0.5}
-  minor_ticks_per_major: 4
+  minor_ticks_per_major: 9         # medium tick at the half-way mark (D-24)
   zone_layout: [green, amber, red]
   value_grid: 1                 # needle values are integers
   families: {G1_READ: 0.6, G2_ZONE: 0.4}

@@ -25,10 +25,16 @@ from knotwork.knotcore.seeds import SeedTree
 from knotwork.plugins.gauge import geom
 from knotwork.plugins.gauge.render import M8_SWEEP, M9_SHIFT, draw_dial
 from knotwork.plugins.gauge.scale import ZONES, admissible, sample_zones, zone_of
+from knotwork.render import realism
 from knotwork.render.canvas import make_canvas, render_cfg
 
-BEZELS = [(90, 90, 90), (40, 60, 110), (110, 50, 40), (30, 90, 60)]
-TINTS = [(246, 244, 238), (232, 240, 250), (250, 236, 226), (236, 248, 236)]
+#: metal bezel finishes: chrome, black anodized, brass, gunmetal
+BEZELS = [(178, 182, 188), (62, 64, 70), (182, 156, 100), (114, 118, 126)]
+#: aged-enamel / off-white dial faces (light faces keep dark numerals OCR- and template-readable)
+FACES = [(250, 249, 244), (246, 241, 226), (241, 238, 229), (252, 252, 250)]
+#: instrument housing / wall tones (light: every palette colour keeps >= 0.2 luminance contrast)
+TINTS = [(214, 216, 218), (206, 210, 214), (220, 216, 206), (210, 214, 208)]
+UNITS = ["bar", "psi", "kPa", "MPa", "°C"]
 GID = "gauge/gauge:g1"
 PROMPTS = {
     Family.G1_READ: "What value does the gauge needle point to?",
@@ -80,12 +86,27 @@ def sample_dial(rng: np.random.Generator, prof: dict[str, Any], name: str, cente
         d = {"name": name, "center": [float(center[0]), float(center[1])], "radius": float(radius), "scale": scale,
              "labels": list(s["labels"]), "vmin": vmin, "vmax": vmax, "zones": list(sample_zones(rng, vmin, vmax)),
              "bezel_rgb": list(BEZELS[int(rng.integers(len(BEZELS)))]), "band_inner": 0.92,
+             "face_rgb": list(FACES[int(rng.integers(len(FACES)))]), "unit": UNITS[int(rng.integers(len(UNITS)))],
+             "serial": f"No. {int(rng.integers(10000, 99999))}   CL 1.6",
+             "minor_per_major": int(prof.get("minor_ticks_per_major", 9)),
+             "surface": realism.sample_surface(rng, "powder"),
              "label_frac": label_frac}  # fmt: skip
         v = pick_value(rng, d, tol_units(prof, d), zone)
         if v is not None:
             d["value"] = float(v)
             return d
     raise RuntimeError("no admissible needle value")
+
+
+def restyle_dial(d: dict[str, Any], rng: np.random.Generator) -> None:
+    """New bezel finish, face ageing and dial surface (lighting / grime); geometry and value kept."""
+    d["bezel_rgb"] = list(
+        [b for b in BEZELS if list(b) != d["bezel_rgb"]][int(rng.integers(len(BEZELS) - 1))]
+    )
+    d["face_rgb"] = list(
+        [f for f in FACES if list(f) != d.get("face_rgb")][int(rng.integers(len(FACES) - 1))]
+    )
+    d["surface"] = realism.sample_surface(rng, "powder")
 
 
 def tol_units(prof: dict[str, Any], d: dict[str, Any]) -> float:
@@ -124,7 +145,8 @@ class GaugePlugin:
             "render": render_cfg(profile),
             "grade_tol": tol_units(prof, d),
         }
-        pay["render"]["background_rgb"] = list(TINTS[0])
+        pay["render"]["background_rgb"] = list(TINTS[int(rng.integers(len(TINTS)))])
+        pay["surface"] = realism.sample_surface(rng, "brushed")
         return SceneIR(plugin=self.name, plugin_version=self.version, seed_path=seeds.path_str,
                        params={"scale": d["scale"], "radius": radius}, payload=pay)  # fmt: skip
 
@@ -132,7 +154,9 @@ class GaugePlugin:
         self, scene: SceneIR, out_dir: Path, fault: FaultCode | None = None
     ) -> RenderManifest:
         c = make_canvas(scene.payload["render"])
+        realism.corner_screws(c, "gauge")
         g = draw_dial(c, "gauge", scene.payload["dial"], fault)
+        realism.add_surface(c, scene.payload["surface"])
         return c.finish(out_dir, self.name, gauges=[g])
 
     def claims(self, scene: SceneIR) -> ClaimSet:
@@ -183,14 +207,14 @@ class GaugePlugin:
         return _scene(scene, pay), f"needle {old:g} -> {v}"
 
     def nuisance_twin(self, scene: SceneIR, program: QuestionProgram, seeds: SeedTree) -> SceneIR:
+        """Domain shift with the answer kept: bezel finish, dial ageing, housing tone, zone band width,
+        lighting direction, grime pattern and surface finish all resampled."""
         pay, rng = copy.deepcopy(scene.payload), seeds.rng()
-        d = pay["dial"]
-        d["bezel_rgb"] = list(
-            [b for b in BEZELS if list(b) != d["bezel_rgb"]][int(rng.integers(len(BEZELS) - 1))]
-        )
+        restyle_dial(pay["dial"], rng)
         tints = [t for t in TINTS if list(t) != pay["render"]["background_rgb"]]
         pay["render"]["background_rgb"] = list(tints[int(rng.integers(len(tints)))])
-        d["band_inner"] = [0.90, 0.94][int(rng.integers(2))]
+        pay["surface"] = realism.sample_surface(rng, "brushed")
+        pay["dial"]["band_inner"] = [0.90, 0.94][int(rng.integers(2))]
         return _scene(scene, pay)
 
 

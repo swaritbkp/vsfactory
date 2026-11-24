@@ -35,6 +35,27 @@ def unit(v: np.ndarray) -> np.ndarray:
     return np.asarray(v / (np.linalg.norm(v) or 1.0), dtype=np.float64)
 
 
+SHADE = {"schematic": "jacket", "harness": "harness", "flat": "flat"}
+SLEEVE_RGB: RGB = (38, 40, 44)
+FERRULE_RGB: RGB = (196, 190, 172)
+
+
+def _cut(p: np.ndarray, length: float) -> np.ndarray:
+    """The leading part of polyline ``p`` up to arc length ``length`` (end point interpolated)."""
+    seg = np.hypot(*np.diff(p, axis=0).T)
+    cum = np.concatenate([[0.0], np.cumsum(seg)])
+    k = int(np.searchsorted(cum, length))
+    if k >= len(p):
+        return p
+    t = (length - cum[k - 1]) / max(seg[k - 1], 1e-9)
+    return np.vstack([p[:k], p[k - 1] + (p[k] - p[k - 1]) * t])
+
+
+def end_runs(p: np.ndarray, length: float) -> tuple[np.ndarray, np.ndarray]:
+    """The first and last ``length`` px of a polyline."""
+    return _cut(p, length), _cut(p[::-1], length)[::-1]
+
+
 def draw_cables(
     c: LayeredCanvas,
     prefix: str,
@@ -45,16 +66,54 @@ def draw_cables(
     shade: str,
     halos: bool = True,
     beauty_rgb: dict[int, RGB] | None = None,
+    sleeves: bool = True,
 ) -> list[int]:
-    """Draw every cable fully in index order, then per-crossing halos in increasing x (SPEC 6.1)."""
+    """Soft drop shadows, then every cable in index order with jacket shading, heat-shrink sleeves and
+    ferrules at both ends (part of the cable object), then per-crossing halos in increasing x
+    (SPEC 6.1) so every crossing stays crisp."""
     ids = [c.new_object(f"{prefix}/strand:s{k}", "strand", colors[k]) for k in range(len(paths))]
+    off = (0.25 * width + 0.5, 0.35 * width + 0.5)
+    for p in paths:
+        c.shadow_polyline(p, width + 2.0, off, 0.10)
+    style = cast(Shade, SHADE.get(shade, shade))
     for k, p in enumerate(paths):
-        c.polyline(ids[k], p, width, beauty_rgb=(beauty_rgb or {}).get(k), shade=cast(Shade, shade))
+        c.polyline(ids[k], p, width, beauty_rgb=(beauty_rgb or {}).get(k), shade=style)
+        if sleeves and width >= 4.0:
+            for run in end_runs(p, 18.0):
+                c.polyline(
+                    ids[k],
+                    run,
+                    width + 4.0,
+                    beauty_rgb=SLEEVE_RGB,
+                    shade="harness",
+                    keep_style=True,
+                )
+            for run in end_runs(p, 6.0):
+                c.polyline(
+                    ids[k],
+                    run,
+                    width + 1.0,
+                    beauty_rgb=FERRULE_RGB,
+                    shade="harness",
+                    keep_style=True,
+                )
     if halos:
         for x in sorted(crossings, key=lambda x: (x["center"][0], x["center"][1])):
             top = int(x["over"])
             c.halo_patch(ids[top], paths[top], width, HALO_PX, HALO_RADIUS, tuple(x["center"]))
     return ids
+
+
+def halo_mask(
+    crossings: list[dict[str, Any]], size: int = 1024, radius: float = HALO_RADIUS + 6
+) -> np.ndarray:
+    """Discs around crossing centres (kept crisp by the surface finish)."""
+    y, x = np.mgrid[0:size, 0:size]
+    m = np.zeros((size, size), dtype=bool)
+    for cr in crossings:
+        cx, cy = cr["center"]
+        m |= (x - cx) ** 2 + (y - cy) ** 2 <= radius**2
+    return m
 
 
 def box_at(p: np.ndarray, half: int = 10) -> PixelBox:
@@ -83,7 +142,9 @@ def add_terminal_labels(
         if text is not None:
             label_obj = c.new_object(f"{prefix}/label:{role}_{name}", "label", LABEL_RGB,
                                      parent=f"{prefix}/labels:{role}", label_text=text)  # fmt: skip
-            gap = 26.0 + 7.0 * max(len(text) - 1, 0)
+            gap = 34.0 + 7.0 * max(
+                len(text) - 1, 0
+            )  # clear of the sleeve + ferrule in the OCR crop
             glyph = (drawn[k] if drawn is not None else None) or text
             c.text(label_obj, tuple(p + u * gap), glyph, font_px)
         out.append(TerminalEntry(terminal_id=f"{prefix}/terminal:{role}_{name}", role=cast(Role, role),

@@ -951,3 +951,30 @@ spec leaves open. Never silently change a threshold.
 * D-23: The kernel's RapidOCR engine runs with one intra-/inter-op thread: identical reduction order on
   every machine (determinism independent of core count) and no oversubscription when generation runs one
   process per core. Worker pools also pin BLAS/OpenMP to one thread each.
+* D-24: Photographic realism lives entirely in `render/` + `plugins/` (knotcore unchanged). `render.realism`
+  applies a seeded finish at output resolution (uneven overhead lighting, powder-coat/brushed grain,
+  smudges, dust, sensor grain; dial bevel/grooves, recess and inner face shadow, aged-enamel vignette,
+  rim grime, curved-glass glare, metallic hub cap). Kernel-compatibility rules: (a) far (> 4 px) from
+  every object the finish may not move a pixel beyond ±36 levels of the manifest background (the
+  `E_UNEXPLAINED_INK` threshold is 40), and pixels already outside that band (e.g. injected M7 ink) are
+  never pulled back, so the finish cannot hide a defect; (b) high-frequency effects (grain, brushing,
+  dust, smudges, glare, grime) are attenuated over label OCR boxes, needles and crossing halos, while
+  smooth lighting applies everywhere; (c) noise uses numpy's portable Generator plus filtering, no array
+  transcendentals. Causal twins copy the finish parameters (same texture, so only the edit changes
+  pixels); nuisance twins resample them (lighting angle, grime, grain, metal finish, dial ageing,
+  housing/backplate tone) for a real domain shift.
+* D-25: Dial construction: a bevelled metal bezel ring (chrome, black anodized, brass, gunmetal) is part
+  of the dial object (concentric, so the kernel's mask-centroid dial centre is unchanged); light
+  enamel/cream faces only (dark faces would need light numerals, which the kernel's dark-on-light template
+  OCR fallback cannot verify); minor + medium ticks form one `tick_minor` object
+  (`gauge.minor_ticks_per_major: 9`, medium at the half mark); tapered pointer with a counterweight disc
+  (symmetric about the axis, so the PCA axis is exact) and a beauty-only contact shadow on the face; printed
+  unit / serial / accuracy-class marks are one `decor` object, only on dials with R >= 200 and in the dead
+  band the needle never sweeps.
+* D-26: Cables: matte (`jacket`) or glossy (`harness`) cylindrical shading inside the stroke footprint,
+  a beauty-only drop shadow (background darkened 10 %, inside the background tolerance), and heat-shrink
+  sleeves (18 px) + ferrules (6 px) drawn as part of the cable object (terminal clearance unaffected);
+  terminal labels moved 8 px outward so sleeves stay out of their OCR crops. Panels: corner hex screws
+  and printed placards are `decor` objects away from terminals; the DIN rail behind the sockets is
+  background relief (no object near a terminal box, which `E_TERMINAL_CLEARANCE` forbids); panel dial
+  slots moved so bezels and `Gk` labels stay on the canvas; ports sit 8 px from the bezel.

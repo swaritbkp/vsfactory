@@ -33,7 +33,7 @@ from knotwork.knotcore.contracts import (
 )
 
 RGB = tuple[int, int, int]
-Shade = Literal["flat", "harness"]
+Shade = Literal["flat", "jacket", "harness"]
 FloatArray = npt.NDArray[np.float64]
 
 
@@ -45,10 +45,10 @@ def font_sha256(path: str | Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def _shade_colors(rgb: RGB) -> tuple[RGB, RGB]:
-    """(darker rim, lighter core) colours for harness shading; both stay inside the stroke."""
-    rim = tuple(int(c * 0.62) for c in rgb)
-    core = tuple(int(c + (255 - c) * 0.22) for c in rgb)
+def _shade_colors(rgb: RGB, glossy: bool = True) -> tuple[RGB, RGB]:
+    """(darker rim, lighter core) colours for jacket shading; both stay inside the stroke."""
+    rim = tuple(int(c * (0.62 if glossy else 0.78)) for c in rgb)
+    core = tuple(int(c + (255 - c) * (0.22 if glossy else 0.12)) for c in rgb)
     return (rim[0], rim[1], rim[2]), (core[0], core[1], core[2])
 
 
@@ -147,6 +147,8 @@ class LayeredCanvas:
         self._idraw = ImageDraw.Draw(self.idimg)
         self._idraw.fontmode = "1"
         self._objs: dict[int, _Obj] = {}
+        #: post-processes (beauty uint8 HxWx3, canvas) -> beauty, applied at output resolution
+        self.post: list[Any] = []
         self._fonts: dict[int, ImageFont.FreeTypeFont] = {}
 
     # ------------------------------------------------------------------ objects
@@ -217,10 +219,14 @@ class LayeredCanvas:
         idbuf: bool = True,
         beauty_rgb: RGB | None = None,
         shade: Shade = "flat",
+        keep_style: bool = False,
     ) -> None:
+        """Exact-width stroke on every layer. ``keep_style`` leaves the object's remembered style
+        (used by `halo_patch` redraws) untouched, e.g. for sleeves drawn over a cable."""
         p = as_points(pts)
         rgb = self._color(oid, beauty_rgb)
-        self._objs[oid].style = {"rgb": rgb, "shade": shade, "width": float(width_px)}
+        if not keep_style:
+            self._objs[oid].style = {"rgb": rgb, "shade": shade, "width": float(width_px)}
         if beauty:
             self._beauty_stroke(p, float(width_px), rgb, shade)
         for draw, fill in self._layers(oid, mask, idbuf):
@@ -229,13 +235,32 @@ class LayeredCanvas:
     def _beauty_stroke(
         self, p: FloatArray, width: float, rgb: RGB, shade: Shade, caps: bool = True
     ) -> None:
-        if shade == "harness" and width >= 4.0:
-            rim, core = _shade_colors(rgb)
+        if shade in ("harness", "jacket") and width >= 4.0:
+            # cylindrical insulated jacket: darker rim, body, specular centre line (all inside the
+            # stroke footprint); "harness" is glossy, "jacket" matte
+            rim, core = _shade_colors(rgb, glossy=shade == "harness")
             _stroke(self._bdraw, p, width, rim, self.ss, snap=False, caps=caps)
             _stroke(self._bdraw, p, width - 2.0, rgb, self.ss, snap=False, caps=caps)
-            _stroke(self._bdraw, p, max(1.0, width * 0.2), core, self.ss, snap=False, caps=caps)
+            frac = 0.2 if shade == "harness" else 0.32
+            _stroke(self._bdraw, p, max(1.0, width * frac), core, self.ss, snap=False, caps=caps)
         else:
             _stroke(self._bdraw, p, width, rgb, self.ss, snap=False, caps=caps)
+
+    def shadow_polyline(
+        self, pts: Any, width_px: float, offset: tuple[float, float], darken: float
+    ) -> None:
+        """Soft drop shadow on the beauty layer only: the background darkened by ``darken`` (kept
+        small so shadows stay inside the background clamp of `render.realism`)."""
+        rgb = tuple(int(c * (1.0 - darken)) for c in self.background)
+        q = as_points(pts) + np.asarray(offset, dtype=np.float64)
+        _stroke(self._bdraw, q, float(width_px), (rgb[0], rgb[1], rgb[2]), self.ss, snap=False)
+
+    def raw_beauty_polygon(self, pts: Any, rgb: RGB) -> None:
+        """Background relief on the beauty layer only (e.g. a DIN rail); callers keep it within the
+        background tolerance of `render.realism`, so it is surface finish, not object ink."""
+        self._bdraw.polygon(
+            [(float(x) * self.ss, float(y) * self.ss) for x, y in as_points(pts)], fill=rgb
+        )
 
     def raw_beauty_polyline(self, pts: Any, width_px: float, rgb: RGB) -> None:
         """Ink on the beauty layer only: no object, no mask, no id (fault injection M7)."""
@@ -362,8 +387,12 @@ class LayeredCanvas:
 
     # ------------------------------------------------------------------ output
     def beauty_array(self) -> npt.NDArray[np.uint8]:
+        """Downsampled beauty with every registered post-process applied (at output resolution)."""
         small = self.beauty.resize((self.size, self.size), Image.Resampling.LANCZOS)
-        return np.asarray(small, dtype=np.uint8)
+        out = np.asarray(small, dtype=np.uint8)
+        for fn in self.post:
+            out = fn(out, self)
+        return out
 
     def id_array(self) -> npt.NDArray[np.uint16]:
         arr = np.asarray(self.idimg, dtype=np.int64)
