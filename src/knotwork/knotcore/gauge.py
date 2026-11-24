@@ -54,7 +54,7 @@ def needle(b: Bundle, g: GaugeEntry, cfg: dict[str, Any]) -> dict[str, Any]:
         u, proj = -u, -proj
     offset = abs(float((cx - m[0]) * u[1] - (cy - m[1]) * u[0]))
     limit = max(float(cfg["gauge"]["max_center_offset_px"]), 0.03 * radius)
-    tip = m + u * (proj.max() - 3.0)
+    tip = m + u * (proj.max() - 6.0)
     ev = {"center": [cx, cy], "R": radius, "axis_offset": offset, "limit": limit}
     ev |= {"theta_needle": float(math.degrees(math.atan2(-u[1], u[0])) % 360.0)}
     ev |= {"length": float(proj.max() - proj.min()), "tip": [float(tip[0]), float(tip[1])]}
