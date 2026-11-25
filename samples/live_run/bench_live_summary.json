@@ -1,0 +1,492 @@
+{
+ "cost_usd": 0.99918,
+ "dir": "artifacts/phase5/bench_live",
+ "failure_examples": [
+  {
+   "block": "staircase:tangle",
+   "crossings_on_path": 1,
+   "image": "artifacts/phase3/bench_split/tangle/bundles/kw-1beb7606b8a423b08402/beauty.png",
+   "key": "t1:kw-1beb7606b8a423b08402",
+   "question": "Follow the cable that starts at terminal N. At which numbered terminal does it end?",
+   "replies": {
+    "google/gemini-2.5-flash": "7",
+    "openai/gpt-5.4": "7",
+    "qwen/qwen3-vl-235b-a22b-instruct": "7"
+   },
+   "truth": "8"
+  },
+  {
+   "block": "composition",
+   "crossings_on_path": 1,
+   "image": "artifacts/phase3/bench_split/panel/bundles/kw-05068cc77781e0bb1657/beauty.png",
+   "key": "read:kw-05068cc77781e0bb1657",
+   "question": "What value does gauge G1 read?",
+   "replies": {
+    "google/gemini-2.5-flash": "10",
+    "openai/gpt-5.4": "20",
+    "qwen/qwen3-vl-235b-a22b-instruct": "0"
+   },
+   "truth": "14"
+  },
+  {
+   "block": "gaslight",
+   "crossings_on_path": 0,
+   "image": "artifacts/phase3/bench_split/panel/bundles/kw-22c7f7df871c06bedd25/beauty.png",
+   "key": "gas:kw-22c7f7df871c06bedd25",
+   "question": "Since the gauge connected to socket E is in the green zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.",
+   "replies": {
+    "google/gemini-2.5-flash": "yes; 30",
+    "openai/gpt-5.4": "no; 65",
+    "qwen/qwen3-vl-235b-a22b-instruct": "yes; 40"
+   },
+   "truth": "no; 67"
+  }
+ ],
+ "max_trials": 40,
+ "mode": "live",
+ "models": {
+  "vlm_a": {
+   "accuracy": {
+    "gauge_read": {
+     "acc": 0.1562,
+     "n": 32
+    },
+    "overall": {
+     "acc": 0.2523,
+     "n": 325
+    },
+    "panel": {
+     "acc": 0.2282,
+     "n": 149
+    },
+    "tangle": {
+     "acc": 0.2727,
+     "n": 176
+    }
+   },
+   "blocks": {
+    "ablation:mono": {
+     "acc": 0.0312,
+     "n": 32
+    },
+    "ablation:unique": {
+     "acc": 0.5938,
+     "n": 32
+    },
+    "composition": {
+     "acc": 0.1979,
+     "n": 96
+    },
+    "gaslight": {
+     "acc": 0.0,
+     "n": 24
+    },
+    "staircase:panel": {
+     "acc": 0.5172,
+     "n": 29
+    },
+    "staircase:tangle": {
+     "acc": 0.3,
+     "n": 40
+    },
+    "twins": {
+     "acc": 0.2222,
+     "n": 72
+    }
+   },
+   "color_ablation": {
+    "acc_mono": 0.03125,
+    "acc_unique": 0.59375,
+    "chance_mono": 0.1661,
+    "delta": 0.5625,
+    "n": 32
+   },
+   "composition": {
+    "abbott": {
+     "comp_obs": 0.023438,
+     "comp_pred": 0.002471,
+     "gap": 0.020966,
+     "gap_ci": [
+      -0.048186,
+      0.115359
+     ],
+     "read": 0.121094,
+     "trace": 0.020408
+    },
+    "chance": {
+     "comp": 0.04,
+     "read": 0.04,
+     "trace": 0.361979
+    },
+    "n": 32,
+    "p_comp": 0.0625,
+    "p_read": 0.15625,
+    "p_trace": 0.375
+   },
+   "cost_usd": 0.80794,
+   "errors": 0,
+   "gaslight": {
+    "failure_rate": 0.0,
+    "n": 24
+   },
+   "missing": 0,
+   "parse_fail_rate": 0.0,
+   "parse_failures": 0,
+   "per_crossing": {
+    "ci": [
+     0.608669,
+     0.999999
+    ],
+    "n": 144,
+    "p_hat": 0.796682
+   },
+   "seconds": 368.6,
+   "slot": "vlm_a",
+   "slug": "openai/gpt-5.4",
+   "staircase": {
+    "panel": {
+     "expected_level": null,
+     "levels": [
+      1,
+      6
+     ],
+     "reversals": [
+      2,
+      3,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2
+     ],
+     "threshold_level": 1.5,
+     "trials": 29
+    },
+    "tangle": {
+     "expected_level": null,
+     "levels": [
+      1,
+      12
+     ],
+     "reversals": [
+      1,
+      2,
+      1,
+      2
+     ],
+     "threshold_level": 1.5,
+     "trials": 40
+    }
+   },
+   "track_switch": {
+    "n_errors": 76,
+    "single_switch_explained_frac": 0.618421
+   },
+   "trials": 325,
+   "twins": {
+    "all_three": 0.125,
+    "answer_changed_on_causal": 0.4167,
+    "causal": 0.125,
+    "n": 24,
+    "nuisance": 0.25,
+    "original": 0.2917,
+    "same_answer_on_nuisance": 0.666667
+   }
+  },
+  "vlm_b": {
+   "accuracy": {
+    "gauge_read": {
+     "acc": 0.25,
+     "n": 32
+    },
+    "overall": {
+     "acc": 0.2054,
+     "n": 336
+    },
+    "panel": {
+     "acc": 0.2437,
+     "n": 160
+    },
+    "tangle": {
+     "acc": 0.1705,
+     "n": 176
+    }
+   },
+   "blocks": {
+    "ablation:mono": {
+     "acc": 0.0938,
+     "n": 32
+    },
+    "ablation:unique": {
+     "acc": 0.1875,
+     "n": 32
+    },
+    "composition": {
+     "acc": 0.2083,
+     "n": 96
+    },
+    "gaslight": {
+     "acc": 0.0833,
+     "n": 24
+    },
+    "staircase:panel": {
+     "acc": 0.425,
+     "n": 40
+    },
+    "staircase:tangle": {
+     "acc": 0.125,
+     "n": 40
+    },
+    "twins": {
+     "acc": 0.2222,
+     "n": 72
+    }
+   },
+   "color_ablation": {
+    "acc_mono": 0.09375,
+    "acc_unique": 0.1875,
+    "chance_mono": 0.1661,
+    "delta": 0.09375,
+    "n": 32
+   },
+   "composition": {
+    "abbott": {
+     "comp_obs": -0.009115,
+     "comp_pred": -0.00625,
+     "gap": -0.002865,
+     "gap_ci": [
+      -0.073711,
+      0.068814
+     ],
+     "read": 0.21875,
+     "trace": -0.028571
+    },
+    "chance": {
+     "comp": 0.04,
+     "read": 0.04,
+     "trace": 0.361979
+    },
+    "n": 32,
+    "p_comp": 0.03125,
+    "p_read": 0.25,
+    "p_trace": 0.34375
+   },
+   "cost_usd": 0.120818,
+   "errors": 0,
+   "gaslight": {
+    "failure_rate": 0.5,
+    "n": 24
+   },
+   "missing": 0,
+   "parse_fail_rate": 0.002976,
+   "parse_failures": 1,
+   "per_crossing": {
+    "ci": [
+     0.999999,
+     0.999999
+    ],
+    "n": 144,
+    "p_hat": 0.999999
+   },
+   "seconds": 485.4,
+   "slot": "vlm_b",
+   "slug": "google/gemini-2.5-flash",
+   "staircase": {
+    "panel": {
+     "expected_level": null,
+     "levels": [
+      1,
+      6
+     ],
+     "reversals": [
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      3
+     ],
+     "threshold_level": 1.6667,
+     "trials": 40
+    },
+    "tangle": {
+     "expected_level": null,
+     "levels": [
+      1,
+      12
+     ],
+     "reversals": [],
+     "threshold_level": 1.075,
+     "trials": 40
+    }
+   },
+   "track_switch": {
+    "n_errors": 82,
+    "single_switch_explained_frac": 0.5
+   },
+   "trials": 336,
+   "twins": {
+    "all_three": 0.125,
+    "answer_changed_on_causal": 0.5,
+    "causal": 0.125,
+    "n": 24,
+    "nuisance": 0.2917,
+    "original": 0.25,
+    "same_answer_on_nuisance": 0.791667
+   }
+  },
+  "vlm_c": {
+   "accuracy": {
+    "gauge_read": {
+     "acc": 0.0625,
+     "n": 32
+    },
+    "overall": {
+     "acc": 0.2024,
+     "n": 336
+    },
+    "panel": {
+     "acc": 0.1938,
+     "n": 160
+    },
+    "tangle": {
+     "acc": 0.2102,
+     "n": 176
+    }
+   },
+   "blocks": {
+    "ablation:mono": {
+     "acc": 0.1562,
+     "n": 32
+    },
+    "ablation:unique": {
+     "acc": 0.375,
+     "n": 32
+    },
+    "composition": {
+     "acc": 0.1562,
+     "n": 96
+    },
+    "gaslight": {
+     "acc": 0.0,
+     "n": 24
+    },
+    "staircase:panel": {
+     "acc": 0.4,
+     "n": 40
+    },
+    "staircase:tangle": {
+     "acc": 0.125,
+     "n": 40
+    },
+    "twins": {
+     "acc": 0.2083,
+     "n": 72
+    }
+   },
+   "color_ablation": {
+    "acc_mono": 0.15625,
+    "acc_unique": 0.375,
+    "chance_mono": 0.1661,
+    "delta": 0.21875,
+    "n": 32
+   },
+   "composition": {
+    "abbott": {
+     "comp_obs": -0.041667,
+     "comp_pred": 0.001626,
+     "gap": -0.043293,
+     "gap_ci": [
+      -0.057803,
+      -0.02904
+     ],
+     "read": 0.023438,
+     "trace": 0.069388
+    },
+    "chance": {
+     "comp": 0.04,
+     "read": 0.04,
+     "trace": 0.361979
+    },
+    "n": 32,
+    "p_comp": 0.0,
+    "p_read": 0.0625,
+    "p_trace": 0.40625
+   },
+   "cost_usd": 0.070423,
+   "errors": 0,
+   "gaslight": {
+    "failure_rate": 1.0,
+    "n": 24
+   },
+   "missing": 0,
+   "parse_fail_rate": 0.002976,
+   "parse_failures": 1,
+   "per_crossing": {
+    "ci": [
+     0.999999,
+     0.999999
+    ],
+    "n": 144,
+    "p_hat": 0.999999
+   },
+   "seconds": 744.5,
+   "slot": "vlm_c",
+   "slug": "qwen/qwen3-vl-235b-a22b-instruct",
+   "staircase": {
+    "panel": {
+     "expected_level": null,
+     "levels": [
+      1,
+      6
+     ],
+     "reversals": [
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2
+     ],
+     "threshold_level": 1.5,
+     "trials": 40
+    },
+    "tangle": {
+     "expected_level": null,
+     "levels": [
+      1,
+      12
+     ],
+     "reversals": [],
+     "threshold_level": 1.075,
+     "trials": 40
+    }
+   },
+   "track_switch": {
+    "n_errors": 80,
+    "single_switch_explained_frac": 0.5125
+   },
+   "trials": 336,
+   "twins": {
+    "all_three": 0.0833,
+    "answer_changed_on_causal": 0.4583,
+    "causal": 0.125,
+    "n": 24,
+    "nuisance": 0.25,
+    "original": 0.25,
+    "same_answer_on_nuisance": 0.833333
+   }
+  }
+ },
+ "network_calls": 871,
+ "source": "live",
+ "stopped": null,
+ "trials": 997
+}

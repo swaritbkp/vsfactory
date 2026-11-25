@@ -1,0 +1,42 @@
+{
+ "bundle_id": "kw-ed08bfa81fc8d87d0cd9",
+ "plugin": "tangle",
+ "family": "T1_TRACE",
+ "split": "dev",
+ "role": "nuisance",
+ "base_id": "kw-10d38d2a5f25dddd573d",
+ "edit": "nuisance restyle",
+ "pixel_diff_frac": 0.738879,
+ "question": "The image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal A. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+ "options": [
+  "1",
+  "2",
+  "3"
+ ],
+ "answer": {
+  "canonical": "1",
+  "tolerance": 0.0,
+  "type": "label",
+  "value": "1"
+ },
+ "program": [
+  [
+   "TRACE",
+   [
+    "tangle/terminal:start_A"
+   ]
+  ]
+ ],
+ "verdict": "CERTIFIED",
+ "d1": "1",
+ "d3": "1",
+ "kernel_steps": [
+  {
+   "op": "TRACE",
+   "output": "1"
+  }
+ ],
+ "claims_checked": 23,
+ "claims_failed": 0,
+ "canary": "KNOTWORK-CANARY-0644a3f7843c87fc79d2012cff779479"
+}

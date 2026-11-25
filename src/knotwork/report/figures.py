@@ -140,8 +140,9 @@ def fig_colour_ablation(s: dict[str, Any], out: Path) -> Path:
     ax.set_xlabel("cable-tracing accuracy on the same scenes (filled = unique colours, open = monochrome)",
                   fontsize=9.5, color=INK2)  # fmt: skip
     n = models[0]["color_ablation"].get("n")
-    _titles(fig, "Colour is the shortcut: tracing collapses when every cable looks the same",
-            f"Matched pairs (same braid, same geometry, only cable colours changed), n = {n} per model · "
+    _titles(fig, "Colour as a shortcut: tracing with unique vs identical cable colours",
+            f"Matched pairs (same braid, same geometry, only cable colours changed), n = {n} per model; "
+            "exact McNemar per model in README · "
             f"{SOURCE_LABEL[s['source']]}")  # fmt: skip
     return _save(fig, out, "fig01_colour_ablation.png", left=0.17)
 
@@ -189,9 +190,10 @@ def fig_twins(s: dict[str, Any], out: Path) -> Path:
     ax.set_ylim(0, max(0.45, max((v or 0) for _, vs in series for v in vs) + 0.12))
     ax.set_ylabel("accuracy", fontsize=9.5, color=INK2)
     n = models[0]["twins"]["n"]
-    _titles(fig, "Twin consistency: a minimal causal edit halves accuracy",
-            f"Cable-tracing triples: original, causal twin (one crossing edited, < 5% of pixels), nuisance twin "
-            f"(restyle only); n = {n} triples per model · {SOURCE_LABEL[s['source']]}")  # fmt: skip
+    _titles(fig, "Twin consistency on cable tracing (directional: small n)",
+            f"Cable-tracing triples: original, causal twin (two end labels swapped, cables unchanged), nuisance "
+            f"twin (restyle only); n = {n} triples per model, so per-model drops are not significant · "
+            f"{SOURCE_LABEL[s['source']]}")  # fmt: skip
     return _save(fig, out, "fig03_twin_consistency.png")
 
 

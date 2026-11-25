@@ -1,0 +1,13 @@
+{
+ "block": "composition",
+ "key": "read:kw-05068cc77781e0bb1657",
+ "question": "What value does gauge G1 read?",
+ "truth": "14",
+ "replies": {
+  "google/gemini-2.5-flash": "10",
+  "openai/gpt-5.4": "20",
+  "qwen/qwen3-vl-235b-a22b-instruct": "0"
+ },
+ "source": "live OpenRouter run, artifacts/phase5/bench_live (seed 0, --max-trials 40)",
+ "bundle_image": "artifacts/phase3/bench_split/panel/bundles/kw-05068cc77781e0bb1657/beauty.png"
+}

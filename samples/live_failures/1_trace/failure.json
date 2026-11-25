@@ -1,0 +1,13 @@
+{
+ "block": "staircase:tangle",
+ "key": "t1:kw-1beb7606b8a423b08402",
+ "question": "Follow the cable that starts at terminal N. At which numbered terminal does it end?",
+ "truth": "8",
+ "replies": {
+  "google/gemini-2.5-flash": "7",
+  "openai/gpt-5.4": "7",
+  "qwen/qwen3-vl-235b-a22b-instruct": "7"
+ },
+ "source": "live OpenRouter run, artifacts/phase5/bench_live (seed 0, --max-trials 40)",
+ "bundle_image": "artifacts/phase3/bench_split/tangle/bundles/kw-1beb7606b8a423b08402/beauty.png"
+}

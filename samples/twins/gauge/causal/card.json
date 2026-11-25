@@ -1,0 +1,41 @@
+{
+ "bundle_id": "kw-c78097f80606278d60c0",
+ "plugin": "gauge",
+ "family": "G1_READ",
+ "split": "dev",
+ "role": "causal",
+ "base_id": "kw-e9f40ba8338408cb77b7",
+ "edit": "needle 15 -> 78",
+ "pixel_diff_frac": 0.004826,
+ "question": "What value does the gauge needle point to?\nEnd your reply with a final line of the form 'ANSWER: <number>'.",
+ "options": null,
+ "answer": {
+  "canonical": "78",
+  "tolerance": 1.6,
+  "type": "float",
+  "value": 78.0
+ },
+ "program": [
+  [
+   "READ",
+   [
+    "gauge/gauge:g1"
+   ]
+  ]
+ ],
+ "verdict": "CERTIFIED",
+ "d1": "78",
+ "d3": "78.0156",
+ "kernel_steps": [
+  {
+   "op": "READ",
+   "output": [
+    78.01562252126917,
+    0.6667172877503192
+   ]
+  }
+ ],
+ "claims_checked": 2,
+ "claims_failed": 0,
+ "canary": "KNOTWORK-CANARY-0644a3f7843c87fc79d2012cff779479"
+}

@@ -1,0 +1,263 @@
+{
+ "answer": {
+  "canonical": "78",
+  "tolerance": 1.6,
+  "type": "float",
+  "value": 78.0
+ },
+ "bundle_id": "kw-c78097f80606278d60c0",
+ "canary": "KNOTWORK-CANARY-0644a3f7843c87fc79d2012cff779479",
+ "certificate": {
+  "agree": true,
+  "bundle_id": "kw-c78097f80606278d60c0",
+  "checks": [
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.6254853207929758,
+    "name": "contrast",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.002233455931174577,
+    "name": "needle_tip_color",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_UNEXPLAINED_INK",
+    "metric": 0.0,
+    "name": "unexplained_ink",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 30.0
+   },
+   {
+    "code": "E_OOB",
+    "metric": 0.0,
+    "name": "oob_mask",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 0.0
+   },
+   {
+    "code": "E_OOB",
+    "metric": 0.0,
+    "name": "oob_box",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 0.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 9.0,
+    "name": "stroke_768",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 18,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 20,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 21,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 22,
+    "passed": true,
+    "threshold": 1.0
+   }
+  ],
+  "claims_checked": 2,
+  "claims_failed": 0,
+  "codes": [],
+  "d1": {
+   "canonical": "78",
+   "tolerance": 0.0,
+   "type": "float",
+   "value": 78.0
+  },
+  "d2": {
+   "canonical": "78",
+   "tolerance": 0.0,
+   "type": "float",
+   "value": 78.0
+  },
+  "d3": {
+   "canonical": "78.0156",
+   "tolerance": 0.6667172877503192,
+   "type": "float",
+   "value": 78.01562252126917
+  },
+  "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+  "kernel_version": "1.0.0",
+  "ocr_engine": "rapidocr",
+  "steps": [
+   {
+    "codes": [],
+    "evidence": {
+     "R": 182.21838778675323,
+     "axis_offset": 0.4647261869448962,
+     "center": [
+      388.0,
+      570.5
+     ],
+     "hi": 90,
+     "length": 177.63222152389835,
+     "limit": 5.466551633602597,
+     "lo": 70,
+     "phi_needle": 229.56691141428723,
+     "theta_needle": 355.443390987787,
+     "ticks": [
+      {
+       "ocr": "10",
+       "phi": 0.0,
+       "r": 142.48201871244916,
+       "theta": 225.01030240207422,
+       "v": 10
+      },
+      {
+       "ocr": "30",
+       "phi": 67.49911058611019,
+       "r": 142.92531186277606,
+       "theta": 157.51119181596403,
+       "v": 30
+      },
+      {
+       "ocr": "50",
+       "phi": 135.2113393999088,
+       "r": 142.50087719028258,
+       "theta": 89.7989630021654,
+       "v": 50
+      },
+      {
+       "ocr": "70",
+       "phi": 202.5214942180382,
+       "r": 142.92531186277603,
+       "theta": 22.488808184035996,
+       "v": 70
+      },
+      {
+       "ocr": "90",
+       "phi": 270.0032577978101,
+       "r": 142.75783928221009,
+       "theta": 315.00704460426414,
+       "v": 90
+      }
+     ],
+     "tip": [
+      525.9785746473448,
+      581.0301294551986
+     ],
+     "tol": 0.6667172877503192
+    },
+    "inputs": [
+     "gauge/gauge:g1"
+    ],
+    "op": "READ",
+    "output": [
+     78.01562252126917,
+     0.6667172877503192
+    ],
+    "step_id": "s0"
+   }
+  ],
+  "verdict": "CERTIFIED"
+ },
+ "family": "G1_READ",
+ "files": {
+  "beauty.png": "c5f7250668ce43d544994e06df74f14f7c2c47536bb85099b7ede7193297b1ee",
+  "claims.json": "392b819e15ba8b55f42a3ab8948bfb2f79332714fabc4faa31060bed8abc2030",
+  "id_buffer.png": "c5e3fe43fb4c2238254bea663c55fb72cd622006a656dd5e5e8d69ff5639661b",
+  "manifest.json": "0d6f19467c8ad97e961dc403a2770629a75bcb775a77bcce83948d01303cc74d",
+  "masks/obj_00001.png": "a88b9e24e74c8ce98fbffc29e69d14bd4af26977832d5a58811635466ec6e1ab",
+  "masks/obj_00002.png": "ad37035ca69718201751bde3c326b424a8867abf3ec6bf0cfc66c62ad887363d",
+  "masks/obj_00003.png": "923490b307953fca3d100c6e9c9c4a10dca125799b26e59bd8b2393a32a8b250",
+  "masks/obj_00004.png": "526dbb84ed9378000c07b41ad6bcea4874519d296be18b8806ae82da8a143036",
+  "masks/obj_00005.png": "863b6139d26c52ca4c8be86f57dff94219cb8a28ab7134dceb50589b3ab9e35d",
+  "masks/obj_00006.png": "d467d93761859b10db7c3a3e8ce97871cb4e7c3b9edc85765f8cbbc48bbad8d7",
+  "masks/obj_00007.png": "869d53ead2de97b30d36da4f1f4030d98d0c009e58d6bda5eaafe942ca84eb7a",
+  "masks/obj_00008.png": "b9e113406901c997605cbf5c4afc2a7393d4e4ec463156c13f2cda6d71bcdaf3",
+  "masks/obj_00009.png": "76d725aac6108557cc03ba7a09430ba03a76593bc0f28beb59b370e6dab09f85",
+  "masks/obj_00010.png": "852b20f8752a4f0449f8dab4f6bf5247e20474092821aafbdfcf36963a5e6809",
+  "masks/obj_00011.png": "452703865fe7efce50ea59b5ce5123b5d1aedeeda894887881b59c71fe8a5787",
+  "masks/obj_00012.png": "6ab1340a97ab4550b17c1d447481f3d6da980e08ac41047da91038800974d06a",
+  "masks/obj_00013.png": "d43952b7d40e6239e6a9400e9b6abfdae919fa2a2e5a33cedbad13fc4fd6d3db",
+  "masks/obj_00014.png": "6b28fdbd955e7db4b3248d0f72872967ec1d1cf41f9f3520dc54e0a86fff713f",
+  "masks/obj_00015.png": "38ae233a87f083b9350328ba3a01d16e1d7e4463c38cf9a3a5eb99da3b766d43",
+  "masks/obj_00016.png": "eecae5a30727fe9b8e77483bd2b0b17a55b16ea3cf91fc298384df9312def97e",
+  "masks/obj_00017.png": "36a97ea7f385899a7a9c66e434cd1bb13765885b07d91f70642de5fa62af25b0",
+  "masks/obj_00018.png": "8c759cdcb1a47dcff64836d1b102048b62d20b7b0c8fb7fc481abad7e4e18121",
+  "masks/obj_00019.png": "78f9ebff55355a147289359bfad3760b1a65fc0b141d43fcd5877421737fb543",
+  "masks/obj_00020.png": "203a07872e1ae64727fff2f65c847831b8059c8c4b05713734d7e42c273dad9c",
+  "masks/obj_00021.png": "d51d41f1268b19bf743cef493c4060b01b758d653b137dfa9999daa055cdcc3b",
+  "masks/obj_00022.png": "15cca8b8d568d0f6dd90f160dd573b6903caa91c78f7abe2e78e5263c1ba1629"
+ },
+ "freshness_receipt_id": "a666e92ebb79428189592dae142a4d8b356d525a9b12a866fb7de50c372f4011",
+ "plugin": "gauge",
+ "question": {
+  "answer_type": "float",
+  "difficulty": {
+   "radius": 169.63976431168976,
+   "span": 80.0
+  },
+  "family": "G1_READ",
+  "options": null,
+  "premise": null,
+  "program_id": "gauge/G1_READ/8163730cd18707f0",
+  "steps": [
+   {
+    "args": [
+     "gauge/gauge:g1"
+    ],
+    "op": "READ",
+    "step_id": "s0"
+   }
+  ],
+  "text": "What value does the gauge needle point to?\nEnd your reply with a final line of the form 'ANSWER: <number>'."
+ },
+ "scene_id": "3df8618fbbac4825baa3707d7e2da4cbd5a733cbcd33bdba301d96aa2f4bd806",
+ "schema_version": "1.0.0",
+ "seed_path": "s:gauge/s:slot/i:0/s:attempt/i:0/s:twin_causal",
+ "split": "dev",
+ "twins": {
+  "base_id": "kw-e9f40ba8338408cb77b7",
+  "causal_id": null,
+  "edit": "needle 15 -> 78",
+  "nuisance_id": null,
+  "pixel_diff_frac": 0.004826,
+  "role": "causal"
+ }
+}

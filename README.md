@@ -29,7 +29,7 @@ uv run knot mutate --fault all --n 4   # M1–M10 fault-injection matrix: 100 % 
 uv run knot verify data/panel          # file-only re-verification, no plugin code executed
 uv run knot export --format harbor --data data/panel --out export/   # Harbor task folders
 uv run knot bench --offline --client mock --data data/panel --out bench/   # simulated VLMs
-uv run streamlit run apps/inspector.py # forensic inspector
+uv run knot report                     # self-contained artifacts/report/report.html (figures + tables)
 ```
 
 Paid benchmarking is opt-in only: `knot bench --live --budget-usd 8` additionally requires a human
@@ -69,17 +69,27 @@ with 0 network calls.
 | Staircase threshold (crossings): tangle · panel | 1.5 · 1.5 | 1.1 · 1.7 | 1.1 · 1.5 |
 
 Findings: (1) tracing a cable through even one or two crossings is essentially unsolved by all three
-models; (2) GPT-5.4's tracing comes almost entirely from colour (59 % with unique cable colours, 3 %
-when every cable looks the same, below the ~17 % chance level); (3) a causal edit touching < 5 % of
-the pixels halves accuracy while a style-only twin does not; (4) the models split cleanly on false
-premises, from always rejecting to always accepting them.
+models; (2) the colour collapse is led by GPT-5.4: 59 % with unique cable colours vs 3 % when every
+cable looks the same, below the ~17 % chance level (32 matched pairs, exact McNemar p < 0.001;
+Gemini p = 0.38 and Qwen p = 0.065 are not significant); (3) twins, directional only: accuracy drops
+from 25-29 % on the original to 12.5 % on the causal twin (two end labels swapped, cables unchanged)
+but not on the style-only nuisance twin; with n = 24 triples per model the per-model drops are not
+significant (exact McNemar p = 0.125 / 0.25 / 0.375); (4) the models split cleanly on false premises,
+from always rejecting (GPT-5.4, 0 %) to always accepting them (Qwen, 100 %; n = 24).
 
 Caveats, stated plainly: accuracy is at the floor, so the staircases (no reversals for two models)
 bound rather than measure the threshold, and the per-crossing error MLE and the composition product
 law are not informative on this run. The false-premise prompt forces a yes/no answer, so abstention
 is not measured, and the true-premise controls (`P5`) were not part of the bench. There is no
 gauge-only track: "gauge reading" is the read-only question on panel images (±2 % of the scale).
-Figures: `docs/figures/fig01…fig06`; full report: `uv run knot report` → `artifacts/report/report.html`.
+Figures: `docs/figures/fig01…fig06`; full report: `uv run knot report` → `artifacts/report/report.html`;
+browsable task packages and the three failure items: [`samples/`](samples/).
+
+Reproducibility: the committed CI fixtures (`tests/bench/fixtures/`) replay offline at $0 on every
+push; the full live replay cache (`bench_replay/`) and burn ledger stay local by design (SPEC D-35 /
+D-36). The live results are committed in [`samples/live_run/`](samples/live_run/)
+(`bench_report.json`, per-trial `trials.jsonl`, `bench_live_summary.json`) and rebuilt into
+`report.html` by `uv run knot report`.
 
 ## Status
 

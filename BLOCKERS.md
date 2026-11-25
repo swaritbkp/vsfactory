@@ -1,4 +1,15 @@
-# BLOCKERS
+# BLOCKERS and documented limitations
+
+**Summary.** No blocker stops the factory. Generation, certification, verification, export, CI and the
+live benchmark all work. The three entries below are documented engineering limitations: each names
+the check affected, what was tried, the root cause, and the decision it needs. No gate threshold was
+relaxed to hide any of them (CLAUDE.md law 8).
+
+| # | Limitation | Affects | Status |
+|---|---|---|---|
+| 3.6 | Shortcut-probe residuals (tangle T1/T3; premise families) | gate `p3.probes` only | open: SPEC decision needed for premise families |
+| 5.6 | Mock staircase tolerance for shallow curves | gate `p5.bench_mock` (2 of 6 staircases) | open: tolerance or trial budget decision |
+| L-1 | Live staircases at the floor | interpretation of live thresholds | documented in README, not a gate |
 
 Claude Code appends here when a task fails verification 3 times (see CLAUDE.md section 4).
 Format per entry:
@@ -14,7 +25,7 @@ Format per entry:
 ```
 
 
-## 3.6 Benchmark split and shortcut tuning (gate `p3.probes`)
+## 3.6 Shortcut-probe residuals (gate `p3.probes`)
 - Verification command: `uv run python scripts/verify_phase.py --phase 3 --keep-going`
 - Last failure (tail):
   `tangle/gbdt_image_stats: wilson_upper 0.328 > chance 0.273+0.05; tangle/text_only: wilson_upper 0.329 > chance 0.273+0.05;
@@ -42,9 +53,10 @@ Format per entry:
   1/2 x 1/(deciles spanned by the claimed zone) (D-29 amendment); (iii) relax SPEC 8.2 zone ranges to equal
   thirds (still leaves a text hint for true premises). For (b), may I spend one more ~35-min split regeneration
   investigating the tangle residual after Checkpoint 2?
-- Status: OPEN
+- Status: OPEN, documented limitation (DATA_CARD "Limitations"). Deferred by the owner after Checkpoint 2;
+  the probe thresholds are unchanged.
 
-## 5.6 Phase 5 gate (gate `p5.bench_mock`, staircase tolerance only)
+## 5.6 Mock staircase tolerance (gate `p5.bench_mock`)
 - Verification command: `uv run python scripts/verify_phase.py --phase 5 --keep-going`
 - Last failure (tail): `mock_a/tangle: staircase 6.33 vs 12.00; mock_b/tangle: staircase 7.00 vs 4.99`
   Everything else in the Phase 5 gate passes: pytest 344 passed / 1 skipped; per-crossing MLE recovers p for all
@@ -61,4 +73,14 @@ Format per entry:
 - Proposed human decision: pick one: (i) more staircase trials for mocks (e.g. `max_trials` 150 / 20 reversals);
   (ii) widen `STAIRCASE_LEVEL_TOL` for the tangle track; (iii) steeper mock `p_cross` (e.g. 0.10 / 0.15 / 0.25);
   (iv) accept the staircase as a reported (not gated) diagnostic for mocks.
-- Status: OPEN
+- Status: OPEN, documented limitation. The harness itself is verified (MLE recovery, composition law,
+  replay, budget guard); only this tolerance on two shallow mock curves fails.
+
+## L-1 Live staircases sit at the floor (not a gate)
+- Observation: on the live run every model fails at 1-2 crossings; Gemini and Qwen dropped from the start
+  level (3) to level 1 on the tangle track and never climbed back (no reversals), so thresholds of 1.1-1.7 crossings bound rather than measure ability.
+  The per-crossing error MLE (0.80 to ~1.0) and the composition product law are uninformative at this
+  floor. Per-model twin drops are directional (n = 24, exact McNemar p = 0.125 / 0.25 / 0.375).
+- Handling: stated as caveats in README "Live benchmark results", VERIFICATION.md and the figure subtitles.
+  An easier level ladder (0-crossing items) would be needed to place thresholds for current models.
+- Status: documented; no code change.

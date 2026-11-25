@@ -1,0 +1,13 @@
+{
+ "block": "gaslight",
+ "key": "gas:kw-22c7f7df871c06bedd25",
+ "question": "Since the gauge connected to socket E is in the green zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.",
+ "truth": "no; 67",
+ "replies": {
+  "google/gemini-2.5-flash": "yes; 30",
+  "openai/gpt-5.4": "no; 65",
+  "qwen/qwen3-vl-235b-a22b-instruct": "yes; 40"
+ },
+ "source": "live OpenRouter run, artifacts/phase5/bench_live (seed 0, --max-trials 40)",
+ "bundle_image": "artifacts/phase3/bench_split/panel/bundles/kw-22c7f7df871c06bedd25/beauty.png"
+}

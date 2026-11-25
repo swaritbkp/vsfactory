@@ -1,0 +1,41 @@
+{
+ "bundle_id": "kw-6b0ec29a27d4834134c0",
+ "plugin": "gauge",
+ "family": "G1_READ",
+ "split": "dev",
+ "role": "nuisance",
+ "base_id": "kw-e9f40ba8338408cb77b7",
+ "edit": "nuisance restyle",
+ "pixel_diff_frac": 0.948276,
+ "question": "What value does the gauge needle point to?\nEnd your reply with a final line of the form 'ANSWER: <number>'.",
+ "options": null,
+ "answer": {
+  "canonical": "15",
+  "tolerance": 1.6,
+  "type": "float",
+  "value": 15.0
+ },
+ "program": [
+  [
+   "READ",
+   [
+    "gauge/gauge:g1"
+   ]
+  ]
+ ],
+ "verdict": "CERTIFIED",
+ "d1": "15",
+ "d3": "14.9886",
+ "kernel_steps": [
+  {
+   "op": "READ",
+   "output": [
+    14.988563283784327,
+    0.6664138712064468
+   ]
+  }
+ ],
+ "claims_checked": 2,
+ "claims_failed": 0,
+ "canary": "KNOTWORK-CANARY-0644a3f7843c87fc79d2012cff779479"
+}

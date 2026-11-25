@@ -1,0 +1,61 @@
+{
+ "bundle_id": "kw-2a3cc86c60de714ca3ae",
+ "plugin": "panel",
+ "family": "P1_READ_TRACE",
+ "split": "dev",
+ "role": "base",
+ "base_id": null,
+ "edit": null,
+ "pixel_diff_frac": null,
+ "question": "Follow the cable from socket E to the gauge it is plugged into. What value does that gauge read?\nEnd your reply with a final line of the form 'ANSWER: <number>'.",
+ "options": null,
+ "answer": {
+  "canonical": "7",
+  "tolerance": 1.6,
+  "type": "float",
+  "value": 7.0
+ },
+ "program": [
+  [
+   "TRACE",
+   [
+    "panel/terminal:start_E"
+   ]
+  ],
+  [
+   "GAUGE_OF",
+   [
+    "$s0"
+   ]
+  ],
+  [
+   "READ",
+   [
+    "$s1"
+   ]
+  ]
+ ],
+ "verdict": "CERTIFIED",
+ "d1": "7",
+ "d3": "6.9593",
+ "kernel_steps": [
+  {
+   "op": "TRACE",
+   "output": "G1"
+  },
+  {
+   "op": "GAUGE_OF",
+   "output": "panel/gauge:g1"
+  },
+  {
+   "op": "READ",
+   "output": [
+    6.959298186125926,
+    0.9354476740703098
+   ]
+  }
+ ],
+ "claims_checked": 20,
+ "claims_failed": 0,
+ "canary": "KNOTWORK-CANARY-0644a3f7843c87fc79d2012cff779479"
+}
