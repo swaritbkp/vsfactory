@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import shutil
 from pathlib import Path
 
 from PIL import Image
@@ -37,3 +39,24 @@ def test_figures_and_report_from_mock_run(tmp_path: Path) -> None:
     assert len(figs) >= 4
     for f in figs:
         assert Image.open(f).size[0] >= 1600
+
+
+def test_report_from_fresh_clone_layout(tmp_path: Path) -> None:
+    """A fresh clone has no artifacts/phase5 or phase2: the report falls back to the committed
+    samples/live_run and to the quickstart's `knot mutate` default (artifacts/mutate/report.json)."""
+    shutil.copytree(REPO / "samples" / "live_run", tmp_path / "samples" / "live_run")
+    art = tmp_path / "artifacts"
+    (art / "mutate").mkdir(parents=True)
+    fault = {"plugin": "tangle", "expected": "E_ID_MISMATCH", "injected": 4, "caught_exact": 4}
+    (art / "mutate" / "report.json").write_text(json.dumps({
+        "faults": {"M1": fault}, "clean": {"false_quarantine_rate": 0.0}, "exact_catch_rate": 1.0,
+        "catch_rate": 1.0, "n_per_fault": 4}), encoding="utf-8")  # fmt: skip
+    s = build_summary(art)
+    assert s is not None and s["source"] == "live" and s["dir"] == "samples/live_run"
+    assert s["trials"] == 997 and len(s["models"]) == 3
+    out = tmp_path / "report" / "report.html"
+    assert run_report(art, out) == 0
+    text = out.read_text(encoding="utf-8")
+    assert "No benchmark run found" not in text and "No mutate report found" not in text
+    assert "openai/gpt-5.4" in text and "live OpenRouter run" in text and "E_ID_MISMATCH" in text
+    assert out.stat().st_size > 200_000 and text.count("data:image/png;base64,") >= 4

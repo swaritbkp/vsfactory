@@ -20,6 +20,17 @@ the plugins that drew the scene.
 
 ## Quickstart (100 % offline, zero API keys)
 
+**15-second fast path.** After `uv sync --locked`, this builds the full self-contained HTML report
+(benchmark tables and all figures) from the committed live-run results in `samples/live_run`:
+
+```bash
+uv run pytest tests/apps/test_report.py && uv run knot report   # -> artifacts/report/report.html
+```
+
+**Full offline quickstart** (about 28 min on 2 cores: `selftest` ~8 min, `generate` ~7 min,
+`verify` ~6 min, `mutate` ~5 min, the rest under a minute each). The long commands print nothing
+until they finish, so a silent terminal means they are still working, not hung.
+
 ```bash
 uv sync --locked                       # Python 3.11 env from uv.lock
 uv run knot selftest --seeds-only      # determinism known-answer test (works from day one)

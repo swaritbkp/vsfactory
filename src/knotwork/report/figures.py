@@ -168,9 +168,9 @@ def fig_false_premise(s: dict[str, Any], out: Path) -> Path:
         color=INK2,
     )
     n = models[0]["gaslight"].get("n")
-    _titles(fig, "False premises: one model always pushes back, one always plays along",
-            f"T_GASLIGHT items (“Since the gauge … is in the <wrong> zone …”), n = {n} per model; the prompt "
-            f"forces a yes/no, so abstention is not measured · {SOURCE_LABEL[s['source']]}")  # fmt: skip
+    _titles(fig, f"Preliminary false-premise probe (all {n} prompts false)",
+            f"n = {n} per model; forced yes/no with no true-premise control — response bias not ruled out "
+            f"· {SOURCE_LABEL[s['source']]}")  # fmt: skip
     return _save(fig, out, "fig02_false_premise.png", left=0.17)
 
 

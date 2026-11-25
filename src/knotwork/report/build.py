@@ -32,6 +32,15 @@ def _json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
 
 
+def _first(*paths: Path) -> Path:
+    """First existing path, else the first (preferred) one, so the "not found" note stays accurate."""
+    return next((p for p in paths if p.is_file()), paths[0])
+
+
+# Gate runs write under artifacts/phase2; the quickstart's `knot mutate` default is artifacts/mutate.
+MUTATE_REPORTS = ("phase2/mutate_report.json", "mutate/report.json")
+
+
 def _e(x: Any) -> str:
     return html.escape(str(x))
 
@@ -74,7 +83,7 @@ def gates_section(art: Path) -> str:
 
 
 def faults_section(art: Path) -> str:
-    rep = _json(art / "phase2" / "mutate_report.json")
+    rep = _json(_first(*(art / r for r in MUTATE_REPORTS)))
     if rep is None:
         return "<p class='note'>No mutate report found.</p>"
     rows = [[f, _e(r["plugin"]), _e(r["expected"]), r["injected"], r["caught_exact"],

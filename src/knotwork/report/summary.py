@@ -1,7 +1,8 @@
 """Benchmark summary (Phase 6): per-model metrics from ``bench_report.json`` + ``trials.jsonl``.
 
-Source preference: the live run (``artifacts/phase5/bench_live``), else its offline replay, else the
-mock run; the chosen source is recorded in the summary so every figure can label it.
+Source preference: the live run (``artifacts/phase5/bench_live``), else the committed copy of that run
+(``samples/live_run``, next to ``artifacts/``; this is what a fresh clone has), else its offline replay,
+else the mock run; the chosen source is recorded in the summary so every figure can label it.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from knotwork.render.canvas import REPO_ROOT
 
 SOURCES = (
     ("live", "phase5/bench_live"),
+    ("live", "../samples/live_run"),
     ("replay", "phase5/bench_replayed"),
     ("mock", "phase5/bench_mock"),
 )
@@ -26,7 +28,7 @@ PLUGIN_OF_BLOCK = {
 
 def find_source(artifacts: Path) -> tuple[str, Path] | None:
     for name, rel in SOURCES:
-        d = artifacts / rel
+        d = (artifacts / rel).resolve()
         if (d / "bench_report.json").is_file() and (d / "trials.jsonl").is_file():
             return name, d
     return None
@@ -207,6 +209,7 @@ def write_summary(artifacts: Path) -> Path | None:
     if summ is None:
         return None
     out = artifacts / "phase5" / "bench_summary.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(summ, indent=1, sort_keys=True), encoding="utf-8")
     return out
 
