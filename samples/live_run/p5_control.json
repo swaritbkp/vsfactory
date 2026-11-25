@@ -1,0 +1,875 @@
+{
+ "block": "p5_control",
+ "cost_usd": 0.075571,
+ "errors": 0,
+ "items": [
+  {
+   "answer": {
+    "canonical": "yes; 58",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 58.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "red",
+   "claimed_zone_true": "amber",
+   "control_bundle_id": "kw-d2d8119d5cd2af993a78",
+   "image_id": "9944dfe4fa2cc966e72d77838a5f4429f71925a98a864b34655faa54848fba52",
+   "kernel_answer": "yes; 57.8994",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "amber",
+   "ok": true,
+   "question": "Since the gauge connected to socket Y is in the amber zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "19dda9327e87406bb6433018915d4c07901acd42a8e6d21dad87a6298bbd668e",
+   "socket": "Y",
+   "source_bundle_id": "kw-077032b6c400743fab7c",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 70",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 70.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "green",
+   "claimed_zone_true": "red",
+   "control_bundle_id": "kw-03db3f5142f31e70302e",
+   "image_id": "69630838bcebafc1ff2eca88db86ee704698cdd84c4abdeb067da74cbed05fc5",
+   "kernel_answer": "yes; 70.0628",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "red",
+   "ok": true,
+   "question": "Since the gauge connected to socket F is in the red zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "249162eb492ae6be81229c49b8cfabf48f67440c8616b12677c7d3f7d5b8159b",
+   "socket": "F",
+   "source_bundle_id": "kw-2bad0d4f437a37949a5a",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 65",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 65.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "amber",
+   "claimed_zone_true": "red",
+   "control_bundle_id": "kw-be6aace3b6b8322bf45d",
+   "image_id": "b1eee41723314bfee29a59c9e3ee0c627e89d87b540e6de0726967638511e15d",
+   "kernel_answer": "yes; 65.0705",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "red",
+   "ok": true,
+   "question": "Since the gauge connected to socket V is in the red zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "8ca728d04a7ed260bc794b1208c4389e44a499230602634cacf5ead4a0940fff",
+   "socket": "V",
+   "source_bundle_id": "kw-a6033415e94124950d8f",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 81",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 81.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "green",
+   "claimed_zone_true": "red",
+   "control_bundle_id": "kw-4bb6b38171615b26d301",
+   "image_id": "ad1d155973c0b476806fe6f0a1b931e384ef989f56789d1783339d7dacd4a98b",
+   "kernel_answer": "yes; 80.916",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "red",
+   "ok": true,
+   "question": "Since the gauge connected to socket G is in the red zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "aded0f687893bfa9b12f1b6f40ecc741d49a750c8c4d8158fd1d8a77de1abee8",
+   "socket": "G",
+   "source_bundle_id": "kw-addf3810ebf4fa48bda7",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 18",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 18.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "red",
+   "claimed_zone_true": "green",
+   "control_bundle_id": "kw-a4f0472f08caceeee3b8",
+   "image_id": "b27563b627e2e73d545861421351541bb8f95ba05ae87d0cd6cd12b6a2a67801",
+   "kernel_answer": "yes; 17.8568",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "green",
+   "ok": true,
+   "question": "Since the gauge connected to socket R is in the green zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "e6ed1f45e4d3a5c2ba8adbefb7623e043a9a6b1db0e6705a1ca12faaeb782d91",
+   "socket": "R",
+   "source_bundle_id": "kw-349c948e128015603f70",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 75",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 75.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "amber",
+   "claimed_zone_true": "red",
+   "control_bundle_id": "kw-cdcea1dc33c87e0559ea",
+   "image_id": "b35ffae1fb8abfbe021dcb62d810706d819ef34c03262d5a2a96561820c10a81",
+   "kernel_answer": "yes; 75.0572",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "red",
+   "ok": true,
+   "question": "Since the gauge connected to socket R is in the red zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "48e7d195c26657e4a7675523507eef760b2c5a195cf908e7cb18493c10136e9c",
+   "socket": "R",
+   "source_bundle_id": "kw-9661913376811573ed41",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 34",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 34.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "red",
+   "claimed_zone_true": "green",
+   "control_bundle_id": "kw-960e4cdff9066f66a579",
+   "image_id": "35015019664e5708a41b44937d322992ee110aa8afea68888b63c314aca989b9",
+   "kernel_answer": "yes; 33.8963",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "green",
+   "ok": true,
+   "question": "Since the gauge connected to socket M is in the green zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "15754c1ac8142e5094e09875377bda4d94571a08ed8e728a37dc2a1420545767",
+   "socket": "M",
+   "source_bundle_id": "kw-dc3a5316d4ae65f18f7e",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 67",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 67.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "green",
+   "claimed_zone_true": "amber",
+   "control_bundle_id": "kw-24c782d80d7af9260fda",
+   "image_id": "14cdab7b71e59502788a48f28ed8e4df6b9c411120e56c7bc894cccf55e03838",
+   "kernel_answer": "yes; 67.0002",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "amber",
+   "ok": true,
+   "question": "Since the gauge connected to socket E is in the amber zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "20f9a9fe6981fc52cc9b2d0f0e8c5de3d26d02274876bc16a6e10cfac732ef73",
+   "socket": "E",
+   "source_bundle_id": "kw-22c7f7df871c06bedd25",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 70",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 70.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "amber",
+   "claimed_zone_true": "red",
+   "control_bundle_id": "kw-5e0f112c62686713e6f8",
+   "image_id": "db04b211f7a0a3835561bdcc36d37ffe2107c97235219a1d595005e054a1a0a8",
+   "kernel_answer": "yes; 70.0614",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "red",
+   "ok": true,
+   "question": "Since the gauge connected to socket C is in the red zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "acee9375ee14f444af6d05f60931e62ef7a31d09d89081a923d808af45b460a1",
+   "socket": "C",
+   "source_bundle_id": "kw-12b867f8e4cdbb262514",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 28",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 28.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "amber",
+   "claimed_zone_true": "green",
+   "control_bundle_id": "kw-0bd2f63088f3dd7a94e8",
+   "image_id": "96429ac52a504f613ba90ab698a8140276194e2292cdc20fbd80ba72236465e7",
+   "kernel_answer": "yes; 28.0916",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "green",
+   "ok": true,
+   "question": "Since the gauge connected to socket P is in the green zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "4c55638f61b2ac0e47f320f77fff8afc35da98838dfa37f1d7fda23290edb4bf",
+   "socket": "P",
+   "source_bundle_id": "kw-2d294494a137c182e374",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 66",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 66.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "green",
+   "claimed_zone_true": "red",
+   "control_bundle_id": "kw-84769ee939c6c67c22d1",
+   "image_id": "d415f858009baf6bb5489c6840f3749f8f461efa092c5a3891fdd93211aab570",
+   "kernel_answer": "yes; 66.087",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "red",
+   "ok": true,
+   "question": "Since the gauge connected to socket T is in the red zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "1635b5af5f570ea658f2ac8c4191e5dacf50810a5c82b42e3aa2dbd666efb79f",
+   "socket": "T",
+   "source_bundle_id": "kw-81c2fb35a538c4814fb2",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 66",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 66.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "green",
+   "claimed_zone_true": "amber",
+   "control_bundle_id": "kw-cec06edbfb6912f62c3e",
+   "image_id": "cce4105dfeefd4b7a42a1bfcbc4d292b35a94b2203eab3211809c34ba99018d7",
+   "kernel_answer": "yes; 66.0312",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "amber",
+   "ok": true,
+   "question": "Since the gauge connected to socket R is in the amber zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "161419bec49095cd2b34903bc87025146f307875ab845c30a97b43c853f591a5",
+   "socket": "R",
+   "source_bundle_id": "kw-ce3bf44ec77bc082f3bf",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 61",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 61.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "green",
+   "claimed_zone_true": "amber",
+   "control_bundle_id": "kw-a779f1402eab62aeed88",
+   "image_id": "0805da12bfa4151ef60e8987200c2313e8f9b63ee5422747106a31fe08fe922e",
+   "kernel_answer": "yes; 61.0534",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "amber",
+   "ok": true,
+   "question": "Since the gauge connected to socket A is in the amber zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "63d48ad8d2fb89e8091b0d28527a330dee76f1c6e2b6f7be536e9a3c0ead30aa",
+   "socket": "A",
+   "source_bundle_id": "kw-a69367b960c3c298397c",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 41",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 41.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "amber",
+   "claimed_zone_true": "green",
+   "control_bundle_id": "kw-a30a173e15e99603fd08",
+   "image_id": "ae7fcb357f2cbf549b41aa2c5141bb891f6d3420522853c7e506ad56a8217a85",
+   "kernel_answer": "yes; 41.0024",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "green",
+   "ok": true,
+   "question": "Since the gauge connected to socket W is in the green zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "4b9dc8f39b0bd1011ac3e32da3a5e201607b432fd5ea90262f7478518bd820b0",
+   "socket": "W",
+   "source_bundle_id": "kw-f29d282d874f93f746c1",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 66",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 66.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "amber",
+   "claimed_zone_true": "red",
+   "control_bundle_id": "kw-d965083217e3d5d2da84",
+   "image_id": "1676a10cb514682c081599ce02ac1e4c1ae08254a494897d784e37e66856655b",
+   "kernel_answer": "yes; 65.9282",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "red",
+   "ok": true,
+   "question": "Since the gauge connected to socket R is in the red zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "b2b7969404e4e59c96b0641c1c3db6cb8a251ca07c25c8eddec4b2944a0f7273",
+   "socket": "R",
+   "source_bundle_id": "kw-425fc0c03c6c3fdab9ef",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 75",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 75.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "green",
+   "claimed_zone_true": "red",
+   "control_bundle_id": "kw-f6ed13da06f3c501b37b",
+   "image_id": "cd1e4429ce2e3348ab3fe7f3c673e2d0557daa5d72c0fb866b3e7cc39be436c1",
+   "kernel_answer": "yes; 74.928",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "red",
+   "ok": true,
+   "question": "Since the gauge connected to socket Y is in the red zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "033d0be33ba816b29601f5f3f58dda7964ffbbf82e407c652f20025721b9b587",
+   "socket": "Y",
+   "source_bundle_id": "kw-9b1bc4891590a1224b4f",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 20",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 20.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "amber",
+   "claimed_zone_true": "green",
+   "control_bundle_id": "kw-cc6f0f63a07883865d6d",
+   "image_id": "5f7bbc2c32380d201863c099525fa9967011cbf9573362ea2cbd7d00cd588d1f",
+   "kernel_answer": "yes; 19.9556",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "green",
+   "ok": true,
+   "question": "Since the gauge connected to socket Y is in the green zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "887f0651c3fe0cb46b2e1fc9fcb61955fc7f45d6aa3846f19b8e743a52024fa0",
+   "socket": "Y",
+   "source_bundle_id": "kw-b229ad47c4d859d62616",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 60",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 60.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "red",
+   "claimed_zone_true": "amber",
+   "control_bundle_id": "kw-ebd3eced898738d59b05",
+   "image_id": "401e729df6415bd8e4c3b619d69ba8c881e1cf26d8df53d52d79482d39efde44",
+   "kernel_answer": "yes; 60.054",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "amber",
+   "ok": true,
+   "question": "Since the gauge connected to socket R is in the amber zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "58dda5f7e1b168215c07700eb2f012f306309f7cf1f3ab30d5a1f6dd0abdad61",
+   "socket": "R",
+   "source_bundle_id": "kw-ee511a2d49e799e46da5",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 82",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 82.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "green",
+   "claimed_zone_true": "red",
+   "control_bundle_id": "kw-0ae36a2c03f199645d93",
+   "image_id": "eed4eb23ceb258d4420f38b0c884303c4d0765bdfb4027b80e275ac9d531f5e8",
+   "kernel_answer": "yes; 82.0344",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "red",
+   "ok": true,
+   "question": "Since the gauge connected to socket N is in the red zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "37a8740d697e730486703a5e3a2e200037716f23e02e945127c5f1bfbe6cb37e",
+   "socket": "N",
+   "source_bundle_id": "kw-97134308e4b6aad012cc",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 32",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 32.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "amber",
+   "claimed_zone_true": "green",
+   "control_bundle_id": "kw-24a8bd48800e755adb40",
+   "image_id": "e3799bab3e9e780c5b440d37563ad459b4c823a32dcc36dc30e6d364fd7389c0",
+   "kernel_answer": "yes; 32.0876",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "green",
+   "ok": true,
+   "question": "Since the gauge connected to socket K is in the green zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "fb988375d442f10fdf4f26dbe820d0b06faf4bb61cff86fdeb71c42634ab994d",
+   "socket": "K",
+   "source_bundle_id": "kw-38a80cd19aa8b7da930c",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 11",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 11.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "red",
+   "claimed_zone_true": "green",
+   "control_bundle_id": "kw-0975792057028352df57",
+   "image_id": "d501dd61ea9c42d73cbc6b39d8dbba7e3510b2df0bc3cfbb5f2c729bc1b91fd0",
+   "kernel_answer": "yes; 10.9853",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "green",
+   "ok": true,
+   "question": "Since the gauge connected to socket Y is in the green zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "9f1a93a0938856e9b36f60e1649241a0158c50d74bd23fb607f6ee203af38b13",
+   "socket": "Y",
+   "source_bundle_id": "kw-8403e67258acffc000b5",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 63",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 63.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "green",
+   "claimed_zone_true": "amber",
+   "control_bundle_id": "kw-cdcc6e3f1a1ecb1e3949",
+   "image_id": "93f0ce8e13abc4bb130a5a807383eb8a04835a4afecc0e5f32ae0c5be89ec244",
+   "kernel_answer": "yes; 63.0215",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "amber",
+   "ok": true,
+   "question": "Since the gauge connected to socket N is in the amber zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "bd3514e5b1337a370aa8a4e0975de0e055ccad5d121500f8135c68a6e2d25adc",
+   "socket": "N",
+   "source_bundle_id": "kw-3304d915ca8c87ae0df4",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 68",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 68.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "green",
+   "claimed_zone_true": "amber",
+   "control_bundle_id": "kw-51331d61fa675d34c2d8",
+   "image_id": "404300b3dc88f80569867d886c841a4ff5cc6ecce6b2984aa2a27237f2206e4e",
+   "kernel_answer": "yes; 68.042",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "amber",
+   "ok": true,
+   "question": "Since the gauge connected to socket M is in the amber zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "d58671a9ec10c471147dbff89c9adacc27134ee49d96321482ec3cd25ab73a17",
+   "socket": "M",
+   "source_bundle_id": "kw-26310869410b7395b2d1",
+   "span": 80.0
+  },
+  {
+   "answer": {
+    "canonical": "yes; 47",
+    "tolerance": 1.6,
+    "type": "premise",
+    "value": {
+     "premise_holds": true,
+     "value": 47.0
+    }
+   },
+   "checks": {
+    "control_certified": true,
+    "false_premise_was_false": true,
+    "family_is_p5": true,
+    "kernel_premise_holds": true,
+    "kernel_zone_is_claimed": true,
+    "same_pixels": true,
+    "source_certified": true
+   },
+   "claimed_zone_false": "red",
+   "claimed_zone_true": "amber",
+   "control_bundle_id": "kw-f2812940b83cb5c7cf81",
+   "image_id": "506585c0ad070d605ee76303c2c0f35935be17be32457887ed5024322890ed6f",
+   "kernel_answer": "yes; 46.9302",
+   "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
+   "kernel_zone": "amber",
+   "ok": true,
+   "question": "Since the gauge connected to socket V is in the amber zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'.",
+   "scene_id": "6f0b9adfb104c4c0f05c0f96c62d045d35808c09d39bc989d6b5ea94cfb3483b",
+   "socket": "V",
+   "source_bundle_id": "kw-0e7f89855352410a6b6f",
+   "span": 80.0
+  }
+ ],
+ "missing": 0,
+ "mode": "live",
+ "models": {
+  "vlm_a": {
+   "balanced_accuracy": 0.5,
+   "discordant": {
+    "yes_only_on_false": 0,
+    "yes_only_on_true": 0
+   },
+   "false_fully_correct": 0,
+   "false_reading_correct": 0,
+   "false_yes": 0,
+   "false_yes_rate": 0.0,
+   "fisher_p": 1.0,
+   "gap": 0.0,
+   "mcnemar_p": 1.0,
+   "n": 24,
+   "true_fully_correct": 0,
+   "true_reading_correct": 1,
+   "true_yes": 0,
+   "true_yes_rate": 0.0,
+   "unparsed": 0,
+   "verdict": "rejects regardless"
+  },
+  "vlm_b": {
+   "balanced_accuracy": 0.5625,
+   "discordant": {
+    "yes_only_on_false": 2,
+    "yes_only_on_true": 5
+   },
+   "false_fully_correct": 2,
+   "false_reading_correct": 4,
+   "false_yes": 12,
+   "false_yes_rate": 0.5,
+   "fisher_p": 0.561215,
+   "gap": 0.125,
+   "mcnemar_p": 0.453125,
+   "n": 24,
+   "true_fully_correct": 1,
+   "true_reading_correct": 2,
+   "true_yes": 15,
+   "true_yes_rate": 0.625,
+   "unparsed": 0,
+   "verdict": "no detectable discrimination"
+  },
+  "vlm_c": {
+   "balanced_accuracy": 0.479167,
+   "discordant": {
+    "yes_only_on_false": 1,
+    "yes_only_on_true": 0
+   },
+   "false_fully_correct": 0,
+   "false_reading_correct": 4,
+   "false_yes": 24,
+   "false_yes_rate": 1.0,
+   "fisher_p": 1.0,
+   "gap": -0.041667,
+   "mcnemar_p": 1.0,
+   "n": 24,
+   "true_fully_correct": 4,
+   "true_reading_correct": 4,
+   "true_yes": 23,
+   "true_yes_rate": 0.958333,
+   "unparsed": 0,
+   "verdict": "accepts regardless"
+  }
+ },
+ "network_calls": 72,
+ "seed": 0,
+ "slugs": {
+  "vlm_a": "openai/gpt-5.4",
+  "vlm_b": "google/gemini-2.5-flash",
+  "vlm_c": "qwen/qwen3-vl-235b-a22b-instruct"
+ },
+ "stopped": null,
+ "trials": 72
+}

@@ -71,6 +71,11 @@ Gate re-run: PASSED, knotcore untouched (819 / 850 executable LOC).
   997 trials, 0 HTTP errors, 2 parse failures. Offline replay reproduces every per-model result exactly
   with 0 network calls. Summary: `README.md` "Live benchmark results"; figures `docs/figures/fig01-06`.
 
+## True-premise control (additive, SPEC D-37; run by the owner)
+* 24 matched `P5` pairs of the live `T_GASLIGHT` items, 24/24 certified; 72 paid calls, $0.0756 (project
+  total $1.12, 943 paid calls, 1,069 trials). "Yes" true vs false: GPT-5.4 0/0, Gemini 15/12, Qwen 23/24
+  of 24 (exact McNemar p = 1.00 / 0.45 / 1.00): no detectable premise discrimination.
+
 ## Phase 6 (partial)
 * CI fix for Ubuntu (D-35): platform-neutral replay keys, shipped derived fixture renders,
   platform-tagged golden. `report/summary.py`, `report/figures.py` (6 of the 11 required figures),

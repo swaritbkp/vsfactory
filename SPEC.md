@@ -1065,3 +1065,12 @@ spec leaves open. Never silently change a threshold.
   paid for (resume-safe), retries timeouts like 5xx, and records a failed request as a trial error
   instead of aborting the run. Report figures label their source (live / replay / mock) in every
   subtitle.
+* D-37: Additive true-premise control (owner request after the live run). For each of the 24
+  `T_GASLIGHT` items asked live, `python -m knotwork.bench.p5_control` re-certifies the same scene
+  with the claimed zone set to the traced gauge's true zone, giving a `P5_PREMISE_CONTROL` question
+  on pixel-identical input (prompt differs in the zone word only; same parser, seed, models config).
+  `bench_split` and the 997 live trials are not rewritten; records go to
+  `artifacts/phase5/p5_control/`. The yes-rates are compared with McNemar's exact test (matched
+  pairs), Fisher's exact test next to it. A live run is this module with `--live --budget-usd` at
+  most $0.50, behind the same triple lock as `knot bench --live`; it is a second command allowed to
+  spend, beside the one in TASKS 5.7, and needs the owner's explicit go-ahead.

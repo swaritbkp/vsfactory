@@ -22,10 +22,32 @@ not committed, so this page records their results.
 
 ## Live benchmark (human-approved, Checkpoint 2)
 
-Three VLMs via OpenRouter, $5.00 cap: two canaries ($0.0501) and one full run ($0.9992), **$1.0493
-total, 871 paid calls, 997 trials, 0 HTTP errors, 2 unparsable replies**. An offline replay of the
-cached responses reproduces every per-model statistic exactly with 0 network calls. Results and caveats
-are in `README.md`. Raw outputs: `samples/live_run/`.
+Three VLMs via OpenRouter. Totals: **$1.12, 943 paid calls (canary calls not counted), 1,069 trials,
+0 HTTP errors, 2 unparsable replies**.
+
+| Run | Cap | Paid calls | Trials | Cost |
+|---|---|---|---|---|
+| Two canaries | $5.00 (shared) | not counted above | none | $0.0501 |
+| Main run | $5.00 (shared) | 871 | 997 | $0.9992 |
+| True-premise control (SPEC D-37, owner-run) | $0.50 | 72 | 72 | $0.0756 |
+
+An offline replay of the cached responses reproduces every per-model statistic of the main run exactly
+with 0 network calls. Results and caveats are in `README.md`. Raw outputs: `samples/live_run/`.
+
+### True-premise control
+
+| Check | Result |
+|---|---|
+| Matched pairs certified (source re-verifies from files, original premise false, control `CERTIFIED` as `P5`, kernel ZONE = claimed zone, kernel says "yes", identical pixels) | 24 / 24 on every check |
+| Request parity between arms (temperature, max tokens, reasoning setting, seed, model slug) | identical for all three models |
+| Control trials / missing / HTTP errors / unparsable | 72 / 0 / 0 / 0 |
+| Offline replay of the control | same replies, grades and statistics, 0 network calls |
+| "Yes" on true vs false premise (of 24; exact McNemar p) | GPT-5.4 0 vs 0 (1.00); Gemini 15 vs 12 (0.45); Qwen 23 vs 24 (1.00) |
+
+Finding: no model detectably discriminated true from false premises. The earlier false-premise rates
+(0 / 50 / 100 %) are therefore not evidence of premise grounding. Abstention is not measured. The
+control's code was checked locally with ruff, mypy, import-linter and `tests/bench` plus
+`tests/apps/test_report.py`; the full suite, phase gates and CI above predate it.
 
 ## Open items (documented limitations, `BLOCKERS.md`)
 

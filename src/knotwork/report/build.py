@@ -151,6 +151,34 @@ def bench_section(art: Path) -> str:
     return _table(head, rows, {1, 2, 3}) + note
 
 
+def premise_section(art: Path) -> str:
+    """The matched true-premise control beside the false-premise probe (SPEC D-37)."""
+    s = _json(art / "phase5" / "bench_summary.json")
+    block = (s or {}).get("premise_control")
+    if s is None or block is None:
+        return "<p class='note'>No true-premise control found.</p>"
+    rows = []
+    for m in s["models"].values():
+        p = m["premise_control"]
+        n = p["n"]
+        rows.append([
+            _e(m["slug"]), n, f"{p['true_yes']}/{n} ({_pct(p['true_yes_rate'])})",
+            f"{p['false_yes']}/{n} ({_pct(p['false_yes_rate'])})", f"{100 * p['gap']:+.1f} pts",
+            f"{p['mcnemar_p']:.3f}", f"{p['fisher_p']:.3f}", _pct(p["balanced_accuracy"]),
+            f"{p['true_reading_correct']}/{n} · {p['false_reading_correct']}/{n}", _e(p["verdict"]),
+        ])  # fmt: skip
+    head = ["model", "pairs", "yes on true premise", "yes on false premise", "gap", "McNemar p",
+            "Fisher p", "balanced accuracy", "reading correct: true · false", "pattern"]  # fmt: skip
+    note = (
+        f"<p class='sub'>Source: {_e(block['dir'])}; {block['trials']} trials, ${block['cost_usd']:.4f}. "
+        "Each pair is the same image and socket; only the claimed zone word differs. McNemar's exact "
+        f"test uses the pairs, Fisher's ignores them. With {block['items']} pairs only a large gap is "
+        "detectable, and the control ran after the false-premise block. Both prompts force yes/no: "
+        "abstention is not measured.</p>"
+    )
+    return _table(head, rows, {1}) + note
+
+
 def run_report(artifacts: Path, out: Path) -> int:
     artifacts, out = Path(artifacts).resolve(), Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -167,6 +195,7 @@ def run_report(artifacts: Path, out: Path) -> int:
         "visual task factory: every bundle's answer is re-derived from pixels by a trusted kernel.</p>"
         f"<h2>Phase gates</h2>{gates_section(artifacts)}"
         f"<h2>Benchmark (3 VLMs)</h2>{bench_section(artifacts)}"
+        f"<h2>Premise control (true vs false)</h2>{premise_section(artifacts)}"
         f"<h2>Fault conformance matrix (M1-M10)</h2>{faults_section(artifacts)}"
         f"<h2>Shortcut probes (pooled)</h2>{probes_section(artifacts)}"
         f"<h2>Figures</h2>{imgs or '<p class=note>No figures.</p>'}</body></html>"

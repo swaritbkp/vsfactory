@@ -3,6 +3,9 @@
 Source preference: the live run (``artifacts/phase5/bench_live``), else the committed copy of that run
 (``samples/live_run``, next to ``artifacts/``; this is what a fresh clone has), else its offline replay,
 else the mock run; the chosen source is recorded in the summary so every figure can label it.
+
+A live or replayed summary also carries the matched true-premise control (SPEC D-37) when its records
+are present (``artifacts/phase5/p5_control``, else ``samples/live_run``); it never joins a mock run.
 """
 
 from __future__ import annotations
@@ -12,6 +15,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from knotwork.bench.p5_control import REPORT_FILE, TRIALS_FILE, analyze
 from knotwork.render.canvas import REPO_ROOT
 
 SOURCES = (
@@ -20,6 +24,7 @@ SOURCES = (
     ("replay", "phase5/bench_replayed"),
     ("mock", "phase5/bench_mock"),
 )
+CONTROL_SOURCES = ("phase5/p5_control", "../samples/live_run")
 PLUGIN_OF_BLOCK = {
     "staircase:tangle": "tangle", "ablation:unique": "tangle", "ablation:mono": "tangle",
     "twins": "tangle", "staircase:panel": "panel", "gaslight": "panel", "composition": "panel",
@@ -31,6 +36,29 @@ def find_source(artifacts: Path) -> tuple[str, Path] | None:
         d = (artifacts / rel).resolve()
         if (d / "bench_report.json").is_file() and (d / "trials.jsonl").is_file():
             return name, d
+    return None
+
+
+def premise_control(artifacts: Path, source: str, trials: list[dict[str, Any]],
+                    slots: list[str]) -> tuple[dict[str, Any], dict[str, Any]] | None:  # fmt: skip
+    """(block record, per-slot paired statistics) of the first true-premise control whose items
+    pair with this run's false-premise trials for every model; None otherwise."""
+    if source == "mock":
+        return None
+    for rel in CONTROL_SOURCES:
+        d = (artifacts / rel).resolve()
+        if not ((d / TRIALS_FILE).is_file() and (d / REPORT_FILE).is_file()):
+            continue
+        rep = json.loads((d / REPORT_FILE).read_text(encoding="utf-8"))
+        text = (d / TRIALS_FILE).read_text(encoding="utf-8")
+        rows = [json.loads(x) for x in text.splitlines() if x.strip()]
+        stats = analyze(trials, rows, rep["items"])
+        if rep["mode"] == "mock" or not set(slots) <= set(stats):
+            continue
+        block = {"dir": d.relative_to(artifacts.parent).as_posix(), "mode": rep["mode"],
+                 "trials": len(rows), "network_calls": rep["network_calls"],
+                 "cost_usd": rep["cost_usd"], "items": len(rep["items"])}  # fmt: skip
+        return block, stats
     return None
 
 
@@ -181,7 +209,12 @@ def build_summary(artifacts: Path) -> dict[str, Any] | None:
         s: model_row(s, slugs[s], m, [r for r in trials if r["slot"] == s])
         for s, m in rep["models"].items()
     }
+    control = premise_control(artifacts, source, trials, list(models))
+    if control is not None:
+        for s, row in models.items():
+            row["premise_control"] = control[1][s]
     return {
+        "premise_control": None if control is None else control[0],
         "source": source,
         "dir": d.relative_to(artifacts.parent).as_posix(),
         "mode": rep["mode"],

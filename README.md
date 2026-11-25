@@ -62,21 +62,27 @@ approval file and `OPENROUTER_API_KEY` (see `SPEC.md` §1).
 ## Live benchmark results (3 VLMs via OpenRouter)
 
 One live run on the 600-item-per-plugin `split=test` pool (monochrome cables), seed 0, 40 trials
-per adaptive staircase plus the diagnostic blocks of `SPEC.md` §12. **871 paid calls / 997 trials,
-0 HTTP errors, $0.9992** (plus $0.0501 for two pre-run canaries: **$1.05 total**). Every response is
-cached in replay format; `knot bench --client replay` reproduces the per-model results exactly
+per adaptive staircase plus the diagnostic blocks of `SPEC.md` §12, followed by an additive 72-trial
+true-premise control (SPEC D-37). **943 paid calls / 1,069 trials, 0 HTTP errors**: main run $0.9992
+(871 calls, 997 trials), control $0.0756 (72 calls), plus $0.0501 for two pre-run canaries, **$1.12
+total**. Every response is cached in replay format; `knot bench --client replay` reproduces the main
+run's per-model results exactly, and `python -m knotwork.bench.p5_control` replays the control, both
 with 0 network calls.
 
 | | GPT-5.4 | Gemini 2.5 Flash | Qwen3-VL-235B |
 |---|---|---|---|
 | OpenRouter slug | `openai/gpt-5.4` (reasoning off) | `google/gemini-2.5-flash` | `qwen/qwen3-vl-235b-a22b-instruct` |
-| Trials / errors / parse failures | 325 / 0 / 0 | 336 / 0 / 1 | 336 / 0 / 1 |
-| Cost · wall-clock | $0.808 · 6.1 min | $0.121 · 8.1 min | $0.070 · 12.4 min |
+| Main run: trials / errors / parse failures | 325 / 0 / 0 | 336 / 0 / 1 | 336 / 0 / 1 |
+| Main run: cost · wall-clock | $0.808 · 6.1 min | $0.121 · 8.1 min | $0.070 · 12.4 min |
 | **Overall accuracy** | **25.2 %** | **20.5 %** | **20.2 %** |
 | Tangle (cable tracing) · panel · gauge reading | 27.3 · 22.8 · 15.6 % | 17.0 · 24.4 · 25.0 % | 21.0 · 19.4 · 6.2 % |
 | Colour ablation: unique colours → monochrome | 59.4 → 3.1 % | 18.8 → 9.4 % | 37.5 → 15.6 % |
 | Twins: original / causal / nuisance / all three | 29 / 12.5 / 25 / 12.5 % | 25 / 12.5 / 29 / 12.5 % | 25 / 12.5 / 25 / 8.3 % |
-| False premise accepted (`T_GASLIGHT`, n = 24) | **0 %** | **50 %** | **100 %** |
+| "Yes" on **true** premise (`P5` control, n = 24) | **0 %** (0) | **62.5 %** (15) | **95.8 %** (23) |
+| "Yes" on **false** premise (`T_GASLIGHT`, n = 24) | **0 %** (0) | **50 %** (12) | **100 %** (24) |
+| Premise gap (true − false) · exact McNemar p | 0 pts · 1.00 | +12.5 pts · 0.45 | −4.2 pts · 1.00 |
+| Unpaired Fisher p · balanced accuracy | 1.00 · 50 % | 0.56 · 56 % | 1.00 · 48 % |
+| Dial reading correct on these items: true · false prompt (of 24) | 1 · 0 | 2 · 4 | 4 · 4 |
 | Staircase threshold (crossings): tangle · panel | 1.5 · 1.5 | 1.1 · 1.7 | 1.1 · 1.5 |
 
 Findings: (1) tracing a cable through even one or two crossings is essentially unsolved by all three
@@ -85,13 +91,27 @@ cable looks the same, below the ~17 % chance level (32 matched pairs, exact McNe
 Gemini p = 0.38 and Qwen p = 0.065 are not significant); (3) twins, directional only: accuracy drops
 from 25-29 % on the original to 12.5 % on the causal twin (two end labels swapped, cables unchanged)
 but not on the style-only nuisance twin; with n = 24 triples per model the per-model drops are not
-significant (exact McNemar p = 0.125 / 0.25 / 0.375); (4) the models split cleanly on false premises,
-from always rejecting (GPT-5.4, 0 %) to always accepting them (Qwen, 100 %; n = 24).
+significant (exact McNemar p = 0.125 / 0.25 / 0.375); (4) **no model detectably checked the premise**.
+On matched pairs, GPT-5.4 answered "no" to all 48 prompts and Qwen "yes" to 47 of 48, so their 0 % and
+100 % on false premises reflect a default answer, not a check of the premise against the image.
+Gemini said "yes" somewhat more often when the premise was true (15 vs 12 of 24; 5 pairs moved one
+way, 2 the other), which is not significant.
+
+**How the control works.** Each of the 24 false-premise scenes was re-certified with one change: the
+claimed zone became the zone the traced gauge is really in. All 24 pairs passed: source bundle
+re-verified from its files, control `CERTIFIED`, the kernel's own ZONE step equal to the claimed zone,
+and pixel-identical images. The prompts differ in that one word; parser, seed, temperature and model
+settings are unchanged.
 
 Caveats, stated plainly: accuracy is at the floor, so the staircases (no reversals for two models)
 bound rather than measure the threshold, and the per-crossing error MLE and the composition product
-law are not informative on this run. The false-premise prompt forces a yes/no answer, so abstention
-is not measured, and the true-premise controls (`P5`) were not part of the bench. There is no
+law are not informative on this run. For the premise control: 24 pairs detect only a large gap (at
+least 6 changed pairs, all in one direction, for p < 0.05), so a modest Gemini effect is not ruled
+out; reading to ±2 % on the same items is near the floor, and this design cannot say whether a model
+fails at tracing the cable, at reading the zone or at using it; the control was added after the main run, and OpenRouter served Qwen from a
+slightly different provider mix (Venice 23 of 24 false prompts, 19 of 24 true); claimed zone words
+are not balanced between the arms (true: 7 green, 8 amber, 9 red; false: 10, 8, 6). Both prompts
+force a yes/no answer, so abstention is not measured. There is no
 gauge-only track: "gauge reading" is the read-only question on panel images (±2 % of the scale).
 Figures: `docs/figures/fig01…fig06`; full report: `uv run knot report` → `artifacts/report/report.html`;
 browsable task packages and the three failure items: [`samples/`](samples/).
@@ -99,8 +119,9 @@ browsable task packages and the three failure items: [`samples/`](samples/).
 Reproducibility: the committed CI fixtures (`tests/bench/fixtures/`) replay offline at $0 on every
 push; the full live replay cache (`bench_replay/`) and burn ledger stay local by design (SPEC D-35 /
 D-36). The live results are committed in [`samples/live_run/`](samples/live_run/)
-(`bench_report.json`, per-trial `trials.jsonl`, `bench_live_summary.json`) and rebuilt into
-`report.html` by `uv run knot report`.
+(`bench_report.json`, per-trial `trials.jsonl`, `bench_live_summary.json`, and the control's
+`p5_control_trials.jsonl` and `p5_control.json`) and rebuilt into `report.html` by
+`uv run knot report`, which recomputes the premise statistics from the per-trial records.
 
 ## Status
 

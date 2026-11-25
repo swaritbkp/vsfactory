@@ -10,7 +10,7 @@ MUST use these slide titles verbatim and in this order (`## Slide 1` … `## Sli
 |---|---|---|
 | Runnable source code | this repo (`uv sync --locked && uv run knot selftest`) | CI (`.github/workflows/ci.yml`), gate `p3.selftest` |
 | Sample task packages | `samples/twins/` (one certified twin triple per plugin, with full `task.json` certificates) + `samples/live_failures/`; full Harbor / HF parquet / RLVR export via `uv run knot export --format all` | gates `p4.export_harbor`, `p4.hf_rlvr` |
-| Validation test logs | `VERIFICATION.md` (every gate result), `samples/live_run/` (live bench report + 997 per-trial records), CI runs on GitHub Actions | gate `p6.docs` |
+| Validation test logs | `VERIFICATION.md` (every gate result), `samples/live_run/` (live bench report + 1,069 per-trial records: 997 main run, 72 true-premise control), CI runs on GitHub Actions | gate `p6.docs` |
 | Technical documentation | `README.md`, `SPEC.md`, `VERIFICATION.md`, `DATA_CARD.md`, `docs/schemas/` | gate `p6.docs` |
 | Live prototype demo | `knot` CLI walk-through + `uv run knot report` (self-contained `artifacts/report/report.html`: figures, gate table, fault matrix, probes, benchmark) + demo video | test `tests/apps/test_report.py` |
 
@@ -33,7 +33,7 @@ MUST use these slide titles verbatim and in this order (`## Slide 1` … `## Sli
 | 6 | **Wireframes / Mock Diagrams** | `knot` CLI (10 subcommands) + the `knot report` HTML (figures, gate table, fault matrix, probe and benchmark tables) + `samples/` task packages | report screenshots, fig05_failure_examples |
 | 7 | **Architecture Diagram** | Trusted `knotcore` (≤ 850 executable LOC, import-linter + AST isolation) vs untrusted plugins; data flow across the trust boundary | — (architecture diagram in `README.md`) |
 | 8 | **Technologies Used** | Pure-Python wheels (Pillow, NumPy, SciPy, scikit-image, shapely, RapidOCR, pydantic v2, uv); answer the template phrase verbatim: *"pytest or Harbor framework for evaluation"* → native Harbor exporter (`solve.sh` oracle, `tests/test.sh` → `reward.json`) + oracle pytest (oracle = 1.0, wrong = 0.0) + HF parquet / RLVR | — |
-| 9 | **Estimated Implementation Cost** | $0 core (offline, zero API keys, laptop + free CI); live 3-VLM benchmark **$1.05 actual** (871 paid calls, 997 trials, $5.00 cap): colour-ablation collapse, twin consistency, false-premise acceptance, accuracy by task | fig01_colour_ablation, fig02_false_premise, fig04_accuracy_by_task |
+| 9 | **Estimated Implementation Cost** | $0 core (offline, zero API keys, laptop + free CI); live 3-VLM benchmark **$1.12 actual** (943 paid calls, 1,069 trials, $5.00 cap; $0.50 cap on the control): colour-ablation collapse, twin consistency, premise control (no model detectably told true from false premises), accuracy by task | fig01_colour_ablation, fig02_false_premise, fig04_accuracy_by_task |
 | 10 | **Hackathon Deliverables** | Public GitHub repo, `samples/` (twin triples, live failures, live run outputs), `VERIFICATION.md`, technical docs (`README`, `SPEC`, `DATA_CARD`), `docs/figures/`, demo video | — |
 | 11 | **Thank You** | Links (repo, video) + one-command offline reproduction: `uv sync --locked && uv run knot selftest` | — |
 

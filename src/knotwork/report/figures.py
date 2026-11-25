@@ -20,6 +20,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.axes import Axes  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
 from PIL import Image  # noqa: E402
 
 from knotwork.report.summary import build_summary  # noqa: E402
@@ -63,9 +64,10 @@ def _titles(fig: Figure, title: str, sub: str) -> None:
              linespacing=1.4)  # fmt: skip
 
 
-def _save(fig: Figure, out: Path, name: str, left: float = 0.08) -> Path:
+def _save(fig: Figure, out: Path, name: str, left: float = 0.08, top: float = 0.78,
+          bottom: float = 0.14) -> Path:  # fmt: skip
     path = out / name
-    fig.subplots_adjust(top=0.78, bottom=0.14, left=left, right=0.98)
+    fig.subplots_adjust(top=top, bottom=bottom, left=left, right=0.98)
     fig.savefig(path, dpi=DPI, facecolor=SURFACE)
     plt.close(fig)
     return path
@@ -147,7 +149,53 @@ def fig_colour_ablation(s: dict[str, Any], out: Path) -> Path:
     return _save(fig, out, "fig01_colour_ablation.png", left=0.17)
 
 
+def _rate(v: float) -> str:
+    return f"{100 * v:.1f}".removesuffix(".0") + "%"
+
+
+def fig_premise_control(s: dict[str, Any], out: Path) -> Path:
+    """Share answered "yes" on matched premises: model hue, filled = true, hatched = false."""
+    fig, ax = _fig(9.0, 5.6)
+    models = list(s["models"].values())
+    width, offset = 0.30, 0.165
+    for i, m in enumerate(models):
+        pc, colour = m["premise_control"], SERIES[i % 3]
+        for side, arm in ((-1, "true"), (1, "false")):
+            x, v = i + side * offset, float(pc[f"{arm}_yes_rate"])
+            ax.bar(x, v, width=width, color=colour if arm == "true" else SURFACE,
+                   edgecolor=colour, linewidth=1.5, hatch=None if arm == "true" else "////")  # fmt: skip
+            ax.text(x, v + 0.018, f"{_rate(v)}\n{pc[f'{arm}_yes']}/{pc['n']}", ha="center",
+                    va="bottom", fontsize=9.5, color=INK, linespacing=1.3)  # fmt: skip
+    labels = [f"{_name(m['slug'])}\ngap {100 * m['premise_control']['gap']:+.1f} pts, "
+              f"p = {m['premise_control']['mcnemar_p']:.2f}" for m in models]  # fmt: skip
+    ax.set_xticks(range(len(models)), labels, fontsize=10, color=INK, linespacing=1.6)
+    ax.set_ylim(0, 1.18)
+    ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+    ax.yaxis.set_major_formatter(lambda v, _: f"{100 * v:.0f}%")
+    ax.set_ylabel("answered “yes” (premise accepted)", fontsize=9.5, color=INK2)
+    n = models[0]["premise_control"]["n"]
+    keys = [Patch(facecolor=INK2, edgecolor=INK2, label=f"true premise (P5, n = {n})"),
+            Patch(facecolor=SURFACE, edgecolor=INK2, hatch="////",
+                  label=f"false premise (T_GASLIGHT, n = {n})")]  # fmt: skip
+    ax.legend(handles=keys, loc="lower left", bbox_to_anchor=(-0.083, 1.01), ncols=2, frameon=False,
+              fontsize=9.5, labelcolor=INK, handlelength=1.8, handleheight=1.2)  # fmt: skip
+    found = [_name(m["slug"]) for m in models if m["premise_control"]["verdict"] == "discriminates"]
+    title = (f"Premise control: {', '.join(found)} told true premises from false ones" if found
+             else "Premise control: no model detectably told true from false premises")  # fmt: skip
+    reads = [
+        m["premise_control"][f"{a}_reading_correct"] for m in models for a in ("true", "false")
+    ]
+    _titles(fig, title,
+            "Matched pairs: same image and socket, only the claimed zone word differs. Checking the premise "
+            "would give a high “yes” share on true and a low one on false. p = exact McNemar. Dial readings "
+            f"on these items: {min(reads)} to {max(reads)} of {n} correct · {SOURCE_LABEL[s['source']]}")  # fmt: skip
+    return _save(fig, out, "fig02_false_premise.png", left=0.09, top=0.74, bottom=0.14)
+
+
 def fig_false_premise(s: dict[str, Any], out: Path) -> Path:
+    """The matched control when the run has one, else the single-arm preliminary probe."""
+    if all(m.get("premise_control") for m in s["models"].values()):
+        return fig_premise_control(s, out)
     fig, ax = _fig(9.0, 4.6)
     models = list(s["models"].values())
     vals = [m["gaslight"].get("failure_rate") for m in models]

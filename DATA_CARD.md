@@ -31,6 +31,14 @@ offline counter and recorded in a freshness receipt; bundles are content-address
 logged in a burn ledger and excluded from future test splits; every record carries a
 `KNOTWORK-CANARY-…` string.
 
+**Live evaluation so far.** Three VLMs, 943 paid calls, 1,069 trials, $1.12 total (details and
+caveats in `README.md`). The premise questions now have a matched control: 24 `T_GASLIGHT` scenes
+re-certified as `P5_PREMISE_CONTROL` with only the claimed zone word changed. No model's "yes" rate
+differed detectably between true and false premises (GPT-5.4 0 vs 0 of 24, Gemini 2.5 Flash 15 vs 12,
+Qwen3-VL-235B 23 vs 24; exact McNemar p = 1.00 / 0.45 / 1.00). A false-premise acceptance rate on its
+own cannot separate response bias from premise checking: report it beside a true-premise control.
+Abstention is not measured.
+
 **Intended use.** Evaluating and diagnosing vision-language models on visual tracing, gauge reading and
 compositional / premise-checking questions, and as verifiable-reward data for RL fine-tuning.
 
@@ -42,7 +50,8 @@ safety-critical decisions.
   real-world clutter. English prompts only.
 - Shortcut audit, open items (`BLOCKERS.md` 3.6): on the 600-item pool, text-only and image-statistics
   probes still beat chance in tangle T1/T3 and in the premise families, where SPEC's fixed zone layout
-  plus the stated zone leaks information. All other probe, balance and duplicate checks pass.
+  plus the stated zone leaks information (in a true premise, about the value being asked for). All
+  other probe, balance and duplicate checks pass.
 - Raster bits are reproducible per platform; across platforms answers and verdicts reproduce but bundle
   ids may differ (SPEC D-35).
 

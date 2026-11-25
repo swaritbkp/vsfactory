@@ -32,8 +32,15 @@ each model's reply; `task.json` is the bundle's full record.
 | `2_gauge_read` | what value does gauge G1 read? | `14` | `20` | `10` | `0` |
 | `3_false_premise` | "since the gauge on socket E is in the green zone …" | `no; 67` | `no; 65` | `yes; 30` | `yes; 40` |
 
+GPT-5.4's `no` in row 3 is not evidence that it saw the zone: it also answered `no` to all 24
+matched true premises (see `live_run/p5_control.json`).
+
 ## `live_run/`: the live benchmark's own outputs
 
 `bench_report.json` (per-model statistics), `trials.jsonl` (all 997 trials: block, item key, certified
 answer, extracted reply, correctness, cost) and `bench_live_summary.json` (the summary behind
 `README.md` and `docs/figures/`). The raw response cache stays local (SPEC D-36).
+
+The true-premise control (SPEC D-37) adds `p5_control_trials.jsonl` (72 trials, with the serving
+provider) and `p5_control.json` (the 24 matched pairs with their certification checks, claimed
+zones and prompts, plus the per-model paired statistics).

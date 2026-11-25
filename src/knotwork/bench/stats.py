@@ -10,6 +10,7 @@ from typing import Any
 
 import numpy as np
 from scipy.optimize import minimize_scalar
+from scipy.stats import binomtest, fisher_exact
 
 N_BOOT = 1000
 EPS = 1e-6
@@ -123,10 +124,46 @@ def gaslight(tokens: list[str | None]) -> dict[str, Any]:
     return {"n": len(tokens), "failure_rate": _r(np.mean([t == "yes" for t in tokens]))}
 
 
+def premise_control(pairs: list[tuple[str | None, str | None]]) -> dict[str, Any]:
+    """pairs: (premise token on the true premise, token on the matched false premise); any token
+    other than "yes" counts as not accepted. McNemar's exact test uses the matched pairs; Fisher's
+    exact test (which ignores the matching) is reported next to it."""
+    n = len(pairs)
+    if not n:
+        return {"n": 0, "true_yes": None, "false_yes": None, "gap": None, "mcnemar_p": None,
+                "fisher_p": None, "verdict": "no data"}  # fmt: skip
+    ty = sum(t == "yes" for t, _ in pairs)
+    fy = sum(f == "yes" for _, f in pairs)
+    b = sum(t == "yes" and f != "yes" for t, f in pairs)
+    c = sum(t != "yes" and f == "yes" for t, f in pairs)
+    mcnemar = float(binomtest(b, b + c, 0.5).pvalue) if b + c else 1.0
+    fisher = float(fisher_exact([[ty, n - ty], [fy, n - fy]]).pvalue)
+    return {
+        "n": n, "true_yes": ty, "false_yes": fy,
+        "true_yes_rate": _r(ty / n), "false_yes_rate": _r(fy / n), "gap": _r((ty - fy) / n),
+        "discordant": {"yes_only_on_true": b, "yes_only_on_false": c},
+        "mcnemar_p": _r(mcnemar), "fisher_p": _r(fisher),
+        "balanced_accuracy": _r((ty + sum(f == "no" for _, f in pairs)) / (2 * n)),
+        "unparsed": sum(t not in ("yes", "no") for p in pairs for t in p),
+        "verdict": premise_verdict(ty / n, fy / n, mcnemar),
+    }  # fmt: skip
+
+
+def premise_verdict(true_rate: float, false_rate: float, p: float, alpha: float = 0.05) -> str:
+    """Plain label for the yes-rate pattern; "discriminates" needs a significant matched-pair gap."""
+    if p < alpha:
+        return "discriminates" if true_rate > false_rate else "inverted"
+    if min(true_rate, false_rate) >= 0.9:
+        return "accepts regardless"
+    if max(true_rate, false_rate) <= 0.1:
+        return "rejects regardless"
+    return "no detectable discrimination"
+
+
 def _r(x: Any) -> float | None:
     v = float(x)
     return None if not math.isfinite(v) else round(v, 6)
 
 
 __all__ = ["abbott", "bootstrap", "color_ablation", "composition", "gaslight", "mle_p", "per_crossing",
-           "track_switch", "twins"]  # fmt: skip
+           "premise_control", "premise_verdict", "track_switch", "twins"]  # fmt: skip
