@@ -1,0 +1,35 @@
+{
+ "ablation": [
+  {
+   "base_id": "kw-01a04f537e0c537e42a0",
+   "dir": "ablation/kw-01a04f537e0c537e42a0",
+   "ok": true
+  },
+  {
+   "base_id": "kw-297b8e5fd509b57d6e7e",
+   "dir": "ablation/kw-297b8e5fd509b57d6e7e",
+   "ok": true
+  },
+  {
+   "base_id": "kw-4068d83729f5c4d6eace",
+   "dir": "ablation/kw-4068d83729f5c4d6eace",
+   "ok": true
+  },
+  {
+   "base_id": "kw-7a40bd365a8edaecf99b",
+   "dir": "ablation/kw-7a40bd365a8edaecf99b",
+   "ok": true
+  },
+  {
+   "base_id": "kw-5711ac5ef09991c48892",
+   "dir": "ablation/kw-5711ac5ef09991c48892",
+   "ok": true
+  },
+  {
+   "base_id": "kw-5a4c2c9ed9bb2901954e",
+   "dir": "ablation/kw-5a4c2c9ed9bb2901954e",
+   "ok": true
+  }
+ ],
+ "twins": []
+}

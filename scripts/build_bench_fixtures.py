@@ -4,6 +4,8 @@
 * ``tests/bench/fixtures/data/{tangle,panel}`` -- a small split=test dataset from `knot generate`
   (T1 items; P1 + T_GASLIGHT items). Masks and id buffers are dropped: the bench reads beauty.png,
   task.json, claims.json and manifest.json only (derived items are re-rendered from seed paths).
+* ``tests/bench/fixtures/data/_derived`` -- the derived renders (unique-colour ablation variants,
+  twins) with their index, so replays never re-render (raster bits are platform-dependent, D-35).
 * ``tests/bench/fixtures/replay/<slot>/<key>.json`` -- the mock VLMs' answers for the exact requests
   of ``knot bench --data tests/bench/fixtures/data --client replay --seed 0 --max-trials 10``, written
   in replay format under the live slot names.
@@ -45,6 +47,20 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         rc = run_bench(data, Path(tmp) / "bench", REPO / "configs" / "models.yaml", False, "record-mock",
                        replay, None, "all", 10, 0, False)  # fmt: skip
+        # ship the derived renders (D-35): replays on any platform reuse these exact pixels
+        derived = Path(tmp) / "bench" / "derived"
+        shutil.copytree(derived, data / "_derived")
+    for d in list((data / "_derived").rglob("*")):
+        if d.is_dir() and d.name == "masks":
+            shutil.rmtree(d)
+    for f in sorted((data / "_derived").rglob("*")):
+        if f.is_file() and f.name not in (
+            "beauty.png",
+            "claims.json",
+            "manifest.json",
+            "index.json",
+        ):
+            f.unlink()
     print(f"fixtures: {sum(1 for _ in replay.rglob('*.json'))} replay entries")
     return rc
 

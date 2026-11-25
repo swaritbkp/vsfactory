@@ -33,8 +33,12 @@ class MockClient:
         self.slots = slots
         self.network_calls = 0
 
-    def _rng(self, slot: str, png: bytes, prompt: str, seed: int) -> np.random.Generator:
-        key = hashlib.sha256(png + prompt.encode("utf-8")).hexdigest()[:16]
+    def _rng(self, slot: str, png: bytes, prompt: str, seed: int,
+             meta: dict[str, Any]) -> np.random.Generator:  # fmt: skip
+        from knotwork.bench.client_replay import image_key
+
+        ident = image_key(png, meta).encode("ascii")
+        key = hashlib.sha256(ident + prompt.encode("utf-8")).hexdigest()[:16]
         return SeedTree(int(seed) % (2**128)).child("mock", slot, key).rng()
 
     def ask(
@@ -48,7 +52,7 @@ class MockClient:
         if meta is None:
             raise ValueError("the mock VLM needs the trial's ground truth in `meta`")
         p = self.slots[slot]
-        rng = self._rng(slot, image_png, prompt, seed)
+        rng = self._rng(slot, image_png, prompt, seed, meta)
         answer = self._answer(p, meta, rng)
         return Reply(text=f"Simulated reasoning.\nANSWER: {answer}")
 

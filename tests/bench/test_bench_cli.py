@@ -64,7 +64,11 @@ def test_replay_reproduces_recorded_mock(tmp_path: Path, replay_report: dict) ->
     )
     assert rc == 0
     rec = json.loads((out / "bench_report.json").read_text(encoding="utf-8"))
-    assert rec["models"] == replay_report["models"]
+
+    def timeless(models: dict) -> dict:
+        return {k: {kk: vv for kk, vv in v.items() if kk != "seconds"} for k, v in models.items()}
+
+    assert timeless(rec["models"]) == timeless(replay_report["models"])
 
 
 def test_mock_mode_report(tmp_path: Path) -> None:

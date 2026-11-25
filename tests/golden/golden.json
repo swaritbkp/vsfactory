@@ -1,6 +1,7 @@
 {
  "kernel_sha256": "b6da0ea56ade6abe7475eac9507fb460a1e32a7c8bce4be60726d4527288416e",
  "per_family": 2,
+ "platform": "win32-amd64",
  "plugins": {
   "gauge": [
    {

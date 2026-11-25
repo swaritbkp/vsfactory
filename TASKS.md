@@ -295,7 +295,7 @@ Legend: `[ ]` todo · `[x]` done · `[!]` blocked (see `BLOCKERS.md`) · `[~]` s
   - Verification Command: `uv run python scripts/verify_phase.py --phase 5`
   - Done Criteria: PASSED; `.ci_phase` = 5; commit `feat(bench): staircase + diagnostic harness`. **STOP** and show the human the preflight cost; wait for `.checkpoints/CP2_APPROVED` or `.checkpoints/CP2_SKIPPED`.
 
-- [ ] **5.7 Live 3-VLM run (only if `.checkpoints/CP2_APPROVED` exists)**
+- [x] **5.7 Live 3-VLM run (only if `.checkpoints/CP2_APPROVED` exists)**
   - Files: `bench_replay/`, `artifacts/phase5/bench_live/`, `freshness/burn_ledger.jsonl`
   - Verification Command: `uv run knot bench --data artifacts/phase3/bench_split --out artifacts/phase5/bench_live --live --budget-usd 8 && uv run knot bench --data artifacts/phase3/bench_split --out artifacts/phase5/bench_replayed --client replay`
   - Done Criteria: live report `cost_usd ≤ 8.00`; replay of the same run reproduces it with `network_calls == 0`; commit `data(bench): live run replay cache`. If `CP2_SKIPPED`, mark `[~]`.
@@ -314,7 +314,7 @@ Legend: `[ ]` todo · `[x]` done · `[!]` blocked (see `BLOCKERS.md`) · `[~]` s
   - Verification Command: `uv run pytest tests/apps -q`
   - Done Criteria: `AppTest` runs with no exception and finds the 4 tabs; human staircase writes jsonl.
 
-- [ ] **6.3 `knot report`**
+- [x] **6.3 `knot report`**
   - Files: `src/knotwork/report/build.py`, `tests/apps/test_report.py`
   - Verification Command: `uv run knot report && uv run pytest tests/apps/test_report.py -q`
   - Done Criteria: single self-contained HTML > 50 KB with embedded figures, gate table, fault matrix, probe table, bench summary.

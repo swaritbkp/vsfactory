@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from knotwork.bench.client_base import ReplayMiss, Reply, VLMClient
-from knotwork.bench.prompts import image_sha256
+from knotwork.bench.prompts import image_sha256, png_pixel_id
 from knotwork.knotcore.seeds import canonical_json, sha256_hex
 
 
@@ -26,6 +26,13 @@ def replay_key(slot: str, slug: str, prompt: str, image_sha: str, seed: int) -> 
             }
         )  # fmt: skip
     )
+
+
+def image_key(png: bytes, meta: dict[str, Any] | None) -> str:
+    """Replay-key image component: the caller's source-image id when given, else decoded pixels."""
+    if meta and meta.get("image_id"):
+        return str(meta["image_id"])
+    return png_pixel_id(png)
 
 
 def elide_images(body: dict[str, Any], image_sha: str) -> dict[str, Any]:
@@ -69,7 +76,7 @@ class ReplayClient:
         seed: int,
         meta: dict[str, Any] | None = None,
     ) -> Reply:
-        key = replay_key(slot, self.slugs[slot], prompt, image_sha256(image_png), seed)
+        key = replay_key(slot, self.slugs[slot], prompt, image_key(image_png, meta), seed)
         path = replay_path(self.replay_dir, slot, key)
         if not path.is_file():
             raise ReplayMiss(f"{slot}/{key}")
@@ -98,9 +105,9 @@ class ReplayRecorder:
     ) -> Reply:
         reply = self.inner.ask(slot, image_png, prompt, seed, meta)
         sha = image_sha256(image_png)
-        key = replay_key(slot, self.slugs[slot], prompt, sha, seed)
+        key = replay_key(slot, self.slugs[slot], prompt, image_key(image_png, meta), seed)
         write_entry(self.replay_dir, slot, key, {
-            "request": {"slot": slot, "model": self.slugs[slot], "prompt": prompt, "image_sha256": sha,
+            "request": {"slot": slot, "model": self.slugs[slot], "prompt": prompt, "image_sha256": sha, "image_id": image_key(image_png, meta),
                         "seed": int(seed)},
             "response": {"source": f"recorded from {self.inner.mode} client"},
             "text": reply.text, "usage": {"prompt_tokens": reply.usage_in, "completion_tokens": reply.usage_out},

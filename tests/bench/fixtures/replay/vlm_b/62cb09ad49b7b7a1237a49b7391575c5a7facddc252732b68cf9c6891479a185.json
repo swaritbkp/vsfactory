@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_id": "f744792bd9555cc64aafc21e21456dcabf6eec00d3fb13894bf5fe3d2558bb92",
+  "image_sha256": "6da0f643b74d282e849dcf0706d334072e2635a4092f535ba33e348941ad59b4",
+  "model": "google/gemini-2.5-flash",
+  "prompt": "Follow the cable from socket F to the gauge it is plugged into. What value does that gauge read?\nEnd your reply with a final line of the form 'ANSWER: <number>'.",
+  "seed": 0,
+  "slot": "vlm_b"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: 33.4",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}

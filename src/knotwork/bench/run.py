@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -32,7 +33,7 @@ from knotwork.bench.budget import Budget, preflight
 from knotwork.bench.client_base import BudgetExhausted, ReplayMiss, Reply, VLMClient
 from knotwork.bench.client_mock import MockClient
 from knotwork.bench.client_replay import ReplayClient, ReplayRecorder, replay_key
-from knotwork.bench.prompts import image_png, image_sha256, read_only, trace_only
+from knotwork.bench.prompts import image_id, image_png, read_only, trace_only
 from knotwork.bench.staircase import Staircase, expected_level
 from knotwork.datasets import dataset_dirs
 from knotwork.knotcore.grading import ANSWER_RE, YESNO_RE, extract, grade_prediction
@@ -202,18 +203,67 @@ def _map(fn: Any, jobs: list[dict[str, Any]], workers: int) -> list[Any]:
     return run_jobs(jobs, fn, workers) if jobs else []
 
 
-def derive(
-    chosen: dict[str, list[Any]], out: Path, profile: dict[str, Any], workers: int
-) -> dict[str, Any]:
-    """Unique-colour variants (ablation) and twin triples, re-certified (shared by all models)."""
+def _dirs(rec: dict[str, Any], fn: Any) -> dict[str, Any]:
+    """Copy of a derived result with ``fn`` applied to every directory path in it."""
+    out = {k: v for k, v in rec.items() if k != "base"}
+    if "dir" in out:
+        out["dir"] = fn(out["dir"])
+    for role in ("causal", "nuisance"):
+        if isinstance(out.get(role), dict):
+            out[role] = dict(out[role], dir=fn(out[role]["dir"]))
+    return out
+
+
+def _cached(fn: Any, kind: str, items: list[Item], out: Path, profile: dict[str, Any], workers: int,
+            reuse: Path | None) -> list[dict[str, Any]]:  # fmt: skip
+    """Derived results per item: from ``reuse/index.json`` when it holds the item, else rendered
+    and certified now into ``out/<kind>/``."""
+    cache: dict[str, dict[str, Any]] = {}
+    if reuse is not None:
+        doc = json.loads((reuse / "index.json").read_text(encoding="utf-8"))
+        cache = {r["base_id"]: _dirs(r, lambda p: str(reuse / p)) for r in doc.get(kind, [])}
+    todo = [it for it in items if it.bundle_id not in cache]
+    jobs = [{"ds": str(it.ds), "dir": str(it.beauty.parent), "out": str(out / kind / it.bundle_id),
+             "profile": profile} for it in todo]  # fmt: skip
+    for it, res in zip(todo, _map(fn, jobs, workers), strict=True):
+        cache[it.bundle_id] = res
+    return [cache[it.bundle_id] for it in items]
+
+
+def write_index(out: Path, chosen: dict[str, list[Any]], abl: list[dict[str, Any]],
+                tw: list[dict[str, Any]]) -> None:  # fmt: skip
+    """``out/index.json``: certified derived results rendered in ``out`` (paths relative to it), so a
+    dataset can ship them as ``<data>/_derived`` and replays never re-render."""
+    root = out.resolve()
+    doc: dict[str, list[dict[str, Any]]] = {"ablation": [], "twins": []}
+    for kind, items, results in (
+        ("ablation", chosen["ablation"], abl),
+        ("twins", chosen["twin"], tw),
+    ):
+        for it, res in zip(items, results, strict=True):
+            if not res["ok"]:
+                continue
+            try:
+                rel = _dirs(res, lambda p: Path(p).resolve().relative_to(root).as_posix())
+            except ValueError:  # reused from another directory: not rendered here
+                continue
+            doc[kind].append(dict(rel, base_id=it.bundle_id))
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "index.json").write_text(json.dumps(doc, indent=1, sort_keys=True), encoding="utf-8")
+
+
+def derive(chosen: dict[str, list[Any]], out: Path, profile: dict[str, Any], workers: int,
+           reuse: Path | None = None) -> dict[str, Any]:  # fmt: skip
+    """Unique-colour variants (ablation) and twin triples, re-certified (shared by all models).
+    ``reuse`` (a ``<data>/_derived`` directory) supplies pre-rendered results: raster bits are not
+    portable across platforms (D-35), so committed fixtures ship their derived renders."""
     from knotwork.bench.derive import twin_set, unique_variant
 
-    abl = [{"ds": str(it.ds), "dir": str(it.beauty.parent), "out": str(out / "ablation" / it.bundle_id),
-            "profile": profile} for it in chosen["ablation"]]  # fmt: skip
-    tw = [{"ds": str(it.ds), "dir": str(it.beauty.parent), "out": str(out / "twins" / it.bundle_id),
-           "profile": profile} for it in chosen["twin"]]  # fmt: skip
+    abl_res = _cached(unique_variant, "ablation", chosen["ablation"], out, profile, workers, reuse)
+    tw_res = _cached(twin_set, "twins", chosen["twin"], out, profile, workers, reuse)
+    write_index(out, chosen, abl_res, tw_res)
     pairs = []
-    for it, res in zip(chosen["ablation"], _map(unique_variant, abl, workers), strict=True):
+    for it, res in zip(chosen["ablation"], abl_res, strict=True):
         if res["ok"]:
             d = Path(res["dir"])
             uniq = t1_item(
@@ -222,7 +272,7 @@ def derive(
             uniq.key = f"unique:{it.bundle_id}"
             pairs.append((uniq, it))
     triples = []
-    for it, res in zip(chosen["twin"], _map(twin_set, tw, workers), strict=True):
+    for it, res in zip(chosen["twin"], tw_res, strict=True):
         if res["ok"]:
             tw_items = []
             for role in ("causal", "nuisance"):
@@ -254,6 +304,7 @@ class Runner:
                  slug: str) -> None:  # fmt: skip
         self.client, self.slot, self.seed, self.slug = client, slot, seed, slug
         self.png: dict[Path, bytes] = {}
+        self.ids: dict[Path, str] = {}
         self.log: list[dict[str, Any]] = []
         self.ledger_rows = ledger_rows
 
@@ -262,7 +313,15 @@ class Runner:
             self.png[p] = image_png(p)
         return self.png[p]
 
-    def _outcome(self, item: Item, reply: Reply | None, block: str) -> Outcome:
+    def iid(self, p: Path) -> str:
+        """Source-image id used in replay keys (platform-neutral, D-35)."""
+        if p not in self.ids:
+            self.ids[p] = image_id(p)
+        return self.ids[p]
+
+    def _outcome(
+        self, item: Item, reply: Reply | None, block: str, error: str | None = None
+    ) -> Outcome:
         if reply is None:
             out = Outcome(False, False, "", missing=True)
         else:
@@ -273,33 +332,39 @@ class Runner:
         self.log.append({"slot": self.slot, "block": block, "key": item.key, "k": item.k, "m": item.m,
                          "correct": out.correct, "parsed": out.parsed, "missing": out.missing,
                          "answer": item.answer["canonical"], "reply": extract(out.text)[:200] if out.text else None,
-                         "cost_usd": reply.cost_usd if reply else 0.0})  # fmt: skip
+                         "cost_usd": reply.cost_usd if reply else 0.0, "error": error})  # fmt: skip
         if reply is not None and self.client.mode == "live":
-            png = self.image(item.beauty)
             self.ledger_rows.append({"bundle_id": item.bundle_id, "scene_id": item.scene_id, "slot": self.slot,
                                      "model": self.slug, "request_sha256": replay_key(
-                                         self.slot, self.slug, item.prompt, image_sha256(png), self.seed)})  # fmt: skip
+                                         self.slot, self.slug, item.prompt, self.iid(item.beauty), self.seed)})  # fmt: skip
         return out
 
     def ask(self, item: Item, block: str) -> Outcome:
         try:
             reply = self.client.ask(
-                self.slot, self.image(item.beauty), item.prompt, self.seed, item.meta
-            )
+                self.slot, self.image(item.beauty), item.prompt, self.seed,
+                dict(item.meta, image_id=self.iid(item.beauty)),
+            )  # fmt: skip
+        except BudgetExhausted:
+            raise
         except ReplayMiss:
             reply = None
+        except RuntimeError as exc:  # a failed live request is recorded, never fatal to the run
+            return self._outcome(item, None, block, str(exc)[:300])
         return self._outcome(item, reply, block)
 
     def ask_many(self, items: list[Item], block: str) -> list[Outcome]:
         many = getattr(self.client, "ask_many", None)
         if many is None:
             return [self.ask(it, block) for it in items]
-        res = many([(self.slot, self.image(it.beauty), it.prompt, self.seed) for it in items])
+        res = many([(self.slot, self.image(it.beauty), it.prompt, self.seed, self.iid(it.beauty))
+                    for it in items])  # fmt: skip
         outs = []
         for it, r in zip(items, res, strict=True):
             if isinstance(r, BudgetExhausted):
                 raise r
-            outs.append(self._outcome(it, r if isinstance(r, Reply) else None, block))
+            err = None if isinstance(r, Reply) else str(r)[:300]
+            outs.append(self._outcome(it, r if isinstance(r, Reply) else None, block, err))
         return outs
 
 
@@ -461,6 +526,11 @@ def make_client(
     return OpenRouterClient(cfg, replay_dir, os.environ.get("OPENROUTER_API_KEY", ""), budget)
 
 
+def reuse_dir(data: Path) -> Path | None:
+    d = data / "_derived"
+    return d if (d / "index.json").is_file() else None
+
+
 def run_bench(data: Path, out: Path, models: Path, live: bool, client: str, replay_dir: Path,
               budget_usd: float | None, track: str, max_trials: int, seed: int, dry_run: bool,
               workers: int = 0) -> int:  # fmt: skip
@@ -484,7 +554,7 @@ def run_bench(data: Path, out: Path, models: Path, live: bool, client: str, repl
     pool = load_pool(Path(data))
     chosen = select(pool, sizes, seed)
     derived = (
-        derive(chosen, out / "derived", profile, workers)
+        derive(chosen, out / "derived", profile, workers, reuse_dir(Path(data)))
         if "tangle" in tracks
         else {"pairs": [], "triples": []}
     )
@@ -500,6 +570,7 @@ def run_bench(data: Path, out: Path, models: Path, live: bool, client: str, repl
     for s in slots:
         runner = Runner(vlm, s["slot"], seed, ledger_rows, str(s.get("slug", s["slot"])))
         p_true = float(s["p_cross"]) if client == "mock" else None
+        t0 = time.perf_counter()
         try:
             report["models"][s["slot"]] = run_model(
                 runner, pool, chosen, derived, tracks, max_trials, seed, p_true, profile
@@ -509,6 +580,10 @@ def run_bench(data: Path, out: Path, models: Path, live: bool, client: str, repl
             report["stop_detail"] = str(exc)
             trials += runner.log
             break
+        row = report["models"][s["slot"]]
+        row["seconds"] = round(time.perf_counter() - t0, 1)
+        row["n_errors"] = sum(1 for e in runner.log if e.get("error"))
+        row["n_calls"] = len(runner.log)
         trials += runner.log
     report["network_calls"] = int(vlm.network_calls)
     report["cost_usd"] = round(sum(t["cost_usd"] for t in trials), 6)

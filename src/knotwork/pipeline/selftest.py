@@ -10,7 +10,9 @@ The report holds no timings, so two runs produce byte-identical reports.
 from __future__ import annotations
 
 import json
+import platform
 import shutil
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +56,19 @@ def snapshot(data: Path, plugin: str) -> list[dict[str, Any]]:
     return rows
 
 
+#: row fields that are raster bits (bundle ids digest beauty.png): bit-exact only on the platform that
+#: recorded the golden (libm / SIMD float differences in Lanczos and the realism finish, D-35)
+RASTER_KEYS = ("bundle_id", "id_buffer", "masks")
+
+
+def platform_tag() -> str:
+    return f"{sys.platform}-{platform.machine().lower()}"
+
+
+def _strip(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [{k: v for k, v in r.items() if k not in RASTER_KEYS} for r in rows]
+
+
 def _diff(want: list[dict[str, Any]], got: list[dict[str, Any]]) -> str:
     if len(want) != len(got):
         return f"{len(got)} bundles, golden has {len(want)}"
@@ -86,6 +101,7 @@ def run_selftest(
         "seed": SEED,
         "per_family": PER_FAMILY,
         "kernel_sha256": engine.kernel_sha256(),
+        "platform": platform_tag(),
         "plugins": {},
     }
     index: list[dict[str, Any]] = []
@@ -126,12 +142,27 @@ def run_selftest(
                 "kernel unchanged",
             )
         )
+        same = want.get("platform") == snap["platform"]
         for name in PLUGINS:
-            got = snap["plugins"].get(name, [])
-            diff = _diff(want.get("plugins", {}).get(name, []), got)
-            checks.append(
-                _check(f"golden:{name}", not diff, diff or f"{len(got)} bundles match exactly")
+            got, ref = snap["plugins"].get(name, []), want.get("plugins", {}).get(name, [])
+            if same:  # reference platform: everything bit-exact
+                diff = _diff(ref, got)
+                checks.append(
+                    _check(f"golden:{name}", not diff, diff or f"{len(got)} bundles match exactly")
+                )
+                continue
+            # other platforms: answers, verdicts, families and roles stay exact; raster bits reported
+            diff = _diff(_strip(ref), _strip(got))
+            checks.append(_check(f"golden:{name}", not diff, diff or f"{len(got)} bundles: answers, "
+                                 f"verdicts and slot structure match the golden"))  # fmt: skip
+            moved = sum(
+                1
+                for a, b in zip(ref, got, strict=False)
+                if any(a.get(k) != b.get(k) for k in RASTER_KEYS)
             )
+            checks.append(_check(f"golden:{name}:raster_portability", True,
+                                 f"{moved}/{len(got)} rows differ in raster digests on {snap['platform']} "
+                                 f"(golden recorded on {want.get('platform')}; D-35)"))  # fmt: skip
     report = {"ok": all(c["ok"] for c in checks), "checks": checks}
     write_json(out_dir / "report.json", report)
     print(json.dumps({"ok": report["ok"], "failed": [c["name"] for c in checks if not c["ok"]]}))

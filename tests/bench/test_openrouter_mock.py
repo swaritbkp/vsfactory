@@ -14,7 +14,7 @@ from knotwork import net
 from knotwork.bench.budget import Budget
 from knotwork.bench.client_base import BudgetExhausted, ReplayMiss
 from knotwork.bench.client_openrouter import OpenRouterClient, OpenRouterError
-from knotwork.bench.client_replay import ReplayClient, replay_key, replay_path
+from knotwork.bench.client_replay import ReplayClient, image_key, replay_key, replay_path
 from knotwork.bench.prompts import image_sha256
 
 REPO = Path(__file__).resolve().parents[2]
@@ -72,7 +72,7 @@ def test_body_headers_and_replay_written(tmp_path: Path, monkeypatch: pytest.Mon
     body = json.loads(req.content)
     assert body["provider"]["data_collection"] == "deny" and body["usage"] == {"include": True}
     assert body["model"] == "google/gemini-2.5-flash" and body["temperature"] == 0.0
-    key = replay_key("vlm_b", "google/gemini-2.5-flash", "Which?", image_sha256(PNG), 3)
+    key = replay_key("vlm_b", "google/gemini-2.5-flash", "Which?", image_key(PNG, None), 3)
     entry = json.loads(replay_path(tmp_path / "replay", "vlm_b", key).read_text())
     assert entry["text"] == reply.text and entry["cost_usd"] == pytest.approx(0.0021)
     blob = json.dumps(entry)

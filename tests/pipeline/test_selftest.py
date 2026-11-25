@@ -51,3 +51,14 @@ def test_selftest_reproduces_golden(tmp_path: Path) -> None:
     assert all((out / "data" / r["dir"] / "task.json").is_file() for r in index)
     # the report carries no timings: re-writing it from the same run is byte-identical
     assert b"seconds" not in first
+
+
+def test_cross_platform_rows_compare_semantics_only() -> None:
+    from knotwork.pipeline.selftest import RASTER_KEYS, _strip
+
+    a = [{"family": "T1_TRACE", "role": "base", "answer": "3", "verdict": "CERTIFIED",
+          "bundle_id": "kw-1", "id_buffer": "x", "masks": "y"}]  # fmt: skip
+    b = [dict(a[0], bundle_id="kw-2", id_buffer="z", masks="w")]
+    assert _diff(_strip(a), _strip(b)) == "" and _diff(a, b) != ""
+    assert _diff(_strip(a), _strip([dict(b[0], answer="4")])) != ""
+    assert set(RASTER_KEYS) == {"bundle_id", "id_buffer", "masks"}

@@ -41,8 +41,8 @@ slots:
     slug: openai/gpt-5.4
     est_usd_per_mtok_in: 2.50
     est_usd_per_mtok_out: 15.00
-    max_tokens: 1024
-    reasoning_effort: low
+    max_tokens: 512
+    reasoning_effort: none      # sent as reasoning.effort="none": canary showed "low" spends the whole budget thinking
   - slot: vlm_b                 # fast, cheap closed VLM (also the default for the CP1 gap check)
     tier: fast_closed
     slug: google/gemini-2.5-flash

@@ -51,7 +51,7 @@ def test_prompts() -> None:
     body = request_body(cfg["slots"][0], cfg["request_defaults"], cfg["routing"], PNG, "Q?")
     assert body["provider"]["data_collection"] == "deny" and body["usage"] == {"include": True}
     assert body["temperature"] == 0.0 and body["max_tokens"] == cfg["slots"][0]["max_tokens"]
-    assert body["reasoning"] == {"effort": "low"}
+    assert body["reasoning"] == {"effort": "none"}  # gpt-5.4: no reasoning (canary)
     assert "reasoning" not in request_body(
         cfg["slots"][2], cfg["request_defaults"], cfg["routing"], PNG, "Q"
     )

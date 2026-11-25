@@ -64,3 +64,14 @@ Gate re-run: PASSED, knotcore untouched (819 / 850 executable LOC).
   tolerance; tangle staircases for mock_a / mock_b outside +-1.5 levels (BLOCKERS 5.6). Replay of committed fixtures:
   0 network calls. Preflight (default plan, 50 trials): $5.06 for 1260 calls; $5 option (`--max-trials 40`): $4.05
   for 1008 calls. Stopped at [HUMAN-CHECKPOINT-2].
+
+## Phase 5 live run ([HUMAN-CHECKPOINT-2] approved by the owner)
+* Plan: `--max-trials 40`, three slots (gpt-5.4 with reasoning off after the canary, gemini-2.5-flash,
+  qwen3-vl-235b). Two canaries $0.0501 + full run $0.9992 = **$1.0493** of the $5.00 cap; 871 paid calls,
+  997 trials, 0 HTTP errors, 2 parse failures. Offline replay reproduces every per-model result exactly
+  with 0 network calls. Summary: `README.md` "Live benchmark results"; figures `docs/figures/fig01-06`.
+
+## Phase 6 (partial)
+* CI fix for Ubuntu (D-35): platform-neutral replay keys, shipped derived fixture renders,
+  platform-tagged golden. `report/summary.py`, `report/figures.py` (6 of the 11 required figures),
+  `knot report` (self-contained HTML). Not done yet: 6.1 (11 figures), 6.2 inspector, 6.4-6.6 docs/deck.

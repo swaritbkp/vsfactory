@@ -1044,3 +1044,24 @@ spec leaves open. Never silently change a threshold.
   On the first 600-item split, sampling noise alone (e.g. n = 3 T1 items answered by option 0 in 16 of 25)
   let `text_only` and a constant-majority predictor clear chance by more than the pooled Wilson margin
   allows. Without the hint (mutate, twins, unit tests) plugins sample as before.
+* D-35: Raster bits are not portable across platforms. A Windows-recorded golden and replay cache
+  failed on Ubuntu CI: Lanczos (libm transcendentals for filter coefficients), PNG encoding (bundled
+  zlib builds) and the float realism finish differ between platform builds of the same pinned wheels,
+  so beauty digests -- and with them bundle ids -- differ. Determinism stays guaranteed per platform
+  (same seed => identical ids for any `--workers`, gate `p2.determinism`); across platforms the
+  semantics are guaranteed. Consequences: (a) replay keys use `image_id` = digest of the decoded pixels
+  of the *source* beauty.png instead of the re-encoded 768-px PNG bytes (mock VLM seeds likewise);
+  (b) bench derived renders are indexed (`derived/index.json`) and test fixtures ship them as
+  `tests/bench/fixtures/data/_derived`, so replays never re-render; (c) the golden records its
+  `platform`; on that platform everything is compared bit-exact (gate `p3.selftest`), elsewhere
+  family / role / canonical answer / verdict and the kernel sha256 must match exactly while bundle-id
+  and id-buffer / mask digest differences are reported as a `raster_portability` count. The live
+  replay cache was re-keyed in place (renames only) and replays the live run exactly.
+* D-36: Live-run data handling (owner decision): the replay cache `bench_replay/` and
+  `freshness/burn_ledger.jsonl` stay local and gitignored (task 5.7 asked to commit the cache; gate
+  `p6.cp2` only checks it exists on disk). gpt-5.4 runs with `reasoning.effort: none` and
+  `max_tokens: 512`: the canary showed `low` spending the whole 1024-token budget on reasoning and
+  returning empty replies. The live client returns a cached response for a request it has already
+  paid for (resume-safe), retries timeouts like 5xx, and records a failed request as a trial error
+  instead of aborting the run. Report figures label their source (live / replay / mock) in every
+  subtitle.

@@ -48,9 +48,44 @@ approval file and `OPENROUTER_API_KEY` (see `SPEC.md` §1).
 | `docs/schemas/` | generated JSON Schemas of every public contract |
 | `docs/SUBMISSION_CHECKLIST.md` | mapping to the official 11-slide template and portal fields |
 
+## Live benchmark results (3 VLMs via OpenRouter)
+
+One live run on the 600-item-per-plugin `split=test` pool (monochrome cables), seed 0, 40 trials
+per adaptive staircase plus the diagnostic blocks of `SPEC.md` §12. **871 paid calls / 997 trials,
+0 HTTP errors, $0.9992** (plus $0.0501 for two pre-run canaries: **$1.05 total**). Every response is
+cached in replay format; `knot bench --client replay` reproduces the per-model results exactly
+with 0 network calls.
+
+| | GPT-5.4 | Gemini 2.5 Flash | Qwen3-VL-235B |
+|---|---|---|---|
+| OpenRouter slug | `openai/gpt-5.4` (reasoning off) | `google/gemini-2.5-flash` | `qwen/qwen3-vl-235b-a22b-instruct` |
+| Trials / errors / parse failures | 325 / 0 / 0 | 336 / 0 / 1 | 336 / 0 / 1 |
+| Cost · wall-clock | $0.808 · 6.1 min | $0.121 · 8.1 min | $0.070 · 12.4 min |
+| **Overall accuracy** | **25.2 %** | **20.5 %** | **20.2 %** |
+| Tangle (cable tracing) · panel · gauge reading | 27.3 · 22.8 · 15.6 % | 17.0 · 24.4 · 25.0 % | 21.0 · 19.4 · 6.2 % |
+| Colour ablation: unique colours → monochrome | 59.4 → 3.1 % | 18.8 → 9.4 % | 37.5 → 15.6 % |
+| Twins: original / causal / nuisance / all three | 29 / 12.5 / 25 / 12.5 % | 25 / 12.5 / 29 / 12.5 % | 25 / 12.5 / 25 / 8.3 % |
+| False premise accepted (`T_GASLIGHT`, n = 24) | **0 %** | **50 %** | **100 %** |
+| Staircase threshold (crossings): tangle · panel | 1.5 · 1.5 | 1.1 · 1.7 | 1.1 · 1.5 |
+
+Findings: (1) tracing a cable through even one or two crossings is essentially unsolved by all three
+models; (2) GPT-5.4's tracing comes almost entirely from colour (59 % with unique cable colours, 3 %
+when every cable looks the same, below the ~17 % chance level); (3) a causal edit touching < 5 % of
+the pixels halves accuracy while a style-only twin does not; (4) the models split cleanly on false
+premises, from always rejecting to always accepting them.
+
+Caveats, stated plainly: accuracy is at the floor, so the staircases (no reversals for two models)
+bound rather than measure the threshold, and the per-crossing error MLE and the composition product
+law are not informative on this run. The false-premise prompt forces a yes/no answer, so abstention
+is not measured, and the true-premise controls (`P5`) were not part of the bench. There is no
+gauge-only track: "gauge reading" is the read-only question on panel images (±2 % of the scale).
+Figures: `docs/figures/fig01…fig06`; full report: `uv run knot report` → `artifacts/report/report.html`.
+
 ## Status
 
-Built phase by phase; see `TASKS.md` and `VERIFICATION.md` (Phase 6) for gate results.
+Built phase by phase; see `TASKS.md`, `PROGRESS.md` and `BLOCKERS.md` for gate results and the two
+open items (shortcut-probe residuals in the premise families and tangle T1/T3; the mock staircase
+tolerance).
 
 ## License
 
