@@ -1,8 +1,13 @@
-"""SPEC D-37: the matched true-premise control of the false-premise probe (offline)."""
+"""SPEC D-37: the matched true-premise control of the false-premise probe (offline).
+
+The control requires pixel-identical re-renders, and raster bits differ between platforms (D-35), so
+these tests generate their `T_GASLIGHT` bundle where they run instead of using committed fixtures.
+"""
 
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -10,26 +15,35 @@ import yaml
 
 from knotwork.bench import p5_control, stats
 from knotwork.bench.run import PROFILE, load_pool
+from knotwork.pipeline.generate import run_generate
 
 REPO = Path(__file__).resolve().parents[2]
-FIX = REPO / "tests" / "bench" / "fixtures" / "data"
 
 
-def test_control_is_certified_and_differs_only_in_the_claimed_zone(tmp_path: Path) -> None:
-    source = load_pool(FIX).gaslight[:1]
+@pytest.fixture(scope="module")
+def data(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """A one-bundle `T_GASLIGHT` panel dataset, masks and id buffer included."""
+    root = tmp_path_factory.mktemp("p5_data")
+    rc = run_generate("panel", 1, root / "panel", 21, "offline", PROFILE, "dev", False, None, 1,
+                      ["T_GASLIGHT"])  # fmt: skip
+    assert rc == 0
+    return root
+
+
+def test_control_is_certified_and_differs_only_in_the_claimed_zone(
+    data: Path, tmp_path: Path
+) -> None:
+    source = load_pool(data).gaslight[0]
     profile = yaml.safe_load(PROFILE.read_text(encoding="utf-8"))
-    items, records = p5_control.build_control(
-        FIX, tmp_path, [source[0].key], profile, workers=1
-    )  # fmt: skip
+    items, records = p5_control.build_control(data, tmp_path, [source.key], profile, workers=1)
     rec = records[0]
-    assert rec["checks"]["control_certified"] and rec["checks"]["kernel_zone_is_claimed"]
-    assert rec["checks"]["kernel_premise_holds"] and rec["checks"]["false_premise_was_false"]
-    assert items[0].beauty == source[0].beauty and items[0].meta["holds"] is True
+    assert rec["ok"] and all(rec["checks"].values()), rec["checks"]
+    assert items[0].beauty == source.beauty and items[0].meta["holds"] is True
     assert rec["claimed_zone_true"] != rec["claimed_zone_false"]
-    swapped = source[0].prompt.replace(
+    swapped = source.prompt.replace(
         f"in the {rec['claimed_zone_false']} zone", f"in the {rec['claimed_zone_true']} zone"
     )
-    assert items[0].prompt == swapped and items[0].prompt != source[0].prompt
+    assert items[0].prompt == swapped and items[0].prompt != source.prompt
 
 
 def test_premise_control_statistics() -> None:
@@ -71,8 +85,10 @@ def test_live_budget_above_the_cap_is_refused(capsys: pytest.CaptureFixture[str]
     assert "E_BUDGET_OVER_CAP" in capsys.readouterr().out
 
 
-def test_mock_run_writes_separate_records(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    key = load_pool(FIX).gaslight[0].key
+def test_mock_run_writes_separate_records(
+    data: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    key = load_pool(data).gaslight[0].key
     source = tmp_path / "source.jsonl"
     source.write_text(
         "".join(json.dumps({"slot": s, "block": "gaslight", "key": key, "reply": "no; 1",
@@ -80,14 +96,17 @@ def test_mock_run_writes_separate_records(tmp_path: Path, monkeypatch: pytest.Mo
                 for s in ("mock_a", "mock_b", "mock_c")), encoding="utf-8")  # fmt: skip
     monkeypatch.setattr(p5_control, "N_ITEMS", 1)
 
-    def run() -> int:
-        return p5_control.run_control(FIX, tmp_path / "out", REPO / "configs" / "models.yaml",
+    def run(dataset: Path) -> int:
+        return p5_control.run_control(dataset, tmp_path / "out", REPO / "configs" / "models.yaml",
                                       tmp_path / "replay", "mock", None, False, source, workers=1)  # fmt: skip
 
-    # the committed fixtures drop masks and id buffers, so the source cannot be re-verified
-    assert run() == 1 and not (tmp_path / "out" / p5_control.TRIALS_FILE).exists()
-    monkeypatch.setattr("knotwork.pipeline.verify.verify_bundle", lambda *_: None)
-    assert run() == 0
+    # a source bundle that no longer verifies from its files blocks the whole run
+    broken = tmp_path / "broken"
+    shutil.copytree(data, broken)
+    next(broken.glob("panel/bundles/*/id_buffer.png")).unlink()
+    assert run(broken) == 1 and not (tmp_path / "out" / p5_control.TRIALS_FILE).exists()
+
+    assert run(data) == 0
     rep = json.loads((tmp_path / "out" / p5_control.REPORT_FILE).read_text(encoding="utf-8"))
     assert rep["network_calls"] == 0 and rep["trials"] == 3 and set(rep["models"]) == {
         "mock_a", "mock_b", "mock_c"}  # fmt: skip
@@ -95,4 +114,4 @@ def test_mock_run_writes_separate_records(tmp_path: Path, monkeypatch: pytest.Mo
     # a non-live run never replaces a live record
     record = tmp_path / "out" / p5_control.REPORT_FILE
     record.write_text(json.dumps(dict(rep, mode="live")), encoding="utf-8")
-    assert run() == 4 and json.loads(record.read_text(encoding="utf-8"))["mode"] == "live"
+    assert run(data) == 4 and json.loads(record.read_text(encoding="utf-8"))["mode"] == "live"
