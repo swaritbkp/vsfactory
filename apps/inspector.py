@@ -21,6 +21,7 @@ PAGES = (
     ("forensics.py", "Forensics", ":material/troubleshoot:"),
     ("human_eval.py", "Human Eval", ":material/person_check:"),
     ("export.py", "Export", ":material/package_2:"),
+    ("arena.py", "Model Arena", ":material/leaderboard:"),
 )
 
 

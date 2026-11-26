@@ -59,7 +59,7 @@ def from_scene(scene: SceneIR, question: str) -> str:
         lines += _dial("Gauge", pay["dial"])
     else:
         n = int(pay["n"])
-        if scene.plugin == "tangle":
+        if scene.plugin in ("tangle", "rack_patch"):
             starts = ", ".join(f"row {r + 1}: {t}" for r, t in enumerate(pay["start_labels"]))
         else:
             starts = ", ".join(
@@ -71,7 +71,7 @@ def from_scene(scene: SceneIR, question: str) -> str:
             "",
         ]
         lines += ["Along the way, from left to right:", *_rows(n, pay["word"]), ""]
-        if scene.plugin == "tangle":
+        if scene.plugin in ("tangle", "rack_patch"):
             ends = ", ".join(f"row {r + 1}: {t}" for r, t in enumerate(pay["end_labels"]))
             lines.append(f"Right ends -- {ends}.")
         else:

@@ -14,7 +14,7 @@ from knotwork.knotcore.contracts import FAULT_EXPECTED, FAULT_PLUGIN, FaultCode
 from knotwork.pipeline.counterfactual import run_counterfactual
 from knotwork.pipeline.io import read_json
 from knotwork.render.canvas import REPO_ROOT
-from knotwork.studio import factory, forensics, present
+from knotwork.studio import factory, fault_proofs, forensics, present
 from studio_ui import OUT, dataset_select, relative, resolve, run_with_status, verdict_badge
 
 SECTIONS = ("Counterfactual twins", "Quarantine", "Fault proofs")
@@ -257,52 +257,63 @@ def _quarantine(dataset: Path | None) -> None:
 
 
 # ------------------------------------------------------------------ faults
-def _proof(fault: FaultCode, seed: int) -> list[factory.Generated]:
-    run = OUT / "faults" / uuid.uuid4().hex[:8]
-    plugin = FAULT_PLUGIN[fault]
-    for family in factory.families_of(plugin):
-        try:
-            bad = factory.generate_one(plugin, family, seed, run / "faulty", fault=fault)
-        except RuntimeError:
-            continue
-        # the same attempt without the fault is the clean control
-        good = factory.generate_one(
-            plugin, family, seed, run / "clean", first_attempt=bad.attempts - 1
-        )
-        return [good, bad]
-    raise RuntimeError("no scene admits this fault at this seed")
+@st.cache_data(show_spinner=False, max_entries=32)
+def _proof(fault_id: str, seed: int) -> list[fault_proofs.ProofSide]:
+    """A proof pair per (fault, seed): built once per server, then instant."""
+    return fault_proofs.build(FaultCode(fault_id), seed, OUT / "faults")
+
+
+@st.cache_resource(show_spinner=False)
+def _sample() -> tuple[FaultCode, int, list[fault_proofs.ProofSide]] | None:
+    return fault_proofs.load_sample()
+
+
+def _fault_label(value: str) -> str:
+    fault = FaultCode(value)
+    return f"{value} · {FAULT_PLUGIN[fault]} · {FAULT_EXPECTED[fault].value}"
+
+
+def _strip(fault: FaultCode, sides: list[fault_proofs.ProofSide]) -> None:
+    expected = fault_proofs.expected_code(fault)
+    for column, side in zip(st.columns(2, border=True), sides, strict=True):
+        with column:
+            with st.container(horizontal=True, vertical_alignment="center"):
+                st.markdown(f"**{side.label}**", width="content")
+                verdict_badge(side.verdict)
+                if side.label == fault_proofs.LABELS[1]:
+                    hit = fault_proofs.caught(fault, side)
+                    st.badge(f"{expected} {'raised' if hit else 'NOT raised'}",
+                             color="green" if hit else "red",
+                             icon=":material/gpp_good:" if hit else ":material/gpp_bad:")  # fmt: skip
+            st.image(side.image, width="stretch", alt=f"{side.label} with witness overlay")
+            st.caption(", ".join(side.codes) or "no codes: certified")
 
 
 def _faults() -> None:
+    sample = _sample()
+    values = [f.value for f in FaultCode]
+    default_fault, default_seed = (sample[0], sample[1]) if sample else (FaultCode.M1, 3)
+    st.session_state.setdefault("fp_fault", default_fault.value)
+    st.session_state.setdefault("fp_seed", default_seed)
     with st.container(horizontal=True, vertical_alignment="bottom"):
-        fault = FaultCode(
-            st.selectbox(
-                "Fault", [f.value for f in FaultCode], key="fp_fault",
-                format_func=lambda v: f"{v} · {FAULT_PLUGIN[FaultCode(v)]} · {FAULT_EXPECTED[FaultCode(v)].value}",
-            )
-        )  # fmt: skip
-        seed = int(st.number_input("Seed", 0, 2**31 - 1, 3, key="fp_seed"))
+        fault = FaultCode(st.selectbox("Fault", values, key="fp_fault", format_func=_fault_label))
+        seed = int(st.number_input("Seed", 0, 2**31 - 1, key="fp_seed"))
         go = st.button("Build proof strip", type="primary", key="fp_go")
-    if not go:
-        st.caption("Renders one scene twice, with and without the fault, and certifies both.")
+    st.caption("One scene rendered twice, with and without the fault; both go through the kernel.")
+    if go:
+        st.session_state.fp_built = (fault.value, seed)
+    if sample and (fault, seed) == (sample[0], sample[1]):
+        _strip(fault, sample[2])
+        st.caption("Committed default proof (`samples/fault_proof/`): shown instantly on open.")
         return
-    pair = run_with_status("Inject and certify", lambda: _proof(fault, seed))
-    if pair is None:
+    if st.session_state.get("fp_built") != (fault.value, seed):
+        st.info(
+            "Press **Build proof strip** to render this fault and seed.", icon=":material/build:"
+        )
         return
-    expected = FAULT_EXPECTED[fault].value
-    for column, label, made in zip(
-        st.columns(2, border=True), ("Clean control", "Faulty"), pair, strict=True
-    ):
-        cert = made.candidate.certificate.model_dump(mode="json")
-        with column:
-            st.markdown(f"**{label}**")
-            verdict_badge(cert["verdict"])
-            st.image(factory.witness_overlay(made.candidate.dir, cert), width="stretch", alt=label)
-            if label == "Faulty":
-                caught = expected in cert["codes"]
-                st.badge(f"{expected} {'raised' if caught else 'NOT raised'}",
-                         color="green" if caught else "red")  # fmt: skip
-            st.caption(", ".join(cert["codes"]) or "no codes")
+    sides = run_with_status("Inject and certify", lambda: _proof(fault.value, seed))
+    if sides is not None:
+        _strip(fault, sides)
 
 
 # ------------------------------------------------------------------ page
@@ -311,8 +322,9 @@ picker, _ = st.columns([2, 3])
 with picker:
     run = dataset_select("Run", "fx_dataset", prefer)
 _kpis(run)
+st.session_state.setdefault("fx_section", SECTIONS[0])  # Model Arena may preselect a section
 section = st.segmented_control(
-    "Section", SECTIONS, default=SECTIONS[0], required=True, key="fx_section",
+    "Section", SECTIONS, required=True, key="fx_section",
     label_visibility="collapsed",
 )  # fmt: skip
 if section == "Quarantine":

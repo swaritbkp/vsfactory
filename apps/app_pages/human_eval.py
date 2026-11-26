@@ -77,13 +77,14 @@ def _verdict(row: dict[str, Any], item: dict[str, Any]) -> None:
 
 
 def _show_result(result: dict[str, Any]) -> None:
-    """After a submit the item stays on screen, with its verdict and the witness one toggle away."""
+    """After a submit the item stays on screen and its verdict takes the Submit button's place,
+    directly under the picture and question, so it is read without scrolling."""
     item, row = result["item"], result["row"]
-    with st.container(border=True):
-        _verdict(row, item)
     with st.container(horizontal_alignment="center"):
         _picture(item, bool(st.session_state.get("he_witness")))
     st.markdown(_question_text(item))
+    with st.container(border=True, key="he_verdict"):
+        _verdict(row, item)
     with st.container(horizontal=True, vertical_alignment="center"):
         st.toggle("Show witness overlay", key="he_witness")
         next_item = st.button("Next item", type="primary", icon=":material/skip_next:",
@@ -117,9 +118,11 @@ def _trial(dataset: Path, who: str) -> None:
     with st.container(horizontal_alignment="center"):
         _picture(item, witness=False)
     st.markdown(_question_text(item))
-    with st.form("he_form", border=False):
-        reply = _answer_input(item)
-        sent = st.form_submit_button("Submit", type="primary", width="stretch")
+    reply = _answer_input(item)
+    # a plain primary button, styled exactly like Next item (a form submit button flashes darker)
+    sent = st.button(
+        "Submit", type="primary", width="stretch", icon=":material/send:", key="he_submit"
+    )
     if sent:
         if not reply.strip():
             st.warning(EMPTY_ANSWER, icon=":material/edit:")
@@ -140,26 +143,36 @@ def _scoreboard(who: str) -> None:
     else:
         st.metric("Your session", "0 answered", "Submit an item to get a score",
                   delta_color="off", delta_arrow="off")  # fmt: skip
-    rows = present.scoreboard(calibration.summary(), present.model_names())
-    frame = pd.DataFrame([r for r in rows if r["who"] != "You"])
+    frame = baseline_frame()
     if frame.empty:
         st.caption("No model baseline yet: the committed live run is missing.")
         return
+    percent = st.column_config.ProgressColumn(format="%.1f%%", min_value=0.0, max_value=100.0)
+    st.dataframe(
+        frame, hide_index=True, width="stretch", alt="Model accuracy on the live benchmark",
+        column_config={"Accuracy": percent, "Shared": percent},
+        height=36 * (len(frame) + 1) + 2,  # every row visible: no inner scroll, no blank space
+    )  # fmt: skip
+    st.caption(
+        "VLM baselines from the committed live benchmark run. A Shared column appears once "
+        "people and models have answered the same items."
+    )
+
+
+def baseline_frame() -> pd.DataFrame:
+    """The committed live run's model accuracies (percent), best first. Not cached: the Shared
+    column changes with every response a person submits."""
+    rows = present.scoreboard(calibration.summary(), present.model_names())
+    frame = pd.DataFrame([r for r in rows if r["who"] != "You"])
+    if frame.empty:
+        return frame
     frame = frame.rename(
         columns={"who": "Model", "accuracy": "Accuracy", "n": "Items", "shared": "Shared"}
     )
     frame[["Accuracy", "Shared"]] = frame[["Accuracy", "Shared"]].astype(float) * 100
     if frame["Shared"].isna().all():  # nothing answered by both a person and a model yet
         frame = frame.drop(columns="Shared")
-    percent = st.column_config.ProgressColumn(format="%.1f%%", min_value=0.0, max_value=100.0)
-    st.dataframe(
-        frame, hide_index=True, width="stretch", alt="Model accuracy on the live benchmark",
-        column_config={"Accuracy": percent, "Shared": percent},
-    )  # fmt: skip
-    st.caption(
-        "Model baselines come from the committed live benchmark run. A Shared column appears "
-        "once people and models have answered the same items."
-    )
+    return frame.sort_values("Accuracy", ascending=False).reset_index(drop=True)
 
 
 # ------------------------------------------------------------------ page
@@ -167,9 +180,9 @@ if "participant" not in st.session_state:
     st.session_state.participant = f"p-{uuid.uuid4().hex[:6]}"
 card, side = st.columns([2.2, 1], gap="large")
 with side:
-    with st.container(border=True):
+    with st.container(border=True, key="he_scoreboard"):
         st.markdown("**Scoreboard**")
-        board = st.empty()
+        _scoreboard(str(st.session_state.participant))  # drawn first: above the fold on load
     with st.expander("Session", icon=":material/badge:"):
         participant = st.text_input("Participant id", key="participant")
         chosen = dataset_select("Item set", "he_dataset", _preferred_dataset())
@@ -183,5 +196,3 @@ with card, st.container(border=True):
         st.info("Pick an item set under Session to start.", icon=":material/playlist_add:")
     else:
         _trial(chosen, participant)
-with board.container():
-    _scoreboard(participant)

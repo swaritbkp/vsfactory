@@ -87,11 +87,7 @@ def _result(out: Path) -> None:
         f"`{relative(out)}`.  \nManifest SHA-256 `{digest}`",
         icon=":material/check_circle:",
     )
-    files = pd.DataFrame(
-        [{"Path": f"{relative(out)}/{name}", "Size": present.human_bytes(int(info["bytes"]))}
-         for name, info in sorted(data["artifacts"].items())]
-        + [{"Path": relative(manifest), "Size": present.human_bytes(manifest.stat().st_size)}]
-    )  # fmt: skip
+    files = pd.DataFrame(present.export_rows(out, data))
     st.dataframe(files, hide_index=True, width="stretch", height=FILE_TABLE_HEIGHT,
                  alt="Every exported file and its size")  # fmt: skip
     st.download_button(

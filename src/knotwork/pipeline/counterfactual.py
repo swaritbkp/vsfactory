@@ -48,6 +48,8 @@ BUNDLE_RE = re.compile(r"kw-[0-9a-f]{20}")
 PLAIN_BACKGROUND = [246, 246, 243]
 THUMB_PX = 480
 PALETTE_SHIFT = 3
+#: braid-word cable plugins (the rack patch bay is a tangle drawn as a rack)
+TANGLES = ("tangle", "rack_patch")
 
 
 class Unavailable(RuntimeError):
@@ -149,7 +151,7 @@ def perceptual_clean(plugin: str, pay: dict[str, Any]) -> None:
     pay["style"] = "flat"
     if pay["color_regime"] == "mono":
         pay["colors"] = [[20, 20, 20] for _ in pay["colors"]]
-    if plugin == "tangle":
+    if plugin in TANGLES:
         trial = copy.deepcopy(pay)
         trial["layout"]["jitter_amps"] = [0.0, 0.0, 0.0]
         if geom.validate(lay_of(trial), trial["n"], float(trial["stroke"])) is None:
@@ -180,7 +182,7 @@ def palette_swap(plugin: str, pay: dict[str, Any]) -> None:
 
 def _queried_strands(plugin: str, pay: dict[str, Any], q: QuestionProgram) -> set[int]:
     labels = [str(a).rsplit("_", 1)[-1] for s in q.steps for a in s.args if "start_" in str(a)]
-    if plugin == "tangle":
+    if plugin in TANGLES:
         return {pay["start_labels"].index(x) for x in labels if x in pay["start_labels"]}
     return {int(s) for s, lab in pay["sockets"].items() if lab in labels}
 
@@ -210,7 +212,7 @@ def step_down_candidates(plugin: str, pay: dict[str, Any], q: QuestionProgram) -
 
 
 def remove_crossing(plugin: str, pay: dict[str, Any], letter: int) -> None:
-    if plugin == "tangle":
+    if plugin in TANGLES:
         pay["word"][letter] = None  # an identity slot keeps the column layout
     else:
         del pay["word"][letter]

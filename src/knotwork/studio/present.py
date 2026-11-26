@@ -85,6 +85,9 @@ def difficulty_scores(
     if plugin == "tangle":
         load = (float(payload.get("n", 3)) - 3) / 7
         how = f"{payload.get('n')} cables"
+    elif plugin == "rack_patch":
+        load = (float(payload.get("n", 8)) - 8) / 6
+        how = f"{payload.get('n')} patch cables"
     elif plugin == "panel":
         load = (float(payload.get("k", 2)) - 2) / 2
         how = f"{payload.get('k')} gauges, {payload.get('n')} cables"
@@ -96,7 +99,7 @@ def difficulty_scores(
     parts = [float(surface.get("grain", 0.0)) / 6.0, float(surface.get("noise", 0.0))]
     parts.append((1.0 - float(surface.get("dpi_scale", 1.0))) * 2.0)
     stress = 0.5 * min(parts[0], 1.0) + parts[1] * 0.5 + parts[2] * 0.5
-    if plugin == "tangle":
+    if plugin in ("tangle", "rack_patch"):
         stress += (11.0 - float(payload.get("stroke", 9.0))) / 8.0 * 0.5
     reasoning = spec.get("reasoning_load")
     visual = spec.get("visual_stress")
@@ -248,3 +251,15 @@ def human_bytes(n: float) -> str:
             return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
         n /= 1024
     return f"{n:.1f} GB"
+
+
+def export_rows(out: Path, data: dict[str, Any]) -> list[dict[str, str]]:
+    """One row per exported file with its path relative to the output folder
+    (`harbor/index.json`, `parquet/train-00000.parquet`, `dataset_manifest.json`)."""
+    rows = [
+        {"Path": Path(name).as_posix(), "Size": human_bytes(int(info["bytes"]))}
+        for name, info in sorted(data["artifacts"].items())
+    ]
+    manifest = out / "dataset_manifest.json"
+    size = manifest.stat().st_size if manifest.is_file() else 0
+    return [*rows, {"Path": manifest.name, "Size": human_bytes(size)}]

@@ -26,7 +26,14 @@ LEVELS = [AUTO, *(i / 10 for i in range(11))]
 IMAGE_PX = 560
 CERTIFY_ATTEMPTS = 3
 HOLDOUT_EXAMPLES = {"tangle": "strands=9:10", "gauge": "radius_px=200:240", "panel": "gauges=4"}
-SAMPLE = ("tangle", "T1_TRACE", 1)  # a seven-strand braid: the flagship domain on first load
+SAMPLE = ("tangle", "T1_TRACE", 1)
+PLUGIN_LABELS = {"rack_patch": "Rack patch-bay"}
+
+
+def plugin_label(name: str) -> str:
+    return PLUGIN_LABELS.get(
+        name, name.replace("_", " ").title()
+    )  # a seven-strand braid: the flagship domain on first load
 
 
 # ------------------------------------------------------------------ state
@@ -187,8 +194,11 @@ def _batch_panel(plugin: str) -> None:
         params.split(),
         spec,
     )
-    st.code(factory.command_line(args), language="powershell", wrap_lines=True)
-    st.caption("Batches take the load, stress, occlusion and colour dials from Advanced Controls.")
+    with st.expander("Show CLI command", icon=":material/terminal:"):
+        st.code(factory.command_line(args), language="powershell", wrap_lines=True)
+        st.caption(
+            "Batches take the load, stress, occlusion and colour dials from Advanced Controls."
+        )
     job = st.session_state.get("batch")
     running = job is not None and job["process"].poll() is None
     missing = split == "ood" and not (held or params.strip())
@@ -233,7 +243,7 @@ def _summary(item: dict[str, Any]) -> None:
             st.caption(f"seed {item['seed']} · attempt {item['attempts']}")
         answer.metric("Certified answer", item["answer"] if certified else "none")
         task.metric(
-            "Plugin / family", item["plugin"].title(), item["family"],
+            "Plugin / family", plugin_label(item["plugin"]), item["family"],
             delta_color="off", delta_arrow="off",
         )  # fmt: skip
         load.metric("Reasoning", f"{scores['reasoning'][0]}/100", help=scores["reasoning"][1])
@@ -319,7 +329,7 @@ with rail:
     names = factory.plugin_names()
     plugin = str(
         st.segmented_control(
-            "Plugin", names, format_func=str.title, key="plugin", required=True, width="stretch"
+            "Plugin", names, format_func=plugin_label, key="plugin", required=True, width="stretch"
         )
     )
     st.pills(

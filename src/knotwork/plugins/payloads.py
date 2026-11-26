@@ -99,6 +99,13 @@ class TanglePayload(_Payload):
         return self
 
 
+class RackPatchPayload(TanglePayload):
+    """A tangle loom drawn as a rack patch bay: jacket style and per-port link LEDs."""
+
+    jacket: Literal["mono", "dual", "mixed"]
+    leds: list[list[int]] = Field(min_length=2, max_length=2)
+
+
 class GaugePayload(_Payload):
     dial: Dial
     render: Render
@@ -154,6 +161,7 @@ MODELS: dict[str, type[BaseModel]] = {
     "tangle": TanglePayload,
     "gauge": GaugePayload,
     "panel": PanelPayload,
+    "rack_patch": RackPatchPayload,
 }
 
 
