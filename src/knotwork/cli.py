@@ -259,13 +259,21 @@ def diversity(data: Path, out: Path, n: int, seed: int) -> None:
 @click.option(
     "--data", type=click.Path(path_type=Path, exists=True, file_okay=False), required=True
 )
-@click.option("--format", "fmt", type=click.Choice(["harbor", "hf", "rlvr", "all"]), default="all")
+@click.option(
+    "--format", "fmt", type=click.Choice(["harbor", "hf", "rlvr", "manifest", "all"]), default="all"
+)
 @click.option("--out", type=click.Path(path_type=Path), required=True)
 @click.option("--limit", type=click.IntRange(min=1), default=None)
-def export(data: Path, fmt: str, out: Path, limit: int | None) -> None:
-    """Export certified bundles to Harbor task folders, HF parquet and/or RLVR jsonl."""
+@click.option(
+    "--max-shard-mb",
+    type=click.FloatRange(min=0.001),
+    default=None,
+    help="Close a parquet shard at this size.",
+)
+def export(data: Path, fmt: str, out: Path, limit: int | None, max_shard_mb: float | None) -> None:
+    """Export certified bundles (Harbor, HF parquet, RLVR) and write dataset_manifest.json."""
     _set_network("deny")
-    _dispatch("export", data=data, fmt=fmt, out=out, limit=limit)
+    _dispatch("export", data=data, fmt=fmt, out=out, limit=limit, max_shard_mb=max_shard_mb)
 
 
 @cli.command()

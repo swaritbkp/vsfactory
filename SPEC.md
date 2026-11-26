@@ -1113,4 +1113,4 @@ spec leaves open. Never silently change a threshold.
   its seed path and editing the plugin payload, plus a `text_ir_twin`. Bundles whose scene the
   running version cannot re-sample get no visual twin (stated per item); gauge reading questions
   still get a text twin from kernel evidence. Gauges have no semantic cable palette, so their
-  palette swap rotates housing tones and keeps zone colours.
+  palette swap rotates housing tones and keeps zone colours.\n* D-42: Data product. Every export writes `dataset_manifest.json` (schema version, git commit,\n  `kernel_sha256`, font hashes, per-family / per-split cardinality, sealed fraction, canaries and\n  the SHA-256 of every exported file; no timestamps). Parquet embeds the 768-px PNG bytes, carries\n  the HuggingFace image feature metadata and is sharded by `--max-shard-mb`.\n

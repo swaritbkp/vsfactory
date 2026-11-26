@@ -29,8 +29,13 @@ def runner() -> CliRunner:
     return CliRunner()
 
 
-def test_all_ten_subcommands_registered(runner: CliRunner) -> None:
-    assert set(K.cli.commands) == COMMANDS == set(K.DISPATCH_TARGETS)
+#: v2 commands that import their implementation directly (no phase-gated dispatch table entry)
+DIRECT = {"telemetry", "counterfactual"}
+
+
+def test_all_subcommands_registered(runner: CliRunner) -> None:
+    assert set(K.DISPATCH_TARGETS) == COMMANDS
+    assert set(K.cli.commands) == COMMANDS | DIRECT
     res = runner.invoke(K.cli, ["--help"])
     assert res.exit_code == 0
     for c in COMMANDS:
