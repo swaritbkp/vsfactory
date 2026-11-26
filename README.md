@@ -20,7 +20,7 @@ the plugins that drew the scene.
 
 ## Quickstart (100 % offline, zero API keys)
 
-**15-second fast path.** After `uv sync --locked`, this builds a self-contained HTML report with
+**Fast path, about 20 seconds.** After `uv sync --locked`, this builds a self-contained HTML report with
 the benchmark and premise-control tables and four figures (fig01–fig04) from the committed live-run
 results in `samples/live_run`. The gate, fault-matrix and probe sections, fig05 and fig06 need
 locally generated `artifacts/`; all six figures are committed in [`docs/figures/`](docs/figures/).
