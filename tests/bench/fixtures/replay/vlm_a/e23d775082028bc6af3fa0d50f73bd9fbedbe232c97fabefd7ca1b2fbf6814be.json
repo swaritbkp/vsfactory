@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_id": "b4b6646839da3d10a348b892fd00ae511de9e475dd9ff2ea677e1c2c03e113f8",
+  "image_sha256": "ad01f0020e092f007accc0e96f341f4d98fa2c3d6ebf05c3b5d42d68db9f823b",
+  "model": "openai/gpt-5.4",
+  "prompt": "The image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal H. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+  "seed": 0,
+  "slot": "vlm_a"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: 3",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}

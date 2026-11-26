@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_id": "bc6b65a89b7384fd890716f176d9fee649ef245632678a9a8793094bd7b03569",
+  "image_sha256": "62d827aaf22e9d2b42e73475a79770c80f29727995ac7002f73127fdbe61632f",
+  "model": "google/gemini-2.5-flash",
+  "prompt": "What value does gauge G1 read?\nEnd your reply with a final line of the form 'ANSWER: <number>'.",
+  "seed": 0,
+  "slot": "vlm_b"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: 14.9",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}

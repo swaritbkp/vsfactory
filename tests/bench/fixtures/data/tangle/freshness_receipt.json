@@ -1,12 +1,12 @@
 {
  "beacon_url": null,
- "canary": "KNOTWORK-CANARY-b6e0a521ea6145919c99c35f00c71b6f",
+ "canary": "KNOTWORK-CANARY-1c811935a08fccf7e715d0bfcb48deb7",
  "emission_mask_commit": "82bb7bac7beae5b588afe1355a62fa965b700e022eab84001358a1a31479499b",
  "fetched_at_utc": null,
- "protocol_commit": "05ff8593555cd6b17ff698bac27dd4734e6d4f518b72183f40fa676ee5ac522f",
+ "protocol_commit": "fa5e79ac4475d3f788a6f691dfee34441137f1d4c0eedf9e36ac189c42cf4d5f",
  "randomness_hex": "0e5648c67dd3696545d143ca40ed085f7108fd5535379286526d9e2b44aae79f",
- "receipt_id": "b004170509504e23b5ec32dd4d491a0c7a8a88223b1164aa47c603aa97e6ba6f",
- "root_seed": 142864468473833613871217504479771837818,
+ "receipt_id": "49a5a40c675d018927095b6bfa89d49b02b8e0fddbf8d39ecd8f20118693a117",
+ "root_seed": 103192788367666567823302578089412187077,
  "round": 3,
  "source": "offline"
 }

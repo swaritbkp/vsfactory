@@ -1,0 +1,168 @@
+{
+ "claims": [
+  {
+   "args": [
+    "panel/terminal:start_R"
+   ],
+   "claim_id": "trace_R",
+   "expected": {
+    "canonical": "G1",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "G1"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "panel/terminal:start_x0"
+   ],
+   "claim_id": "trace_x0",
+   "expected": {
+    "canonical": "panel/terminal:end_pad1",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "panel/terminal:end_pad1"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "panel/terminal:start_P"
+   ],
+   "claim_id": "trace_P",
+   "expected": {
+    "canonical": "G2",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "G2"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "panel/terminal:start_x0",
+    "*"
+   ],
+   "claim_id": "cross_x0",
+   "expected": {
+    "canonical": "1",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 1
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "panel/terminal:start_x0",
+    "panel/terminal:start_R",
+    0
+   ],
+   "claim_id": "ontop_x0_R_0",
+   "expected": {
+    "canonical": "panel/terminal:start_x0",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "panel/terminal:start_x0"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "panel/terminal:start_P",
+    "*"
+   ],
+   "claim_id": "cross_P",
+   "expected": {
+    "canonical": "1",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 1
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "panel/terminal:start_P",
+    "panel/terminal:start_R",
+    0
+   ],
+   "claim_id": "ontop_P_R_0",
+   "expected": {
+    "canonical": "R",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "R"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "panel/terminal:start_R",
+    "*"
+   ],
+   "claim_id": "cross_R",
+   "expected": {
+    "canonical": "2",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 2
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "panel/gauge:g1"
+   ],
+   "claim_id": "read_g1",
+   "expected": {
+    "canonical": "47",
+    "tolerance": 0.0,
+    "type": "float",
+    "value": 47.0
+   },
+   "op": "READ"
+  },
+  {
+   "args": [
+    "panel/gauge:g1"
+   ],
+   "claim_id": "zone_g1",
+   "expected": {
+    "canonical": "green",
+    "tolerance": 0.0,
+    "type": "zone",
+    "value": "green"
+   },
+   "op": "ZONE"
+  },
+  {
+   "args": [
+    "panel/gauge:g2"
+   ],
+   "claim_id": "read_g2",
+   "expected": {
+    "canonical": "57",
+    "tolerance": 0.0,
+    "type": "float",
+    "value": 57.0
+   },
+   "op": "READ"
+  },
+  {
+   "args": [
+    "panel/gauge:g2"
+   ],
+   "claim_id": "zone_g2",
+   "expected": {
+    "canonical": "amber",
+    "tolerance": 0.0,
+    "type": "zone",
+    "value": "amber"
+   },
+   "op": "ZONE"
+  }
+ ],
+ "plugin": "panel"
+}

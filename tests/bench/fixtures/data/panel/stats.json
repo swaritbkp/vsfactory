@@ -4,25 +4,30 @@
   "P1_READ_TRACE": 5,
   "T_GASLIGHT": 1
  },
+ "difficulty": null,
  "false_quarantine_rate": 0.0,
  "families_expected": [
   "P1_READ_TRACE",
   "T_GASLIGHT"
  ],
+ "holdout": {},
  "n_base_certified": 6,
  "n_bundles": 6,
  "n_candidates": 6,
  "n_quarantined": 0,
  "n_requested": 6,
  "plugin": "panel",
+ "profile_overrides": null,
  "schedule": [
   "P1_READ_TRACE",
   "P1_READ_TRACE",
   "P1_READ_TRACE",
-  "T_GASLIGHT",
   "P1_READ_TRACE",
-  "P1_READ_TRACE"
+  "P1_READ_TRACE",
+  "T_GASLIGHT"
  ],
- "seconds": 13.5,
+ "seconds": 16.6,
+ "shard_size": 0,
+ "split": "test",
  "workers": 0
 }
