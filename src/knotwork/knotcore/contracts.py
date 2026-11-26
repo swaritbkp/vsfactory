@@ -26,7 +26,7 @@ from pydantic import (
 if TYPE_CHECKING:
     from knotwork.knotcore.seeds import SeedTree
 
-SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION = "1.1.0"
 KERNEL_VERSION = "1.0.0"
 CANVAS_PX = 1024
 CONSUMPTION_PX = 768
@@ -194,6 +194,7 @@ class Split(StrEnum):
     DEV = "dev"
     TEST = "test"
     SEALED = "sealed"
+    OOD = "ood"
 
 
 class PixelBox(_Model):
@@ -252,7 +253,7 @@ class GaugeEntry(_Model):
 
 
 class RenderManifest(_Model):
-    schema_version: Literal["1.0.0"] = "1.0.0"
+    schema_version: Literal["1.0.0", "1.1.0"] = "1.1.0"
     plugin: str
     canvas: tuple[int, int] = (CANVAS_PX, CANVAS_PX)
     supersample: int = SUPERSAMPLE
@@ -331,6 +332,20 @@ class Premise(_Model):
     holds: bool
 
 
+class DifficultySpec(_Model):
+    """Independent difficulty dials in [0, 1]; None keeps the generation profile's own ranges."""
+
+    reasoning_load: float | None = Field(default=None, ge=0.0, le=1.0)
+    visual_stress: float | None = Field(default=None, ge=0.0, le=1.0)
+    occlusion_level: float | None = Field(default=None, ge=0.0, le=1.0)
+    stroke_px: float | None = Field(default=None, ge=4.0, le=16.0)
+    jitter_px: float | None = Field(default=None, ge=0.0, le=24.0)
+    realism: float | None = Field(default=None, ge=0.0, le=1.0)
+    noise: float | None = Field(default=None, ge=0.0, le=1.0)
+    dpi_scale: float | None = Field(default=None, ge=0.5, le=1.0)
+    color_regime: Literal["unique", "partial", "mono"] | None = None
+
+
 class QuestionProgram(_Model):
     program_id: str
     family: Family
@@ -340,6 +355,7 @@ class QuestionProgram(_Model):
     options: list[str] | None = None
     premise: Premise | None = None
     difficulty: dict[str, float] = Field(default_factory=dict)
+    difficulty_spec: DifficultySpec | None = None
 
     @model_validator(mode="after")
     def _refs_resolve(self) -> QuestionProgram:
@@ -446,7 +462,7 @@ class TwinRefs(_Model):
 
 
 class TaskBundle(_Model):
-    schema_version: Literal["1.0.0"] = "1.0.0"
+    schema_version: Literal["1.0.0", "1.1.0"] = "1.1.0"
     bundle_id: str = Field(pattern=BUNDLE_ID)
     plugin: str
     family: Family
@@ -502,7 +518,9 @@ class TaskPlugin(Protocol):
     version: str
     families: tuple[Family, ...]
 
-    def sample_scene(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR: ...
+    def sample_scene(
+        self, seeds: SeedTree, profile: dict[str, Any], difficulty: DifficultySpec | None = None
+    ) -> SceneIR: ...
 
     def render(
         self, scene: SceneIR, out_dir: Path, fault: FaultCode | None = None

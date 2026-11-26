@@ -15,6 +15,7 @@ from knotwork.knotcore.contracts import (
     AnswerType,
     Claim,
     ClaimSet,
+    DifficultySpec,
     Family,
     FaultCode,
     Op,
@@ -23,6 +24,7 @@ from knotwork.knotcore.contracts import (
     SceneIR,
 )
 from knotwork.knotcore.seeds import SeedTree
+from knotwork.plugins.difficulty import adjust_profile, finalize_scene, restress, with_difficulty
 from knotwork.plugins.tangle import braid, geom, layout
 from knotwork.plugins.tangle.render import halo_mask, hex_rgb, render_tangle
 from knotwork.render import realism
@@ -100,7 +102,14 @@ class TanglePlugin:
     families = (Family.T1_TRACE, Family.T2_CROSS, Family.T3_ONTOP)
 
     # ------------------------------------------------------------------ scene
-    def sample_scene(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR:
+    def sample_scene(
+        self, seeds: SeedTree, profile: dict[str, Any], difficulty: DifficultySpec | None = None
+    ) -> SceneIR:
+        if difficulty is not None:
+            profile = adjust_profile(self.name, profile, difficulty)
+        return finalize_scene(self._sample(seeds, profile), difficulty)
+
+    def _sample(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR:
         """Sample a braid scene. ``profile["_family"]`` (optional) conditions T2 on a target count."""
         prof, rng = profile["tangle"], seeds.rng()
         family = profile.get("_family")
@@ -206,6 +215,9 @@ class TanglePlugin:
         return ClaimSet(plugin=self.name, claims=out)
 
     def questions(self, scene: SceneIR, seeds: SeedTree, family: Family) -> QuestionProgram:
+        return with_difficulty(self._question(scene, seeds, family), scene.payload)
+
+    def _question(self, scene: SceneIR, seeds: SeedTree, family: Family) -> QuestionProgram:
         pay, rng = scene.payload, seeds.rng()
         n, word, labels = pay["n"], word_of(pay), pay["start_labels"]
         pid = f"tangle/{family.value}/{seeds.digest()[:16]}"
@@ -334,6 +346,7 @@ class TanglePlugin:
                     k, i = slots[0]
                     trial["word"] = _fill(trial["word"], k, i, int(rng.choice([1, -1])))
             if geom.validate(lay_of(trial), n, float(pay["stroke"])) is None:
+                restress(self.name, trial)
                 return _scene(scene, trial)
         raise TwinUnavailable("no valid nuisance layout")
 

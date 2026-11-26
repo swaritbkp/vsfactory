@@ -136,10 +136,21 @@ def cli() -> None:
     type=click.Path(path_type=Path, exists=True, dir_okay=False),
     default=Path("configs/default_profile.yaml"),
 )
-@click.option("--split", type=click.Choice(["dev", "test", "sealed"]), default="dev")
+@click.option("--split", type=click.Choice(["dev", "test", "sealed", "ood"]), default="dev")
 @click.option("--twins/--no-twins", default=True, help="Emit causal + nuisance twins.")
 @click.option("--families", type=str, default=None, help="Comma list; default = profile mix.")
 @click.option("--workers", type=click.IntRange(min=0), default=1, help="0 = cpu_count - 1.")
+@click.option(
+    "--holdout-family", multiple=True, help="Family held out for the ood split (repeatable)."
+)
+@click.option(
+    "--holdout-param", multiple=True, help="Held-out parameter, e.g. strands=9:10 (repeatable)."
+)
+@click.option("--shard-size", type=click.IntRange(min=0), default=0, help="Slots per bundle shard.")
+@click.option("--reasoning-load", type=click.FloatRange(0, 1), default=None)
+@click.option("--visual-stress", type=click.FloatRange(0, 1), default=None)
+@click.option("--occlusion-level", type=click.FloatRange(0, 1), default=None)
+@click.option("--color-regime", type=click.Choice(["unique", "partial", "mono"]), default=None)
 def generate(
     plugin: str,
     n: int,
@@ -151,14 +162,29 @@ def generate(
     twins: bool,
     families: str | None,
     workers: int,
+    holdout_family: tuple[str, ...],
+    holdout_param: tuple[str, ...],
+    shard_size: int,
+    reasoning_load: float | None,
+    visual_stress: float | None,
+    occlusion_level: float | None,
+    color_regime: str | None,
 ) -> None:
     """Generate certified (image, question, answer, evidence) bundles."""
     if beacon != "offline" and seed is not None:
         raise click.UsageError("--seed is only valid with --beacon offline.")
     _set_network("deny" if beacon == "offline" else "beacon")
     fams = [f.strip() for f in families.split(",") if f.strip()] if families else None
+    if split == "ood" and not (holdout_family or holdout_param):
+        raise click.UsageError("--split ood needs --holdout-family and/or --holdout-param.")
+    dials = {"reasoning_load": reasoning_load, "visual_stress": visual_stress,
+             "occlusion_level": occlusion_level, "color_regime": color_regime}  # fmt: skip
     _dispatch(
         "generate",
+        holdout_families=list(holdout_family) or None,
+        holdout_params=list(holdout_param) or None,
+        shard_size=shard_size,
+        difficulty={k: v for k, v in dials.items() if v is not None} or None,
         plugin=plugin,
         n=n,
         out=out,
@@ -318,6 +344,27 @@ def report(artifacts: Path, out: Path) -> None:
     """Build the self-contained report.html from artifacts/."""
     _set_network("deny")
     _dispatch("report", artifacts=artifacts, out=out)
+
+
+@cli.command(name="telemetry")
+@click.option(
+    "--compare",
+    nargs=2,
+    type=click.Path(path_type=Path, exists=True),
+    default=None,
+    help="Two telemetry.json files (or dataset directories); exit 1 on a regression.",
+)
+@click.argument("path", type=click.Path(path_type=Path, exists=True), required=False)
+def telemetry_cmd(compare: tuple[Path, Path] | None, path: Path | None) -> None:
+    """Show one run's factory telemetry, or compare two runs."""
+    _set_network("deny")
+    from knotwork.pipeline import telemetry
+
+    if compare:
+        sys.exit(telemetry.run_compare(*compare))
+    if path is None:
+        raise click.UsageError("give a telemetry.json / dataset directory, or --compare A B.")
+    click.echo(json.dumps(telemetry.load(path), indent=1, sort_keys=True))
 
 
 @cli.command(name="new-plugin")

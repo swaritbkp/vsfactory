@@ -21,6 +21,7 @@ from typing import Any
 
 import numpy as np
 import numpy.typing as npt
+from PIL import Image
 from scipy import ndimage
 
 F32 = npt.NDArray[np.float32]
@@ -72,11 +73,23 @@ def soft(mask: npt.NDArray[np.bool_], grow: int, blur: float) -> F32:
     )
 
 
+def low_resolution(img: U8, scale: float) -> U8:
+    """The image as captured at `scale` of the output resolution and upsampled again (1 = as is)."""
+    if scale >= 1.0:
+        return img
+    h, w = img.shape[:2]
+    small = Image.fromarray(img).resize(
+        (max(1, round(w * scale)), max(1, round(h * scale))), Image.Resampling.BOX
+    )
+    return np.asarray(small.resize((w, h), Image.Resampling.BILINEAR), dtype=np.uint8)
+
+
 def surface(img: U8, ids: npt.NDArray[np.uint16], bg: tuple[int, int, int], p: dict[str, Any],
             protect: F32) -> U8:  # fmt: skip
     """Uneven overhead lighting, brushed/powder grain, smudges, dust, sensor grain; then the
     background clamp. ``protect`` (0..1) attenuates every effect."""
     rng = np.random.default_rng(int(p["seed"]))
+    img = low_resolution(img, float(p.get("dpi_scale", 1.0)))
     h, w = img.shape[:2]
     f = img.astype(np.float32)
     x, y = _coords(img.shape)
@@ -99,7 +112,8 @@ def surface(img: U8, ids: npt.NDArray[np.uint16], bg: tuple[int, int, int], p: d
         dust[cy : cy + int(rng.integers(1, 3)), cx : cx + int(rng.integers(1, 3))] -= float(
             rng.uniform(10, 26)
         )
-    grain = rng.standard_normal((h, w)).astype(np.float32) * float(p["grain"])
+    sigma = float(p["grain"]) + 8.0 * float(p.get("noise", 0.0))  # film grain + sensor noise
+    grain = rng.standard_normal((h, w)).astype(np.float32) * sigma
     keep = (1.0 - 0.85 * protect)[..., None]
     tint = np.array([1.0, 0.96, 0.88], np.float32)  # smudges/grime read slightly warm-brown
     # smooth lighting applies everywhere (protected areas would otherwise read as pasted-on patches);

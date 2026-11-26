@@ -17,6 +17,7 @@ from knotwork.knotcore.contracts import (
     AnswerType,
     Claim,
     ClaimSet,
+    DifficultySpec,
     Family,
     FaultCode,
     Op,
@@ -28,6 +29,7 @@ from knotwork.knotcore.contracts import (
     TerminalEntry,
 )
 from knotwork.knotcore.seeds import SeedTree
+from knotwork.plugins.difficulty import adjust_profile, finalize_scene, restress, with_difficulty
 from knotwork.plugins.gauge.plugin import (
     float_answer,
     ordinal,
@@ -131,7 +133,14 @@ class PanelPlugin:
                 Family.P5_PREMISE_CONTROL, Family.T_GASLIGHT)  # fmt: skip
 
     # ------------------------------------------------------------------ scene
-    def sample_scene(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR:
+    def sample_scene(
+        self, seeds: SeedTree, profile: dict[str, Any], difficulty: DifficultySpec | None = None
+    ) -> SceneIR:
+        if difficulty is not None:
+            profile = adjust_profile(self.name, profile, difficulty)
+        return finalize_scene(self._sample(seeds, profile), difficulty)
+
+    def _sample(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR:
         prof, tprof, gprof, rng = profile["panel"], profile["tangle"], profile["gauge"], seeds.rng()
         family = profile.get("_family") or Family.P1_READ_TRACE.value
         regimes = tprof["color_regimes"]
@@ -387,8 +396,9 @@ class PanelPlugin:
         if family in PREMISE:
             holds = dial_zone(target_gauge(pay)) == pay["claimed"]
         span = float(pay["dials"][0]["vmax"]) - float(pay["dials"][0]["vmin"])
-        return program(family, f"panel/{family.value}/{seeds.digest()[:16]}", pay["target"],
-                       sorted(pay["sockets"].values()), pay["claimed"], holds, span)  # fmt: skip
+        question = program(family, f"panel/{family.value}/{seeds.digest()[:16]}", pay["target"],
+                           sorted(pay["sockets"].values()), pay["claimed"], holds, span)  # fmt: skip
+        return with_difficulty(question, pay)
 
     def twin_question(self, scene: SceneIR, base: QuestionProgram) -> QuestionProgram:
         """Twin's question: same program; premise truth (and so the family) re-derived from the twin."""
@@ -397,8 +407,9 @@ class PanelPlugin:
         holds = None
         if fam in PREMISE:
             holds = dial_zone(target_gauge(pay)) == pay["claimed"]
-        return program(fam, base.program_id, pay["target"], sorted(pay["sockets"].values()), pay["claimed"],
-                       holds, float(base.difficulty.get("span", 80.0)))  # fmt: skip
+        question = program(fam, base.program_id, pay["target"], sorted(pay["sockets"].values()),
+                           pay["claimed"], holds, float(base.difficulty.get("span", 80.0)))  # fmt: skip
+        return with_difficulty(question, pay)
 
     # ------------------------------------------------------------------ answers
     def symbolic_answer(self, scene: SceneIR, program: QuestionProgram) -> Answer:
@@ -484,6 +495,7 @@ class PanelPlugin:
         pay["surface"] = realism.sample_surface(rng, "brushed")
         tints = [t for t in ENCLOSURES if list(t) != pay["render"]["background_rgb"]]
         pay["render"]["background_rgb"] = list(tints[int(rng.integers(len(tints)))])
+        restress(self.name, pay)
         return _scene(scene, pay)
 
 

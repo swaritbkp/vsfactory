@@ -11,6 +11,143 @@
       "title": "AnswerType",
       "type": "string"
     },
+    "DifficultySpec": {
+      "additionalProperties": false,
+      "description": "Independent difficulty dials in [0, 1]; None keeps the generation profile's own ranges.",
+      "properties": {
+        "color_regime": {
+          "anyOf": [
+            {
+              "enum": [
+                "unique",
+                "partial",
+                "mono"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color Regime"
+        },
+        "dpi_scale": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.5,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dpi Scale"
+        },
+        "jitter_px": {
+          "anyOf": [
+            {
+              "maximum": 24.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Jitter Px"
+        },
+        "noise": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Noise"
+        },
+        "occlusion_level": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Occlusion Level"
+        },
+        "realism": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Realism"
+        },
+        "reasoning_load": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Load"
+        },
+        "stroke_px": {
+          "anyOf": [
+            {
+              "maximum": 16.0,
+              "minimum": 4.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stroke Px"
+        },
+        "visual_stress": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Visual Stress"
+        }
+      },
+      "title": "DifficultySpec",
+      "type": "object"
+    },
     "Family": {
       "enum": [
         "T1_TRACE",
@@ -128,6 +265,17 @@
       },
       "title": "Difficulty",
       "type": "object"
+    },
+    "difficulty_spec": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DifficultySpec"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "family": {
       "$ref": "#/$defs/Family"

@@ -14,6 +14,7 @@ from knotwork.knotcore.contracts import (
     AnswerType,
     Claim,
     ClaimSet,
+    DifficultySpec,
     Family,
     FaultCode,
     Op,
@@ -22,6 +23,7 @@ from knotwork.knotcore.contracts import (
     SceneIR,
 )
 from knotwork.knotcore.seeds import SeedTree
+from knotwork.plugins.difficulty import adjust_profile, finalize_scene, restress, with_difficulty
 from knotwork.plugins.gauge import geom
 from knotwork.plugins.gauge.render import M8_SWEEP, M9_SHIFT, bezel_width, draw_dial
 from knotwork.plugins.gauge.scale import ZONES, admissible, dial_zone, sample_zones
@@ -159,7 +161,14 @@ class GaugePlugin:
     version = "1.0.0"
     families = (Family.G1_READ, Family.G2_ZONE)
 
-    def sample_scene(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR:
+    def sample_scene(
+        self, seeds: SeedTree, profile: dict[str, Any], difficulty: DifficultySpec | None = None
+    ) -> SceneIR:
+        if difficulty is not None:
+            profile = adjust_profile(self.name, profile, difficulty)
+        return finalize_scene(self._sample(seeds, profile), difficulty)
+
+    def _sample(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR:
         """``profile["_family"] == "G2_ZONE"`` samples the needle zone uniformly (balanced answers)."""
         prof, rng = profile["gauge"], seeds.rng()
         draw = int(rng.integers(3))
@@ -220,10 +229,11 @@ class GaugePlugin:
         op = "READ" if family is Family.G1_READ else "ZONE"
         text = f"{PROMPTS[family]}\nEnd your reply with a final line of the form '{FORMAT[at]}'."
         span = float(d["vmax"]) - float(d["vmin"])
-        return QuestionProgram(program_id=f"gauge/{family.value}/{seeds.digest()[:16]}", family=family,
+        question = QuestionProgram(program_id=f"gauge/{family.value}/{seeds.digest()[:16]}", family=family,
                                steps=[{"step_id": "s0", "op": op, "args": [GID]}], text=text, answer_type=at,  # type: ignore[list-item]
                                options=list(ZONES) if at is AnswerType.ZONE else None,
                                difficulty={"span": span, "radius": float(d["radius"])})  # fmt: skip
+        return with_difficulty(question, scene.payload)
 
     def symbolic_answer(self, scene: SceneIR, program: QuestionProgram) -> Answer:
         d = scene.payload["dial"]
@@ -263,6 +273,7 @@ class GaugePlugin:
         pay["render"]["background_rgb"] = list(tints[int(rng.integers(len(tints)))])
         pay["surface"] = realism.sample_surface(rng, "brushed")
         pay["dial"]["band_inner"] = [0.90, 0.94][int(rng.integers(2))]
+        restress(self.name, pay)
         return _scene(scene, pay)
 
 

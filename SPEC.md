@@ -1098,4 +1098,14 @@ spec leaves open. Never silently change a threshold.
   run-seeded permutation. (f) The staircase steps by 2 until the third reversal, then 1, runs up to
   75 trials or 20 reversals, and reports a logistic maximum-likelihood `k*` over all trials; the
   mean of the last 6 reversals stays as `reversal_level`.
+* D-40: v2 control plane (owner direction). `SCHEMA_VERSION` 1.1.0 (1.0.0 bundles still load):
+  `QuestionProgram.difficulty_spec`, `Split.OOD`, and `sample_scene(seeds, profile,
+  difficulty=None)`; `plugins.payloads` validates each plugin's payload at that boundary while
+  `SceneIR.payload` stays opaque to the kernel; `plugins.difficulty` maps the three dials to
+  sampling ranges. `generate` streams results with a bounded number of slots in flight, can shard
+  `bundles/`, and writes `telemetry.json` and `lineage.jsonl`. Holdouts (`pipeline.ood`): `ood`
+  samples only held-out families / parameter ranges, other splits given the same holdout sample the
+  complement; `stats.json` records the overrides so scenes still rebuild from seed paths. Contract
+  and profile changes move the protocol commit, so regenerate the golden
+  (`knot selftest --update-golden`) and the bench fixtures.
 
