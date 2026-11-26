@@ -1,0 +1,231 @@
+"""Interactive generation: one certified item at a time, overlays, fault proofs and batch commands."""
+
+from __future__ import annotations
+
+import inspect
+import shlex
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+from PIL import Image, ImageDraw
+
+from knotwork.knotcore.contracts import (
+    CONSUMPTION_PX,
+    DifficultySpec,
+    Family,
+    FaultCode,
+    RenderManifest,
+)
+from knotwork.knotcore.cvd import simulate
+from knotwork.knotcore.seeds import SeedTree
+from knotwork.pipeline.certify import Candidate, run_candidate
+from knotwork.pipeline.generate import load_profile
+from knotwork.pipeline.io import read_json
+from knotwork.plugins.registry import available, fault_effective, get_plugin
+from knotwork.render.canvas import REPO_ROOT
+
+PROFILE_PATH = REPO_ROOT / "configs" / "default_profile.yaml"
+ATTEMPTS = 8
+OVERLAY_ALPHA = 0.55
+
+
+@dataclass
+class Generated:
+    candidate: Candidate
+    fault: FaultCode | None
+    attempts: int
+
+
+def profile() -> dict[str, Any]:
+    return load_profile(PROFILE_PATH)
+
+
+def plugin_names() -> list[str]:
+    return list(available())
+
+
+def families_of(plugin: str) -> list[str]:
+    return [f.value for f in get_plugin(plugin).families]
+
+
+def batch_ready(plugin: str) -> bool:
+    """Batch generation needs a profile section with family weights."""
+    return "families" in profile().get(plugin, {})
+
+
+def difficulty_from(dials: dict[str, Any]) -> DifficultySpec | None:
+    """A spec from UI values, ignoring the dials left on automatic (None)."""
+    chosen = {k: v for k, v in dials.items() if v is not None}
+    return DifficultySpec.model_validate(chosen) if chosen else None
+
+
+def generate_one(
+    plugin_name: str,
+    family: str,
+    seed: int,
+    out: Path,
+    difficulty: DifficultySpec | None = None,
+    fault: FaultCode | None = None,
+) -> Generated:
+    """Sample, render and certify one item; resample (up to `ATTEMPTS`) while the plugin finds no
+    legible scene or the requested fault would have no effect."""
+    plugin = get_plugin(plugin_name)
+    prof = dict(profile(), _family=family)
+    takes_dials = "difficulty" in inspect.signature(plugin.sample_scene).parameters
+    last = "no attempt made"
+    for attempt in range(ATTEMPTS):
+        at = SeedTree(seed).child("studio", plugin_name, family, attempt)
+        try:
+            kwargs = {"difficulty": difficulty} if takes_dials and difficulty else {}
+            scene = plugin.sample_scene(at.child("scene"), prof, **kwargs)
+            question = plugin.questions(scene, at.child("question"), Family(family))
+        except RuntimeError as exc:
+            last = str(exc)
+            continue
+        if fault is not None and not fault_effective(plugin_name, scene, fault):
+            last = f"{fault.value} has no effect on the sampled scenes"
+            continue
+        candidate = run_candidate(plugin, scene, question, out, prof, fault)
+        return Generated(candidate, fault, attempt + 1)
+    raise RuntimeError(f"no item after {ATTEMPTS} attempts: {last}")
+
+
+# ------------------------------------------------------------------ views of a bundle directory
+def beauty(bundle: Path, size: int | None = None) -> Image.Image:
+    path = bundle / "beauty.png"
+    path = path if path.is_file() else bundle / "image.jpg"
+    with Image.open(path) as im:
+        rgb = im.convert("RGB")
+    return rgb.resize((size, size), Image.Resampling.LANCZOS) if size else rgb
+
+
+def manifest(bundle: Path) -> RenderManifest:
+    return RenderManifest.model_validate(read_json(bundle / "manifest.json"))
+
+
+def _palette(ids: np.ndarray) -> np.ndarray:
+    """A stable bright colour per object id; background stays black."""
+    r = (ids * 97 + 53) % 206 + 50
+    g = (ids * 57 + 131) % 206 + 50
+    b = (ids * 163 + 11) % 206 + 50
+    rgb = np.stack([r, g, b], axis=-1).astype(np.uint8)
+    rgb[ids == 0] = 0
+    return rgb
+
+
+def id_buffer_image(bundle: Path) -> Image.Image:
+    ids = np.asarray(Image.open(bundle / "id_buffer.png"), dtype=np.int64)
+    return Image.fromarray(_palette(ids))
+
+
+def mask_overlay(bundle: Path, obj_id: int) -> Image.Image:
+    """The beauty image with one object's amodal mask tinted magenta."""
+    base = np.asarray(beauty(bundle), dtype=np.float64)
+    mask = np.asarray(Image.open(bundle / manifest(bundle).obj(obj_id).mask)) > 0
+    base[mask] = (1 - OVERLAY_ALPHA) * base[mask] + OVERLAY_ALPHA * np.array([255.0, 0.0, 255.0])
+    return Image.fromarray(base.astype(np.uint8))
+
+
+def witness_overlay(bundle: Path, certificate: dict[str, Any]) -> Image.Image:
+    """Kernel evidence drawn on the beauty: crossing centres (cyan), dial centres and needle axes
+    (blue), terminals (green) and the objects of failed checks (red boxes)."""
+    img = beauty(bundle).copy()
+    draw = ImageDraw.Draw(img)
+    man = manifest(bundle)
+
+    def ring(xy: Any, r: float, color: tuple[int, int, int]) -> None:
+        x, y = float(xy[0]), float(xy[1])
+        draw.ellipse([x - r, y - r, x + r, y + r], outline=color, width=3)
+
+    for t in man.terminals:
+        draw.rectangle([t.box.x0, t.box.y0, t.box.x1, t.box.y1], outline=(0, 150, 60), width=2)
+    for step in certificate.get("steps", []):
+        evidence = step.get("evidence", {})
+        for c in evidence.get("crossings", []):
+            ring(c["center"], 14, (0, 190, 210))
+        if "top_obj" in evidence:
+            ring(evidence["center"], 18, (0, 190, 210))
+        if "tip" in evidence:
+            ring(evidence["center"], 6, (30, 80, 230))
+            ring(evidence["tip"], 9, (30, 80, 230))
+            draw.line([*evidence["center"], *evidence["tip"]], fill=(30, 80, 230), width=2)
+    for check in certificate.get("checks", []):
+        if check["passed"] or check.get("obj_id") is None:
+            continue
+        mask = np.asarray(Image.open(bundle / man.obj(check["obj_id"]).mask)) > 0
+        ys, xs = np.nonzero(mask)
+        if len(xs):
+            box = [int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())]
+            draw.rectangle(box, outline=(220, 20, 20), width=3)
+            draw.text((box[0] + 4, box[1] + 4), check["code"], fill=(220, 20, 20))
+    return img
+
+
+def cvd_preview(bundle: Path, kind: str) -> Image.Image:
+    """The beauty image as seen with `kind` ("protanopia" or "deuteranopia")."""
+    return Image.fromarray(simulate(np.asarray(beauty(bundle)), kind).round().astype(np.uint8))
+
+
+def consumption(bundle: Path) -> Image.Image:
+    """What a model sees: the image at the consumption resolution."""
+    return beauty(bundle, CONSUMPTION_PX)
+
+
+# ------------------------------------------------------------------ batch builds
+def batch_command(
+    plugin: str,
+    n: int,
+    out: Path,
+    seed: int = 0,
+    split: str = "dev",
+    twins: bool = True,
+    workers: int = 0,
+    shard_size: int = 0,
+    holdout_families: list[str] | None = None,
+    holdout_params: list[str] | None = None,
+    difficulty: DifficultySpec | None = None,
+) -> list[str]:
+    """Arguments of the equivalent `knot generate` call (the dials the CLI exposes)."""
+    args = ["generate", "--plugin", plugin, "--n", str(n), "--out", str(out), "--seed", str(seed),
+            "--split", split, "--twins" if twins else "--no-twins", "--workers", str(workers),
+            "--shard-size", str(shard_size)]  # fmt: skip
+    for family in holdout_families or []:
+        args += ["--holdout-family", family]
+    for param in holdout_params or []:
+        args += ["--holdout-param", param]
+    if difficulty is not None:
+        flags = {"reasoning_load": "--reasoning-load", "visual_stress": "--visual-stress",
+                 "occlusion_level": "--occlusion-level", "color_regime": "--color-regime"}  # fmt: skip
+        for name, flag in flags.items():
+            value = getattr(difficulty, name)
+            if value is not None:
+                args += [flag, str(value)]
+    return args
+
+
+def command_line(args: list[str]) -> str:
+    return "uv run knot " + " ".join(shlex.quote(a.replace("\\", "/")) for a in args)
+
+
+def start_batch(args: list[str], log: Path) -> subprocess.Popen[bytes]:
+    """Run `knot generate` in its own process (worker pools do not mix with the UI process)."""
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("wb") as sink:
+        return subprocess.Popen(
+            [sys.executable, "-m", "knotwork", *args],
+            cwd=REPO_ROOT,
+            stdout=sink,
+            stderr=subprocess.STDOUT,
+        )
+
+
+def batch_progress(out: Path) -> int:
+    """Base items written so far."""
+    index = out / "index.jsonl"
+    if not index.is_file():
+        return 0
+    return sum('"role": "base"' in line for line in index.read_text(encoding="utf-8").splitlines())
