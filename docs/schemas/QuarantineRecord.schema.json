@@ -11,6 +11,7 @@
         "E_UNEXPLAINED_INK",
         "E_BEAUTY_MISMATCH",
         "E_OCCLUDED_CROSSING",
+        "E_WITNESS_OCCLUDED",
         "E_TANGENT_CROSSING",
         "E_ILLEGIBLE_RES",
         "E_NEEDLE_OFFCENTER",

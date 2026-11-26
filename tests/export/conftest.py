@@ -1,25 +1,18 @@
-"""A small dev dataset (every family, with twins) and its full export, shared by the export tests."""
+"""The shared dev dataset (every family, with twins) and its full export for the export tests."""
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import pytest
 
-REPO = Path(__file__).resolve().parents[2]
-
 
 @pytest.fixture(scope="session")
-def export_data(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    from knotwork.pipeline.generate import run_generate
-
+def export_data(datasets: Path, tmp_path_factory: pytest.TempPathFactory) -> Path:
     root = tmp_path_factory.mktemp("export_data")
-    for plugin, n in (("tangle", 3), ("gauge", 2), ("panel", 6)):
-        rc = run_generate(
-            plugin, n, root / plugin, 21, "offline", REPO / "configs/default_profile.yaml",
-            "dev", True, None, 0,
-        )  # fmt: skip
-        assert rc == 0, plugin
+    for plugin in ("tangle", "gauge", "panel"):
+        shutil.copytree(datasets / f"data_{plugin}", root / plugin)
     return root
 
 

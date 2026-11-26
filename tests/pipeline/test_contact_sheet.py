@@ -11,8 +11,10 @@ from knotwork.pipeline.contact_sheet import build
 from knotwork.pipeline.io import read_json
 
 
-def test_contact_sheet(datasets: Path, mutate_run: dict[str, Any], profile_path: Path) -> None:
-    out = datasets / "sheet.png"
+def test_contact_sheet(
+    datasets: Path, mutate_run: dict[str, Any], profile_path: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "sheet.png"
     build(datasets, out, profile_path, fault_report=mutate_run["path"])
     w, h = Image.open(out).size
     assert w >= 2048 and h >= 1536

@@ -302,24 +302,21 @@ def round_half_up(x: float) -> int:
 
 # ===================================================================== core gates
 def gate_loc() -> str:
-    from knotwork.devtools.kernel_audit import EXECUTABLE_LOC_CAP, TOTAL_LOC_CAP, loc_report
+    """Informational LOC telemetry (SPEC D-38): over-budget counts warn and never fail."""
+    from knotwork.devtools.kernel_audit import loc_report
 
     rep = loc_report()
     table = ", ".join(f"{k}={v}" for k, v in sorted(rep.per_file.items()))
-    require(
-        rep.executable <= EXECUTABLE_LOC_CAP,
-        f"executable LOC {rep.executable} > {EXECUTABLE_LOC_CAP}: {table}",
-    )
-    require(rep.total <= TOTAL_LOC_CAP, f"total LOC {rep.total} > {TOTAL_LOC_CAP}: {table}")
-    return f"{rep.summary()}; {table}"
+    warned = "".join(f" WARNING: {w};" for w in rep.warnings())
+    return f"{rep.summary()};{warned} {table}"
 
 
 def gate_ast_isolation() -> str:
-    from knotwork.devtools.kernel_audit import scan_forbidden_imports
+    from knotwork.devtools.kernel_audit import tcb_report
 
-    v = scan_forbidden_imports()
-    require(not v, "; ".join(f"{x.file}:{x.line} {x.module} ({x.reason})" for x in v))
-    return "no forbidden imports in knotcore (AST scan)"
+    rep = tcb_report()
+    require(rep.ok, rep.summary())
+    return rep.summary()
 
 
 def gate_kernel_placeholders() -> str:
@@ -362,7 +359,9 @@ def gate_pytest(phases: list[int]) -> Callable[[], str]:
     def _gate() -> str:
         dirs = [d for ph in sorted(set(range(0, max(phases) + 1))) for d in PHASE_TESTS[ph]]
         require(all((REPO / d).is_dir() for d in dirs), f"missing test dirs among {dirs}")
-        cp = run([*tool("pytest"), "-q", "-p", "no:cacheprovider", *dirs], timeout=5400)
+        cp = run(
+            [*tool("pytest"), "-q", "-n", "auto", "-p", "no:cacheprovider", *dirs], timeout=5400
+        )
         summary = _tail(cp.stdout, 1)
         require("failed" not in summary and "error" not in summary, summary)
         return f"pytest {' '.join(dirs)} -> {summary}"
@@ -990,21 +989,28 @@ def gate_scaffold() -> str:
 
 
 def gate_ci_yaml() -> str:
+    """ci.yml runs the tiered fast checks; nightly.yml runs tier2 and the phase gates (D-38)."""
     import yaml
 
-    doc = yaml.safe_load((REPO / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
-    text = json.dumps(doc)
+    def text_of(name: str) -> str:
+        path = REPO / ".github/workflows" / name
+        require(path.is_file(), f"missing workflow {name}")
+        return json.dumps(yaml.safe_load(path.read_text(encoding="utf-8")))
+
+    ci, nightly = text_of("ci.yml"), text_of("nightly.yml")
     for needle in (
         "uv sync",
         "ruff check",
         "lint-imports",
-        "pytest",
+        "pytest -n auto -m tier0",
+        "pytest -n auto -m tier1",
         "knot selftest",
-        "verify_phase.py",
     ):
-        require(needle in text, f"ci.yml missing step containing `{needle}`")
-    require("ubuntu" in text, "ci.yml must run on ubuntu")
-    return "ci.yml has uv sync, ruff, lint-imports, pytest, selftest, verify_phase"
+        require(needle in ci, f"ci.yml missing step containing `{needle}`")
+    for needle in ("verify_phase.py", "pytest -n auto -m tier2", "schedule", "workflow_dispatch"):
+        require(needle in nightly, f"nightly.yml missing `{needle}`")
+    require("ubuntu" in ci and "ubuntu" in nightly, "workflows must run on ubuntu")
+    return "ci.yml: uv sync, ruff, lint-imports, tier0, tier1, selftest; nightly.yml: tier2, gates"
 
 
 # ===================================================================== phase 5

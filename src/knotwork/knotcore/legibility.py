@@ -12,23 +12,41 @@ import numpy as np
 from scipy import ndimage
 
 from knotwork.knotcore.contracts import ErrorCode, WitnessCheck
-from knotwork.knotcore.io import BoolArr, Bundle, KernelFault, sl
+from knotwork.knotcore.io import Bundle, KernelFault, sl
 from knotwork.knotcore.ocr import label_text
-from knotwork.knotcore.topo import crossings, strand_of, stroke
+from knotwork.knotcore.topo import (
+    Crossing,
+    Pixels,
+    crossings,
+    overlaps,
+    pixels,
+    strand_of,
+    stroke,
+)
 from knotwork.knotcore.witness import _chk
 
 E = ErrorCode
 SCALE = 0.75
 
 
-def _direction(m: BoolArr, c: list[float], r: float) -> np.ndarray[Any, np.dtype[np.float64]]:
-    ys, xs = np.nonzero(m)
+def _direction(px: Pixels, c: list[float], r: float) -> np.ndarray[Any, np.dtype[np.float64]]:
+    ys, xs = px
     near = np.hypot(xs - c[0], ys - c[1]) <= r
     p = np.stack([xs[near], ys[near]], axis=1).astype(np.float64)
     if len(p) < 3:
         return np.zeros(2)
     w, v = np.linalg.eigh(np.cov((p - p.mean(axis=0)).T))
     return np.asarray(v[:, int(np.argmax(w))], dtype=np.float64)
+
+
+def _strand_crossings(b: Bundle, start: str, sa: int) -> tuple[list[Crossing], float]:
+    """(crossings of the strand, smallest geodesic gap between neighbours). The geodesic sweep is
+    needed only for two or more crossings; pairwise overlaps are shared between all strands."""
+    cs = [{**x, "other": o} for o in b.kind("strand") if o != sa for x in overlaps(b, sa, o)]
+    if len(cs) < 2:
+        return cs, math.inf
+    cs = crossings(b, start, "*")
+    return cs, float(np.diff([c["geo"] for c in cs]).min())
 
 
 def legibility(b: Bundle, cfg: dict[str, Any]) -> list[WitnessCheck]:
@@ -42,18 +60,16 @@ def legibility(b: Bundle, cfg: dict[str, Any]) -> list[WitnessCheck]:
     for t in (t for t in b.manifest.terminals if t.role == "start"):
         try:
             sa = strand_of(b, t.terminal_id)
-            cs = crossings(b, t.terminal_id, "*")
+            cs, gap = _strand_crossings(b, t.terminal_id, sa)
         except KernelFault:
             continue
         s = strokes[sa]
         for c in cs:
-            u, v = (_direction(b.masks[o], c["center"], 3 * s) for o in (sa, c["other"]))
+            u, v = (_direction(pixels(b, o), c["center"], 3 * s) for o in (sa, c["other"]))
             ang = math.degrees(math.acos(min(1.0, abs(float(u @ v)))))
             out.append(
                 _chk("crossing_angle", sa, ang >= min_ang, ang, min_ang, E.E_TANGENT_CROSSING)
             )
-        gaps = np.diff([c["geo"] for c in cs])
-        gap = float(gaps.min()) if len(gaps) else math.inf
         ok = gap >= gap_k * s
         out.append(_chk("crossing_spacing", sa, ok, min(gap, 1e9), gap_k * s, E.E_CROSSING_SPACING))
     k_clear = float(g["min_terminal_clearance_strokes"])
@@ -70,9 +86,10 @@ def legibility(b: Bundle, cfg: dict[str, Any]) -> list[WitnessCheck]:
             if oid not in (own, t.label_obj):
                 other |= m[win]
         inside = np.zeros_like(other)
+        rows, cols = sl(t.box)
         inside[
-            t.box.y0 - win[0].start : t.box.y1 - win[0].start,
-            t.box.x0 - win[1].start : t.box.x1 - win[1].start,
+            rows.start - win[0].start : max(rows.stop - win[0].start, 0),
+            cols.start - win[1].start : max(cols.stop - win[1].start, 0),
         ] = True
         dist = np.asarray(ndimage.distance_transform_edt(~other), dtype=np.float64)
         d = float(dist[inside].min()) if other.any() and inside.any() else float(pad)

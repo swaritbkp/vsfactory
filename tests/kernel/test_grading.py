@@ -27,7 +27,7 @@ PREM = Answer(
 
 CASES: list[tuple[Any, Answer, float]] = [
     ("7", LABEL, 1.0), (" 7 ", LABEL, 1.0), ("I think it ends at 7.\nANSWER: 7", LABEL, 1.0),
-    ("ANSWER: 6\nANSWER: 7", LABEL, 1.0), ("ANSWER: 7\nANSWER: 6", LABEL, 0.0), ("it is 7", LABEL, 0.0),
+    ("ANSWER: 6\nANSWER: 7", LABEL, 0.0), ("ANSWER: 7\nANSWER: 6", LABEL, 0.0), ("it is 7", LABEL, 0.0),
     ("answer: c", LETTER, 1.0), ("ANSWER: D", LETTER, 0.0), ("Ｃ", LETTER, 1.0),
     ("ANSWER: 3", INT, 1.0), ("three crossings, ANSWER: 3 times", INT, 1.0), ("ANSWER: 4", INT, 0.0),
     (3, INT, 1.0), (True, INT, 0.0), ("2 or 3\nANSWER: 2", INT, 0.0), ("none", INT, 0.0),

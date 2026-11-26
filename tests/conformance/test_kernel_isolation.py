@@ -1,7 +1,8 @@
 """Kernel isolation conformance (layer 2 of 2; layer 1 is import-linter via `.importlinter`).
 
-* knotcore stays within both LOC caps: executable modules (all except contracts.py) <= 850 and
-  all modules <= 1350 non-blank, non-comment, non-docstring lines.
+* the LOC budgets are reported as telemetry (warnings, never failures; D-38).
+* the TCB contract holds: allow-listed imports only, no network / process / dynamic-code modules,
+  no `SceneIR.payload` access, deterministic `kernel_sha256`.
 * knotcore never imports plugins / higher layers / network / geometry-truth / UI libraries,
   directly, relatively, or dynamically.
 * knotcore, and the whole of src/, contain no placeholder markers (the scanner must not flag itself).
@@ -11,6 +12,7 @@ from __future__ import annotations
 
 import configparser
 import textwrap
+import warnings
 from pathlib import Path
 
 import pytest
@@ -39,12 +41,60 @@ def test_loc_counter_definition() -> None:
     assert ka.count_loc_source(src) == 5
 
 
-def test_knotcore_loc_within_caps() -> None:
+def test_knotcore_loc_telemetry() -> None:
     rep = ka.loc_report()
-    table = "\n".join(f"  {k:<28} {v:>5}" for k, v in sorted(rep.per_file.items()))
-    assert rep.executable <= ka.EXECUTABLE_LOC_CAP, f"{rep.summary()}\n{table}"
-    assert rep.total <= ka.TOTAL_LOC_CAP, f"{rep.summary()}\n{table}"
+    for message in rep.warnings():
+        warnings.warn(message, stacklevel=1)
     assert rep.executable == rep.total - rep.per_file.get("contracts.py", 0)
+    assert rep.executable > 0 and rep.summary().startswith("knotcore executable LOC")
+
+
+def test_loc_over_budget_warns_without_failing() -> None:
+    over = ka.LocReport(per_file={}, executable=9999, total=19999)
+    assert len(over.warnings()) == 2 and not over.ok
+    assert ka.LocReport(per_file={}, executable=1, total=2).warnings() == []
+
+
+def test_tcb_contract_holds() -> None:
+    rep = ka.tcb_report()
+    assert rep.ok, rep.summary()
+    assert rep.kernel_sha256 == ka.kernel_sha256()
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "import requests",
+        "import torch",
+        "import yaml",
+        "import urllib.parse",
+        "import subprocess",
+        "from knotwork import render",
+        "from knotwork.render import canvas",
+        "eval('1')",
+        "def f(scene):\n    return scene.payload",
+        "def f(d):\n    return d['payload']",
+        "def f(d):\n    return getattr(d, 'payload')",
+        "from knotwork.knotcore.contracts import SceneIR",
+    ],
+)
+def test_tcb_rejects_planted_violation(tmp_path: Path, line: str) -> None:
+    kernel = tmp_path / "src" / "knotwork" / "knotcore"
+    kernel.mkdir(parents=True)
+    (kernel / "bad.py").write_text(line + "\n", encoding="utf-8")
+    assert not ka.tcb_report(kernel, tmp_path / "src").ok, line
+
+
+def test_tcb_accepts_allowed_imports(tmp_path: Path) -> None:
+    kernel = tmp_path / "src" / "knotwork" / "knotcore"
+    kernel.mkdir(parents=True)
+    (kernel / "good.py").write_text(
+        "import hashlib\nimport numpy as np\nfrom scipy import ndimage\nfrom PIL import Image\n"
+        "from pydantic import BaseModel\nfrom skimage.graph import MCP_Geometric\n"
+        "from rapidocr_onnxruntime import RapidOCR\nfrom knotwork.knotcore import contracts\n",
+        encoding="utf-8",
+    )
+    assert ka.tcb_report(kernel, tmp_path / "src").ok
 
 
 def test_loc_caps_are_the_specified_values() -> None:

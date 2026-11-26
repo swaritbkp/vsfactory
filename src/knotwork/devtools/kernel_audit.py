@@ -1,4 +1,4 @@
-"""Static audits of the trusted kernel: LOC budget, forbidden imports, placeholder markers.
+"""Static audits of the trusted kernel: TCB invariants, LOC telemetry, placeholder markers.
 
 Shared by tests/conformance/test_kernel_isolation.py and scripts/verify_phase.py so both layers
 measure exactly the same thing.
@@ -7,9 +7,18 @@ LOC definition (SPEC.md section 2.2): a physical line counts iff it carries at l
 token other than COMMENT / NL / NEWLINE / INDENT / DEDENT / ENCODING / ENDMARKER and it is not part
 of a module, class or function docstring.
 
-Two caps are enforced (SPEC.md section 2.2):
+The two LOC budgets (SPEC.md section 2.2) are informational telemetry (D-38): exceeding one
+produces a warning, never a failure:
 * EXECUTABLE_LOC_CAP (850): every knotcore module except the declarative schema file contracts.py.
 * TOTAL_LOC_CAP (1350): all knotcore modules including contracts.py.
+
+The trusted-computing-base contract IS enforced (`tcb_report`):
+* imports are allow-listed: standard library, numpy, scipy, skimage, PIL, pydantic,
+  rapidocr_onnxruntime and knotwork.knotcore itself;
+* no module that opens sockets, spawns processes, loads native code or imports dynamically, and no
+  eval / exec / compile calls;
+* no access to `SceneIR.payload`, and no use of `SceneIR` outside the schema module;
+* `kernel_sha256` is a pure function of file names and newline-normalised bytes.
 """
 
 from __future__ import annotations
@@ -18,6 +27,7 @@ import ast
 import hashlib
 import io
 import re
+import sys
 import tokenize
 from dataclasses import dataclass
 from pathlib import Path
@@ -63,6 +73,21 @@ FORBIDDEN_EXTERNAL = (
     "urllib.request",
     "http.client",
     "socket",
+    "socketserver",
+    "ssl",
+    "http",
+    "urllib",
+    "ftplib",
+    "poplib",
+    "imaplib",
+    "smtplib",
+    "xmlrpc",
+    "webbrowser",
+    "subprocess",
+    "multiprocessing",
+    "asyncio",
+    "ctypes",
+    "importlib",
     "shapely",
     "streamlit",
     "sklearn",
@@ -71,7 +96,13 @@ FORBIDDEN_EXTERNAL = (
     "pyarrow",
     "random",
 )
+#: third-party top-level packages the kernel may import, besides the standard library and itself
+ALLOWED_THIRD_PARTY = frozenset(
+    {"numpy", "scipy", "skimage", "PIL", "pydantic", "rapidocr_onnxruntime"}
+)
+KERNEL_PACKAGE = "knotwork.knotcore"
 _DYNAMIC_IMPORT_CALLS = {"__import__", "import_module"}
+_DYNAMIC_CODE_CALLS = {"eval", "exec", "compile"}
 # Built from fragments so this file does not flag itself when src/ is scanned.
 _MARKERS = ("TO" + "DO", "FIX" + "ME", "X" + "XX", "HA" + "CK")
 _PLACEHOLDER_RE = re.compile(r"\b(" + "|".join(_MARKERS) + r")\b|" + "NotImpl" + "ementedError")
@@ -116,7 +147,8 @@ def count_loc_file(path: Path) -> int:
 
 
 def kernel_files(kernel_dir: Path = KNOTCORE_DIR) -> list[Path]:
-    return sorted(p for p in kernel_dir.rglob("*.py") if "__pycache__" not in p.parts)
+    found = (p for p in kernel_dir.rglob("*.py") if "__pycache__" not in p.parts)
+    return sorted(found, key=lambda p: p.relative_to(kernel_dir).as_posix())
 
 
 def kernel_loc(kernel_dir: Path = KNOTCORE_DIR) -> dict[str, int]:
@@ -133,7 +165,19 @@ class LocReport:
 
     @property
     def ok(self) -> bool:
-        return self.executable <= EXECUTABLE_LOC_CAP and self.total <= TOTAL_LOC_CAP
+        """Within both budgets. Informational only (D-38)."""
+        return not self.warnings()
+
+    def warnings(self) -> list[str]:
+        out = []
+        if self.executable > EXECUTABLE_LOC_CAP:
+            out.append(
+                f"knotcore executable LOC {self.executable} exceeds the "
+                f"{EXECUTABLE_LOC_CAP} review budget"
+            )
+        if self.total > TOTAL_LOC_CAP:
+            out.append(f"knotcore total LOC {self.total} exceeds the {TOTAL_LOC_CAP} review budget")
+        return out
 
     def summary(self) -> str:
         return (
@@ -172,6 +216,17 @@ def _hits(name: str, prefixes: tuple[str, ...]) -> str | None:
     return None
 
 
+def _disallowed(base: str) -> str | None:
+    """Reason when `base` is outside the TCB import allow-list."""
+    root = base.split(".")[0]
+    if root == "knotwork":
+        inside = base == KERNEL_PACKAGE or base.startswith(KERNEL_PACKAGE + ".")
+        return None if inside else f"not allowed: {base}"
+    if root in sys.stdlib_module_names or root in ALLOWED_THIRD_PARTY:
+        return None
+    return f"not allowed: {root}"
+
+
 def scan_forbidden_imports(
     kernel_dir: Path = KNOTCORE_DIR, src_root: Path | None = None
 ) -> list[ImportViolation]:
@@ -199,12 +254,89 @@ def scan_forbidden_imports(
                     out.append(
                         ImportViolation(str(path), node.lineno, fname, "dynamic import forbidden")
                     )
+                if isinstance(fn, ast.Name) and fname in _DYNAMIC_CODE_CALLS:
+                    out.append(
+                        ImportViolation(str(path), node.lineno, fname, "dynamic code forbidden")
+                    )
             line = int(getattr(node, "lineno", 0))
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                bases = names if isinstance(node, ast.Import) else names[:1]
+                for base in bases:
+                    reason = _disallowed(base)
+                    if reason and not (
+                        _hits(base, FORBIDDEN_INTERNAL) or _hits(base, FORBIDDEN_EXTERNAL)
+                    ):
+                        out.append(ImportViolation(str(path), line, base, reason))
             for name in names:
                 hit = _hits(name, FORBIDDEN_INTERNAL) or _hits(name, FORBIDDEN_EXTERNAL)
                 if hit:
                     out.append(ImportViolation(str(path), line, name, f"forbidden: {hit}"))
     return sorted(set(out), key=lambda v: (v.file, v.line, v.module))
+
+
+def _names_scene_ir(node: ast.AST) -> bool:
+    if isinstance(node, ast.ImportFrom):
+        return any(a.name == "SceneIR" for a in node.names)
+    name = node.id if isinstance(node, ast.Name) else getattr(node, "attr", "")
+    return isinstance(node, (ast.Name, ast.Attribute)) and name == "SceneIR"
+
+
+def scan_payload_access(kernel_dir: Path = KNOTCORE_DIR) -> list[ImportViolation]:
+    """Any read of a `payload` attribute or key anywhere in the kernel, and any use of `SceneIR`
+    outside the declarative schema module (which only declares the type)."""
+    out: list[ImportViolation] = []
+    for path in kernel_files(kernel_dir):
+        schema = path.name in DECLARATIVE_MODULES
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"), filename=str(path))):
+            what = ""
+            if isinstance(node, ast.Attribute) and node.attr == "payload":
+                what = ".payload"
+            elif isinstance(node, ast.Subscript):
+                key = node.slice
+                if isinstance(key, ast.Constant) and key.value == "payload":
+                    what = "['payload']"
+            elif isinstance(node, ast.Call):
+                fn = node.func
+                fname = fn.id if isinstance(fn, ast.Name) else getattr(fn, "attr", "")
+                if fname in ("getattr", "get", "attrgetter", "itemgetter") and any(
+                    isinstance(a, ast.Constant) and a.value == "payload" for a in node.args
+                ):
+                    what = f"{fname}('payload')"
+            if not schema and not what and _names_scene_ir(node):
+                what = "SceneIR"
+            if what:
+                out.append(
+                    ImportViolation(
+                        str(path), int(getattr(node, "lineno", 0)), what, "scene payload access"
+                    )
+                )
+    return sorted(set(out), key=lambda v: (v.file, v.line, v.module))
+
+
+@dataclass(frozen=True)
+class TcbReport:
+    violations: list[ImportViolation]
+    kernel_sha256: str
+
+    @property
+    def ok(self) -> bool:
+        return not self.violations
+
+    def summary(self) -> str:
+        if self.ok:
+            return (
+                "TCB ok: allow-listed imports, no network or dynamic code, no payload access; "
+                f"kernel_sha256 {self.kernel_sha256[:16]}"
+            )
+        return "; ".join(f"{v.file}:{v.line} {v.module} ({v.reason})" for v in self.violations)
+
+
+def tcb_report(kernel_dir: Path = KNOTCORE_DIR, src_root: Path | None = None) -> TcbReport:
+    found = scan_forbidden_imports(kernel_dir, src_root) + scan_payload_access(kernel_dir)
+    first, second = kernel_sha256(kernel_dir), kernel_sha256(kernel_dir)
+    if first != second:
+        found.append(ImportViolation(str(kernel_dir), 0, "kernel_sha256", "not deterministic"))
+    return TcbReport(violations=found, kernel_sha256=first)
 
 
 def scan_placeholders(root: Path) -> list[tuple[str, int, str]]:

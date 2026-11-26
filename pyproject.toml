@@ -32,6 +32,7 @@ knot = "knotwork.cli:main"
 dev = [
   "pytest>=8.2",
   "pytest-timeout>=2.3",
+  "pytest-xdist>=3.6",
   "hypothesis>=6.100",
   "ruff>=0.5",
   "mypy>=1.10",
@@ -86,5 +87,8 @@ markers = [
   "network: touches the public internet (deselected by default)",
   "live: spends money on paid APIs (deselected by default; never run autonomously)",
   "slow: long-running (> 30 s)",
+  "tier0: pure unit, contract, seed and kernel math checks (fast-fail CI job)",
+  "tier1: plugin, pipeline, fault and export checks on shared rendered fixtures",
+  "tier2: heavy generation, probes, bootstrap and benchmark checks (nightly)",
 ]
 filterwarnings = ["ignore::DeprecationWarning:onnxruntime.*"]

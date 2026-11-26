@@ -134,8 +134,15 @@ def run_slot(job: dict[str, Any]) -> dict[str, Any]:
     return {"slot": i, "ok": False, "bundles": [], "quarantine": quarantine, "n_candidates": n_cand}
 
 
+def auto_workers() -> int:
+    """Pool size for `--workers 0`: cpu_count - 1, or KNOTWORK_AUTO_WORKERS when set (so that nested
+    pools, e.g. under pytest-xdist, do not oversubscribe the machine)."""
+    cap = int(os.environ.get("KNOTWORK_AUTO_WORKERS", "0") or 0)
+    return cap if cap > 0 else max(1, (os.cpu_count() or 2) - 1)
+
+
 def run_jobs(jobs: list[dict[str, Any]], fn: Any, workers: int) -> list[dict[str, Any]]:
-    workers = max(1, (os.cpu_count() or 2) - 1) if workers == 0 else workers
+    workers = auto_workers() if workers == 0 else workers
     workers = min(workers, max(1, len(jobs)))
     if workers == 1:
         return [fn(j) for j in jobs]

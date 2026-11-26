@@ -1074,3 +1074,14 @@ spec leaves open. Never silently change a threshold.
   pairs), Fisher's exact test next to it. A live run is this module with `--live --budget-usd` at
   most $0.50, behind the same triple lock as `knot bench --live`; it is a second command allowed to
   spend, beside the one in TASKS 5.7, and needs the owner's explicit go-ahead.
+* D-38: v2 build (owner direction, branch `feat/vtf-v2`). (a) The 850 / 1350 kernel LOC caps are now
+  informational telemetry; `core.loc` warns and never fails, while `core.ast_isolation` enforces the
+  TCB contract (`kernel_audit.tcb_report`: allow-listed imports, no network / process / dynamic-code
+  modules, no `SceneIR.payload` access, deterministic `kernel_sha256`). (b) CI is tiered: `ci.yml`
+  runs tier0 then tier1 with pytest-xdist, `nightly.yml` runs tier2 and the phase gates; gate
+  `p4.ci` checks both files. (c) ONTOP is decided by the majority of non-halo id pixels in a core
+  disk (`topo.core_vote`) with a ring-continuity check for close votes; `E_WITNESS_OCCLUDED` reports a
+  background or foreign object where a strand or needle must be on top; `claims_failed` counts unique
+  claims and `E_D1_D3_MISMATCH` is recorded even when a program step faults; `grade_prediction`
+  rejects replies that commit to different answers unless `strict_single_answer=False`.
+

@@ -37,7 +37,8 @@ OPS: dict[C.Op, Callable[[Bundle, list[Any], dict[str, Any]], tuple[Any, dict[st
 def kernel_sha256() -> str:
     """Digest of the kernel source (same algorithm as devtools.kernel_audit.kernel_sha256)."""
     root, h = Path(__file__).resolve().parent, hashlib.sha256()
-    for path in sorted(p for p in root.rglob("*.py") if "__pycache__" not in p.parts):
+    files = (p for p in root.rglob("*.py") if "__pycache__" not in p.parts)
+    for path in sorted(files, key=lambda p: p.relative_to(root).as_posix()):
         h.update(path.relative_to(root).as_posix().encode() + b"\0")
         h.update(path.read_bytes().replace(b"\r\n", b"\n") + b"\0")
     return h.hexdigest()
@@ -90,16 +91,20 @@ def execute(
 def check_claims(
     b: Bundle, claims: C.ClaimSet, cfg: dict[str, Any]
 ) -> tuple[int, list[C.ErrorCode]]:
-    """(number of failed claims, codes); a disagreeing claim yields CLAIM_MISMATCH_CODE[op]."""
-    codes: list[C.ErrorCode] = []
+    """(number of unique failed claims, their codes). A claim is identified by op, arguments and
+    expected answer, so a repeated claim counts once. Disagreement yields CLAIM_MISMATCH_CODE[op]."""
+    failed: dict[tuple[str, str], C.ErrorCode] = {}
     for c in claims.claims:
+        key = (repr((c.op.value, c.args)), c.expected.model_dump_json())
+        if key in failed:
+            continue
         try:
             got = to_answer(c.expected.type, OPS[c.op](b, list(c.args), cfg)[0])
             if not agree(c.expected, got, got.tolerance):
-                codes.append(C.CLAIM_MISMATCH_CODE[c.op])
+                failed[key] = C.CLAIM_MISMATCH_CODE[c.op]
         except KernelFault as f:
-            codes.append(f.code)
-    return len(codes), codes
+            failed[key] = f.code
+    return len(failed), list(failed.values())
 
 
 def certify(
@@ -122,8 +127,9 @@ def certify(
     n_failed, claim_codes = check_claims(b, b.claims, cfg)
     d3, steps = execute(b, q, cfg)
     step_codes = [c for s in steps for c in s.codes]
-    ok = not step_codes and agree(d1, d3, d3.tolerance)
-    codes += claim_codes + step_codes + ([] if ok or step_codes else [C.ErrorCode.E_D1_D3_MISMATCH])
+    same = agree(d1, d3, d3.tolerance)
+    ok = same and not step_codes
+    codes += claim_codes + step_codes + ([] if same else [C.ErrorCode.E_D1_D3_MISMATCH])
     if d2 is not None and not agree(d2, d1, max(d1.tolerance, d3.tolerance)):
         ok, codes = False, [*codes, C.ErrorCode.E_D1_D2_MISMATCH]
     codes = sorted(set(codes), key=C.CODE_PRIORITY.index)
