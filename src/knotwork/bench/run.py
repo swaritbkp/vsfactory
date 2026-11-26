@@ -382,9 +382,15 @@ def run_staircase(runner: Runner, items: list[Item], track: str, max_trials: int
     rng = SeedTree(seed).child("bench", runner.slot, track).rng()
     queues: dict[int, list[Item]] = {}
 
-    def draw(level: int) -> Item:
-        lv = min(by_level, key=lambda x: (abs(x - level), x))
-        if not queues.get(lv):
+    def draw(level: int) -> Item | None:
+        """An item nobody has asked yet, from the level nearest to `level` that still has one.
+        A temperature-0 model repeats its reply to a repeated request, so a re-asked item is not
+        a new observation."""
+        left = [lv for lv in by_level if lv not in queues or queues[lv]]
+        if not left:
+            return None
+        lv = min(left, key=lambda x: (abs(x - level), x))
+        if lv not in queues:
             queues[lv] = [by_level[lv][int(i)] for i in rng.permutation(len(by_level[lv]))]
         return queues[lv].pop()
 
@@ -393,12 +399,14 @@ def run_staircase(runner: Runner, items: list[Item], track: str, max_trials: int
     attempts = 0
     while not st.done and attempts < 3 * max_trials:
         attempts += 1
-        it = draw(st.level)
-        out = runner.ask(it, f"staircase:{track}")
+        item = draw(st.level)
+        if item is None:  # every item has been asked once
+            break
+        out = runner.ask(item, f"staircase:{track}")
         if out.missing:
             continue
-        st.update(out.correct)
-        done.append((it, out))
+        st.update(out.correct, item.k)
+        done.append((item, out))
 
     def m_bar(k: float) -> float:
         lv = min(by_level, key=lambda x: (abs(x - k), x))
@@ -475,7 +483,13 @@ def run_model(runner: Runner, pool: Pool, chosen: dict[str, list[Any]], derived:
                 )
                 t1_trials += [(b, ob), (c, oc), (n, on)]
         row["twins"] = stats.twins(trip)
-        valid = [(it, o) for it, o in t1_trials if it.m > 0]
+        # one observation per distinct request: the staircase and the twin blocks can both
+        # ask the same image the same question
+        once: dict[tuple[str, str], tuple[Item, Outcome]] = {}
+        for it, o in t1_trials:
+            if it.m > 0:
+                once.setdefault((runner.iid(it.beauty), it.prompt), (it, o))
+        valid = list(once.values())
         row["per_crossing"] = stats.per_crossing(
             [{"k": it.k, "m": it.m, "correct": o.correct} for it, o in valid], rng
         )

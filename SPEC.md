@@ -1126,3 +1126,8 @@ spec leaves open. Never silently change a threshold.
   through generate, verify, export, certification and faults in tier1. (c) The Forensics page
   opens `samples/demo_forensics/` (real certified twins; replies written by
   `scripts/build_demo_forensics.py` and labelled as not model output).
+* D-46: Staircase trials never repeat an item: a temperature-0 model returns the same reply to the
+  same request, so repeats are not independent evidence (one mock tangle staircase had asked 18
+  items in 75 trials). Each trial takes an unused item from the nearest level that has one, the
+  history records the level shown, the staircase ends when the pool is exhausted, and
+  `per_crossing` counts each distinct (image, prompt) once.

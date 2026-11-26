@@ -46,9 +46,10 @@ class Staircase:
     def done(self) -> bool:
         return len(self.reversals) >= MAX_REVERSALS or len(self.history) >= self.max_trials
 
-    def update(self, correct: bool) -> None:
-        """Record the answer at the current level and move."""
-        self.history.append((self.level, bool(correct)))
+    def update(self, correct: bool, shown: int | None = None) -> None:
+        """Record the answer and move. `shown` is the level of the item actually asked when no
+        unused item was left at the current level; the history keeps what was shown."""
+        self.history.append((self.level if shown is None else shown, bool(correct)))
         step = 0
         if correct:
             self.streak += 1

@@ -1,14 +1,14 @@
 # BLOCKERS and documented limitations
 
 **Summary.** No blocker stops the factory. Generation, certification, verification, export, CI and the
-live benchmark all work. The three entries below are documented engineering limitations: each names
+live benchmark all work. The entries below are documented engineering limitations: each names
 the check affected, what was tried, the root cause, and the decision it needs. No gate threshold was
 relaxed to hide any of them (CLAUDE.md law 8).
 
 | # | Limitation | Affects | Status |
 |---|---|---|---|
 | 3.6 | Shortcut-probe residuals | gate `p3.probes` only | v1 residuals pass in v2; open on one new row (panel P1 image stats) |
-| 5.6 | Mock staircase and error recovery | gate `p5.bench_mock` | v2 staircases pass 6 of 6; open on mock_a per-crossing recovery (repeated items) |
+| 5.6 | Mock staircase and error recovery | gate `p5.bench_mock` | passes in v2; one panel staircase sits at the 1.5-level limit |
 | L-1 | Live staircases at the floor | interpretation of live thresholds | documented in README, not a gate |
 
 Claude Code appends here when a task fails verification 3 times (see CLAUDE.md section 4).
@@ -96,9 +96,18 @@ Format per entry:
   on 18 distinct items (one 16 times, at level 12), and repeats of a deterministic model are counted
   as independent trials. The mock_a tangle staircase pass is therefore weak evidence (it sat at the
   top level).
-- Status: OPEN. Gate `p5.bench_mock` FAILS on the per-crossing check; the staircase-tolerance check
-  itself passes. `STAIRCASE_LEVEL_TOL` is unchanged. Next step: count each item once in
-  `stats.per_crossing` or draw without repeats.
+- v2 fix (D-46, 2026-11-26): every staircase trial asks an item not asked before (nearest level with
+  an unused item; the level shown is what the fit uses) and the per-crossing estimate counts each
+  distinct request once.
+- v2 re-measurement (same split, gate function `gate_bench_mock`): PASS. All staircase trials are
+  distinct. Per-crossing estimates: mock_a 0.034 (CI 0.022-0.047, true 0.04), mock_b 0.071
+  (0.050-0.098, true 0.08), mock_c 0.155 (0.123-0.192, true 0.15). Staircase estimate / expected:
+  mock_a tangle 12.00 / 11.58, panel 5.50 / 7.00; mock_b tangle 4.92 / 4.92, panel 5.50 / 6.94;
+  mock_c tangle 3.11 / 2.56, panel 2.45 / 3.41.
+- Caveat: mock_a panel passes exactly at the 1.5-level limit (mock_b panel at 1.44). The split holds
+  only 3 panel items with 6 crossings and 1 with 7, so shallow panel curves are data-limited.
+- Status: RESOLVED for gate `p5.bench_mock` (the full `--phase 5` run was not repeated).
+  `STAIRCASE_LEVEL_TOL` is unchanged.
 
 ## L-1 Live staircases sit at the floor (not a gate)
 - Observation: on the live run every model fails at 1-2 crossings; Gemini and Qwen dropped from the start
