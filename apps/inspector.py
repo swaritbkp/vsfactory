@@ -69,9 +69,12 @@ def main() -> None:
         st.Page(str(APP / "app_pages" / name), title=title, icon=icon, default=i == 0)
         for i, (name, title, icon) in enumerate(PAGES)
     ]
+    from studio_ui import footer  # importable once APP is on sys.path
+
     current = st.navigation(pages, position="top")
     header()
     current.run()
+    footer()
 
 
 if __name__ == "__main__":

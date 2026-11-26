@@ -165,9 +165,50 @@ def mask_overlay(bundle: Path, obj_id: int) -> Image.Image:
     return Image.fromarray(base.astype(np.uint8))
 
 
+WITNESS_AXIS = (236, 0, 140)  # needle principal axis: high-visibility magenta
+WITNESS_DIAL = (0, 170, 220)  # dial centre crosshair and rim: cyan
+WITNESS_OCR = (245, 158, 11)  # OCR'd tick labels: amber
+WITNESS_HALO = (255, 255, 255)
+
+
+def _gauge_witness(draw: ImageDraw.ImageDraw, read: dict[str, Any]) -> None:
+    """Dial crosshair, the needle's principal axis extended across the dial, and its tip."""
+    cx, cy = float(read["center"][0]), float(read["center"][1])
+    radius = float(read.get("R", 0.0)) or 120.0
+    reach = radius * 1.12
+    for color, width in ((WITNESS_HALO, 5), (WITNESS_DIAL, 2)):
+        draw.line([cx - reach, cy, cx + reach, cy], fill=color, width=width)
+        draw.line([cx, cy - reach, cx, cy + reach], fill=color, width=width)
+    draw.ellipse(
+        [cx - radius, cy - radius, cx + radius, cy + radius], outline=WITNESS_DIAL, width=2
+    )
+    tx, ty = float(read["tip"][0]), float(read["tip"][1])
+    length = max(float(np.hypot(tx - cx, ty - cy)), 1.0)
+    ux, uy = (tx - cx) / length, (ty - cy) / length
+    axis = [cx - ux * radius * 0.3, cy - uy * radius * 0.3, cx + ux * reach, cy + uy * reach]
+    draw.line(axis, fill=WITNESS_HALO, width=10)
+    draw.line(axis, fill=WITNESS_AXIS, width=5)
+    for x, y, r in ((cx, cy, 9), (tx, ty, 11)):
+        draw.ellipse([x - r, y - r, x + r, y + r], outline=WITNESS_HALO, width=6)
+        draw.ellipse([x - r, y - r, x + r, y + r], outline=WITNESS_AXIS, width=3)
+
+
+def _ocr_boxes(draw: ImageDraw.ImageDraw, man: RenderManifest) -> None:
+    """Amber boxes around every tick label the kernel reads with OCR."""
+    for gauge in man.gauges:
+        for tick in gauge.ticks:
+            label = man.obj(tick.label_obj)
+            if label.box is None:
+                continue
+            b = label.box
+            draw.rectangle([b.x0 - 3, b.y0 - 3, b.x1 + 2, b.y1 + 2], outline=WITNESS_HALO, width=5)
+            draw.rectangle([b.x0 - 3, b.y0 - 3, b.x1 + 2, b.y1 + 2], outline=WITNESS_OCR, width=3)
+
+
 def witness_overlay(bundle: Path, certificate: dict[str, Any]) -> Image.Image:
-    """Kernel evidence drawn on the beauty: crossing centres (cyan), dial centres and needle axes
-    (blue), terminals (green) and the objects of failed checks (red boxes)."""
+    """Kernel evidence drawn on the beauty: crossing centres (cyan), terminals (green), for gauges
+    the dial crosshair (cyan), the extended needle axis (magenta) and OCR'd tick labels (amber boxes), and
+    the objects of failed checks (red boxes)."""
     img = beauty(bundle).copy()
     draw = ImageDraw.Draw(img)
     man = manifest(bundle)
@@ -178,16 +219,15 @@ def witness_overlay(bundle: Path, certificate: dict[str, Any]) -> Image.Image:
 
     for t in man.terminals:
         draw.rectangle([t.box.x0, t.box.y0, t.box.x1, t.box.y1], outline=(0, 150, 60), width=2)
+    _ocr_boxes(draw, man)
     for step in certificate.get("steps", []):
         evidence = step.get("evidence", {})
         for c in evidence.get("crossings", []):
             ring(c["center"], 14, (0, 190, 210))
         if "top_obj" in evidence:
             ring(evidence["center"], 18, (0, 190, 210))
-        if "tip" in evidence:
-            ring(evidence["center"], 6, (30, 80, 230))
-            ring(evidence["tip"], 9, (30, 80, 230))
-            draw.line([*evidence["center"], *evidence["tip"]], fill=(30, 80, 230), width=2)
+        if "tip" in evidence and "center" in evidence:
+            _gauge_witness(draw, evidence)
     for check in certificate.get("checks", []):
         if check["passed"] or check.get("obj_id") is None:
             continue

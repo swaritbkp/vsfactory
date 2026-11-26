@@ -10,14 +10,15 @@ from typing import Any
 import streamlit as st
 from PIL import Image
 
-from knotwork.studio import factory, present
+from knotwork.studio import factory, forensics, present
 from knotwork.studio.present import AUTO
 from studio_ui import OUT, relative, resolve, run_with_status, verdict_badge
 
 VIEWS = ("Beauty", "Witness Overlay", "ID Buffer", "CVD Simulation")
 CAPTIONS = {
     "Beauty": "What a model sees (rendered at 1024 px).",
-    "Witness Overlay": "Kernel evidence: terminals, crossing centres, needle axis; failed checks in red.",
+    "Witness Overlay": "Kernel evidence: terminals (green), crossings (cyan), needle axis (magenta), "
+    "OCR labels (amber); failed checks in red.",
     "ID Buffer": "Modal object ids: the visible owner of every pixel.",
     "CVD Simulation": "The same image under simulated colour-vision deficiency.",
 }
@@ -25,7 +26,7 @@ LEVELS = [AUTO, *(i / 10 for i in range(11))]
 IMAGE_PX = 560
 CERTIFY_ATTEMPTS = 3
 HOLDOUT_EXAMPLES = {"tangle": "strands=9:10", "gauge": "radius_px=200:240", "panel": "gauges=4"}
-SAMPLE = ("gauge", "G1_READ", 7)
+SAMPLE = ("tangle", "T1_TRACE", 1)  # a seven-strand braid: the flagship domain on first load
 
 
 # ------------------------------------------------------------------ state
@@ -33,7 +34,7 @@ def _init_state() -> None:
     ss = st.session_state
     ss.setdefault("plugin", SAMPLE[0])
     ss.setdefault("view", VIEWS[0])
-    ss.setdefault("seed", SAMPLE[2])
+    ss.setdefault("seed", SAMPLE[2] + 1)  # the first Generate shows a new scene, not the sample
     for name, value in present.KNOB_DEFAULTS.items():
         ss.setdefault(f"knob_{name}", value)
     for name in ("stroke_px", "jitter_px", "noise", "dpi_scale"):
@@ -50,7 +51,7 @@ def _apply_preset() -> None:
         st.session_state[f"knob_{knob}"] = value
     for knob in ("stroke_px", "jitter_px", "noise", "dpi_scale"):
         st.session_state[f"knob_{knob}"] = AUTO
-    st.session_state.view = "CVD Simulation" if name == "CVD check" else "Beauty"
+    st.session_state.view = "CVD Simulation" if name == "CVD" else "Beauty"
 
 
 def _dials(names: tuple[str, ...]) -> dict[str, Any]:
@@ -80,12 +81,17 @@ def _first_sample(kernel: str) -> dict[str, Any]:
     """One real certified task for the first visit, rendered once per server and kernel."""
     plugin, family, seed = SAMPLE
     made = factory.generate_one(
-        plugin, family, seed, OUT / "sample" / kernel, certify_attempts=CERTIFY_ATTEMPTS
+        plugin,
+        family,
+        seed,
+        OUT / "sample" / kernel / plugin,
+        certify_attempts=CERTIFY_ATTEMPTS,
     )
     return _view_of(made, seed)
 
 
 def _generate(plugin: str, family: str) -> None:
+    """Render and certify a new task. The current stage stays on screen until it is ready."""
     seed = int(st.session_state.seed)
     target = OUT / "single" / f"{plugin}-{uuid.uuid4().hex[:8]}"
 
@@ -123,7 +129,18 @@ def _batch_result(job: dict[str, Any]) -> None:
     code = job["process"].poll()
     done = factory.batch_progress(Path(job["out"]))
     if code == 0:
-        st.success(f"Built {done} base items in `{job['out']}`.", icon=":material/check_circle:")
+        out = Path(job["out"])
+        st.session_state.last_batch_dir = relative(out)
+        total = len(forensics.bundles(out))
+        rate = present.run_kpis(out)["yield_rate"]
+        yield_text = "n/a" if rate is None else f"{rate:.1%}"
+        st.success(
+            f"**Batch built.** {done} certified base items, {total} bundles in total "
+            f"(twins included), yield {yield_text}.  \n"
+            f"Saved to `{relative(out)}`. "
+            "It is preselected on the Export page.",
+            icon=":material/check_circle:",
+        )
         return
     st.error(f"knot generate exited with code {code}.", icon=":material/error:")
     log = Path(job["log"])
@@ -228,6 +245,25 @@ def _summary(item: dict[str, Any]) -> None:
         )
 
 
+def _witness_pill(cert: dict[str, Any]) -> None:
+    """One line that says what the overlay proves, in the CVD gate's pill style."""
+    checks = cert["checks"]
+    passed = sum(bool(c["passed"]) for c in checks)
+    oracle = [c for c in checks if c["name"].startswith("oracle_")]
+    oracle_ok = bool(oracle) and all(c["passed"] for c in oracle)
+    codes = len(cert["codes"])
+    parts = [
+        "D1 = D3 verified" if cert["agree"] else "D1 and D3 disagree",
+        f"{codes} E_* code{'s' if codes != 1 else ''}",
+        f"{passed}/{len(checks)} checks passed",
+    ]
+    if oracle:
+        parts.append("beauty-only oracle pass" if oracle_ok else "beauty-only oracle failed")
+    clean = cert["agree"] and not codes and (oracle_ok or not oracle)
+    st.badge("Kernel witness: " + " · ".join(parts), color="green" if clean else "red",
+             icon=":material/verified_user:" if clean else ":material/gpp_bad:")  # fmt: skip
+
+
 @st.fragment
 def _stage() -> None:
     item = st.session_state.item
@@ -258,6 +294,8 @@ def _stage() -> None:
                 )
             else:
                 st.caption("Colour carries no meaning in this scene, so the gate does not apply.")
+        if view == "Witness Overlay":
+            _witness_pill(item["certificate"])
     with st.container(border=True):
         st.caption("Question")
         question = item["question"]
@@ -285,8 +323,10 @@ with rail:
         )
     )
     st.pills(
-        "Scenario preset", list(present.PRESETS), key="preset", on_change=_apply_preset, wrap=True
-    )
+        "Scenario preset", list(present.PRESETS), key="preset", on_change=_apply_preset,
+        help="Clean: easy and legible. Hard logic: long reasoning chains. High stress: noise, "
+        "occlusion and realism. CVD: colour-vision check.",
+    )  # fmt: skip
     clicked = st.button(
         "Generate & Certify Task", type="primary", width="stretch", icon=":material/play_arrow:",
         key="generate",
@@ -307,7 +347,7 @@ with rail:
             "Color regime", [AUTO, "unique", "partial", "mono"], key="knob_color_regime",
             required=True, width="stretch",
         )  # fmt: skip
-        with st.popover("Fine knobs", icon=":material/settings:", width="stretch"):
+        if st.toggle("Show fine render knobs", value=False, key="fine_knobs"):
             st.select_slider("Stroke width (px)", [AUTO, *range(5, 15)], key="knob_stroke_px")
             st.select_slider("Jitter (px)", [AUTO, *range(0, 25, 4)], key="knob_jitter_px")
             st.select_slider("Sensor noise", LEVELS, key="knob_noise")
@@ -318,9 +358,11 @@ with rail:
         _batch_panel(plugin)
 
 with stage:
-    if clicked:
-        _generate(plugin, family)
+    progress = st.container()  # fixed slot above the stage: the old task stays visible meanwhile
     if "item" not in st.session_state:
-        with st.spinner("Rendering and certifying a first sample..."):
+        with progress, st.spinner("Rendering and certifying a first sample..."):
             st.session_state.item = _first_sample(str(present.repo_status()["kernel"]))
+    if clicked:
+        with progress:
+            _generate(plugin, family)
     _stage()

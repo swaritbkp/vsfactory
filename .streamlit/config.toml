@@ -16,7 +16,8 @@ paddingTop = "0.75rem"
 paddingBottom = "1.5rem"
 
 [theme.light]
-primaryColor = "#047857"
+# Emerald 600: its own hover/active shade stays emerald instead of falling to near-black.
+primaryColor = "#059669"
 linkColor = "#047857"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F4F7F6"
@@ -35,6 +36,8 @@ chartCategoricalColors = ["#047857", "#B45309", "#BE123C", "#1D4ED8", "#7C3AED"]
 
 [theme.dark]
 primaryColor = "#10B981"
+greenBackgroundColor = "#064E3B"
+greenTextColor = "#6EE7B7"
 linkColor = "#34D399"
 backgroundColor = "#0B1120"
 secondaryBackgroundColor = "#111A2E"

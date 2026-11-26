@@ -18,14 +18,19 @@ from knotwork.studio import factory, forensics, present
 from studio_ui import OUT, dataset_select, relative, resolve, run_with_status, verdict_badge
 
 SECTIONS = ("Counterfactual twins", "Quarantine", "Fault proofs")
-CARDS = (
-    ("original", "Original"),
+IMAGE_TWINS = (
     ("perceptual_clean", "Perceptual Clean"),
     ("palette_swap", "Palette Swap"),
     ("reasoning_step_down", "Step Down"),
-    ("text_ir_twin", "Text IR"),
 )
-CARD_HEIGHT = 250
+TWIN_TITLES = {**dict(IMAGE_TWINS), "text_ir_twin": "Text IR"}
+TWIN_NOTES = {
+    "perceptual_clean": "Clutter and surface noise removed; same answer.",
+    "palette_swap": "Colours changed; same answer.",
+    "reasoning_step_down": "One reasoning step removed; new answer.",
+}
+MAX_SEGMENTS = 4
+CARD_HEIGHT = 380
 SAMPLE_REPORT = "samples/demo_forensics"  # committed sample: real twins, written replies
 BUILD_REPORT = "artifacts/studio/counterfactual"
 
@@ -91,29 +96,64 @@ def _image_path(text: str | None) -> Path | None:
     return path if path.is_file() else None
 
 
-def _card_body(kind: str, suite: dict[str, Any]) -> None:
-    if kind == "original":
-        original = _image_path(suite["image"])
-        if original:
-            st.image(str(original), width="stretch", alt="The failed item")
-        st.markdown(f"Certified **{suite['answer']['canonical']}**")
-        for model, reply in sorted(suite["replies"].items()):
-            st.caption(f"{present.short_model_name(model)}: {reply[:60]}")
-        return
+def _reply_lines(suite: dict[str, Any]) -> None:
+    if not suite["replies"]:
+        st.caption("No model reply is recorded for this item.")
+    for model, reply in sorted(suite["replies"].items()):
+        st.markdown(f"{present.short_model_name(model)} replied **{reply[:60]}**")
+
+
+def _solved_badge(kind: str, twin: dict[str, Any], solved: dict[str, bool]) -> None:
+    if twin["status"] == "quarantined":
+        st.badge("Quarantined", color="red", icon=":material/block:",
+                 help=", ".join(twin.get("codes", [])))  # fmt: skip
+    elif kind not in solved:
+        st.badge("No reply yet", color="gray", icon=":material/hourglass_empty:")
+    elif solved[kind]:
+        st.badge("Model solved it", color="green", icon=":material/check_circle:")
+    else:
+        st.badge("Model failed", color="red", icon=":material/cancel:")
+
+
+def _twin_card(kind: str, title: str, suite: dict[str, Any], solved: dict[str, bool]) -> None:
+    """One image twin: picture, certified answer and whether the model solved it."""
     twin = suite["twins"][kind]
+    st.markdown(f"**{title}**")
+    st.caption(TWIN_NOTES[kind])
     if twin["status"] == "unavailable":
-        st.badge("Unavailable", color="gray")
+        st.badge("Not available", color="gray")
         st.caption(twin["reason"])
         return
     picture = _image_path(twin.get("image"))
     if picture:
-        st.image(str(picture), width="stretch", alt=f"{kind} twin")
-    if twin.get("prompt"):
-        with st.container(height=CARD_HEIGHT, border=False):
-            st.text(twin["prompt"])
-    st.markdown(f"Certified **{twin['answer']['canonical']}**")
-    if twin["status"] == "quarantined":
-        st.badge("Quarantined", color="red", help=", ".join(twin.get("codes", [])))
+        st.image(str(picture), width="stretch", alt=f"{title} twin")
+    with st.container(horizontal=True, vertical_alignment="center"):
+        st.markdown(f"Certified **{twin['answer']['canonical']}**", width="content")
+        _solved_badge(kind, twin, solved)
+
+
+def _diagnosis_card(suite: dict[str, Any], solved: dict[str, bool]) -> None:
+    verdict, reason, colour = present.diagnose(solved)
+    with st.container(border=True):
+        with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+            st.badge(verdict, color=colour, icon=":material/diagnosis:")
+            if suite.get("sample"):
+                st.badge("Sample demo replies", color="gray", icon=":material/science:")
+        st.markdown(reason)
+    text = suite["twins"].get("text_ir_twin", {})
+    with st.container(border=True):
+        st.markdown("**Text IR twin**")
+        st.caption("The same question with the scene given as text: no seeing required.")
+        if text.get("status") == "unavailable" or not text:
+            st.badge("Not available", color="gray")
+            st.caption(text.get("reason", "This item has no text twin."))
+            return
+        if text.get("prompt"):
+            with st.container(height=CARD_HEIGHT, border=False):
+                st.code(text["prompt"], language=None, wrap_lines=True)
+        with st.container(horizontal=True, vertical_alignment="center"):
+            st.markdown(f"Certified **{text['answer']['canonical']}**", width="content")
+            _solved_badge("text_ir_twin", text, solved)
 
 
 def _twins() -> None:
@@ -121,14 +161,14 @@ def _twins() -> None:
     report = out / "suites.json"
     if not report.is_file():
         st.info(
-            "No report here yet. Press **Demo suite** for a full set of twins, or open **Build from "
-            "failures** to mine the committed live failures (text twins only).",
+            "No twin report in this folder yet. Press **Demo suite** for a full set of twins, or "
+            "open **Build from failures** to mine the committed live failures (text twins only).",
             icon=":material/troubleshoot:",
         )
         return
     suites = read_json(report)["suites"]
     if not suites:
-        st.warning("The report holds no suites.")
+        st.warning("This report has no suites. Build one with Demo suite.")
         return
     recorded_all = present.load_twin_results(out)
     if any(s.get("sample") for s in suites):
@@ -137,16 +177,18 @@ def _twins() -> None:
             "were written for this demo. They are not results from any model.",
             icon=":material/science:",
         )
-        with st.container(horizontal=True, gap="small"):
-            for s in suites:
-                graded = present.grade_twins(s, recorded_all.get(s["bundle_id"], {}))
-                verdict, _, colour = present.diagnose(graded)
-                st.badge(f"{s.get('sample_title', 'Sample')}: {verdict}", color=colour)
-    by_label = {
-        f"{s.get('sample_title') or s['family']} · {s['family']} · {s['bundle_id']}": s
-        for s in suites
-    }
-    suite = by_label[st.selectbox("Item", list(by_label), key="cf_item")]
+    by_label: dict[str, dict[str, Any]] = {}
+    for s in suites:
+        graded = present.grade_twins(s, recorded_all.get(s["bundle_id"], {}))
+        name = s.get("sample_title") or f"{s['family']} {s['bundle_id'][-6:]}"
+        by_label[f"{name}: {present.diagnose(graded)[0]}"] = s
+    labels = list(by_label)
+    if len(labels) <= MAX_SEGMENTS:
+        chosen = st.segmented_control("Item", labels, default=labels[0], required=True,
+                                      key="cf_item", label_visibility="collapsed")  # fmt: skip
+    else:
+        chosen = st.selectbox("Item", labels, key="cf_item")
+    suite = by_label[str(chosen)]
     bid = suite["bundle_id"]
     recorded = recorded_all.get(bid, {})
     replies = {
@@ -154,27 +196,29 @@ def _twins() -> None:
         for kind in present.DIAGNOSTIC_KINDS
     }
     solved = present.grade_twins(suite, replies)
-    verdict, reason, colour = present.diagnose(solved)
-    with st.container(border=True, horizontal=True, vertical_alignment="center"):
-        st.badge(verdict, color=colour, icon=":material/diagnosis:")
-        if suite.get("sample"):
-            st.badge("Sample replies", color="gray")
-        st.markdown(reason, width="content")
-    st.markdown(suite.get("failed_question") or suite["question"].split("\n")[0])
-    if not suite["replies"]:
-        st.caption("No model reply is recorded for this item.")
-    for column, (kind, title) in zip(st.columns(len(CARDS), border=True), CARDS, strict=True):
+    left, right = st.columns(2, gap="medium")
+    with left, st.container(border=True):
+        st.markdown("**Original item**")
+        original = _image_path(suite["image"])
+        if original:
+            st.image(str(original), width="stretch", alt="The item the model failed")
+        st.markdown(suite.get("failed_question") or suite["question"].split("\n")[0])
+        st.markdown(f"Certified answer **{suite['answer']['canonical']}**")
+        _reply_lines(suite)
+    with right:
+        _diagnosis_card(suite, solved)
+    for column, (kind, title) in zip(st.columns(3, border=True), IMAGE_TWINS, strict=True):
         with column:
-            st.markdown(f"**{title}**")
-            _card_body(kind, suite)
-            if kind != "original" and suite["twins"][kind]["status"] in ("certified", "text"):
-                st.text_input(
-                    f"Model reply to {title}", recorded.get(kind, ""), key=f"reply_{bid}_{kind}",
-                    placeholder="model reply", label_visibility="collapsed",
-                )  # fmt: skip
-                if kind in solved:
-                    st.badge("Solved" if solved[kind] else "Failed",
-                             color="green" if solved[kind] else "red")  # fmt: skip
+            _twin_card(kind, title, suite, solved)
+    with st.expander("Test custom model replies", icon=":material/edit_note:"):
+        st.caption("Type what a model answered on each twin; the diagnosis updates as you go.")
+        inputs = st.columns(len(present.DIAGNOSTIC_KINDS))
+        for column, kind in zip(inputs, present.DIAGNOSTIC_KINDS, strict=True):
+            twin = suite["twins"].get(kind, {})
+            column.text_input(
+                TWIN_TITLES[kind], recorded.get(kind, ""), key=f"reply_{bid}_{kind}",
+                placeholder="model reply", disabled=twin.get("status") not in ("certified", "text"),
+            )  # fmt: skip
 
 
 # ------------------------------------------------------------------ quarantine

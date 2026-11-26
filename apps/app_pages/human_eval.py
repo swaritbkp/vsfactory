@@ -1,4 +1,4 @@
-"""Human Calibration Lab: one blind item at a time, with a running scoreboard against the models."""
+"""Human Calibration Lab: one blind item at a time, scored live against the benchmarked models."""
 
 from __future__ import annotations
 
@@ -10,11 +10,13 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+from knotwork.pipeline.io import read_json, read_jsonl
 from knotwork.studio import calibration, factory, forensics, present
 from studio_ui import dataset_select, relative
 
-IMAGE_PX = 500
+IMAGE_PX = 520
 MAX_BUTTON_OPTIONS = 8
+EMPTY_ANSWER = "Enter an answer before submitting."
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -30,6 +32,15 @@ def _preferred_dataset() -> str | None:
     return None
 
 
+def _session_rows(who: str) -> list[dict[str, Any]]:
+    return [r for r in read_jsonl(calibration.LOG) if r.get("session") == who]
+
+
+# ------------------------------------------------------------------ item card
+def _question_text(item: dict[str, Any]) -> str:
+    return str(item["question"]).split("\nEnd your reply")[0]
+
+
 def _answer_input(item: dict[str, Any]) -> str:
     key = f"he_reply_{item['bundle_id']}"
     options = item["options"]
@@ -40,69 +51,118 @@ def _answer_input(item: dict[str, Any]) -> str:
     return st.text_input("Your answer", placeholder="e.g. 42, or: yes; 42", key=key)
 
 
-def _result(row: dict[str, Any]) -> None:
-    if row["correct"]:
-        st.badge("Correct", color="green", icon=":material/check_circle:")
+def _picture(item: dict[str, Any], witness: bool) -> None:
+    bundle = Path(item["dir"])
+    if witness:
+        certificate = read_json(bundle / "task.json")["certificate"]
+        st.image(factory.witness_overlay(bundle, certificate), width=IMAGE_PX,
+                 alt="The item with the kernel's witness evidence drawn on it")  # fmt: skip
+        st.caption("Witness overlay: the evidence the kernel used to certify the answer.")
     else:
-        st.badge("Incorrect", color="red", icon=":material/cancel:")
+        st.image(factory.consumption(bundle), width=IMAGE_PX, alt="Task image")
+
+
+def _verdict(row: dict[str, Any], item: dict[str, Any]) -> None:
+    """The graded result for the item shown above it."""
+    with st.container(horizontal=True, vertical_alignment="center"):
+        if row["correct"]:
+            st.badge("Correct", color="green", icon=":material/check_circle:")
+        else:
+            st.badge("Incorrect", color="red", icon=":material/cancel:")
+        st.caption(f"{item['plugin'].title()} · {item['family']}", width="content")
     a, b, c = st.columns(3)
     a.metric("Your answer", row["response"])
     b.metric("Certified answer", row["truth"])
-    c.metric("Time", f"{row['elapsed_s']:.1f} s")
-    if st.button("Next item", type="primary", width="stretch", key="he_next"):
+    c.metric("Response time", f"{row['elapsed_s']:.1f} s")
+
+
+def _show_result(result: dict[str, Any]) -> None:
+    """After a submit the item stays on screen, with its verdict and the witness one toggle away."""
+    item, row = result["item"], result["row"]
+    with st.container(border=True):
+        _verdict(row, item)
+    with st.container(horizontal_alignment="center"):
+        _picture(item, bool(st.session_state.get("he_witness")))
+    st.markdown(_question_text(item))
+    with st.container(horizontal=True, vertical_alignment="center"):
+        st.toggle("Show witness overlay", key="he_witness")
+        next_item = st.button("Next item", type="primary", icon=":material/skip_next:",
+                              key="he_next")  # fmt: skip
+    if next_item:
         del st.session_state.last_result
+        st.session_state.pop("he_witness", None)
         st.rerun()
 
 
 def _trial(dataset: Path, who: str) -> None:
+    if "last_result" in st.session_state:
+        _show_result(st.session_state.last_result)
+        return
     answered = calibration.done_ids(who)
     items = calibration.queue(dataset, who)
     left = [i for i in items if i["bundle_id"] not in answered]
-    if "last_result" in st.session_state:
-        _result(st.session_state.last_result)
-        return
     if not left:
-        st.success("Every item in this dataset is answered.", icon=":material/task_alt:")
+        st.success(
+            "You have answered every item in this set. Pick another item set under Session "
+            "to keep going.",
+            icon=":material/task_alt:",
+        )
         return
     item = left[0]
     trial = st.session_state.get("trial")
     if trial is None or trial["bundle_id"] != item["bundle_id"]:
         trial = {"bundle_id": item["bundle_id"], "start": time.monotonic()}
         st.session_state.trial = trial
-    st.caption(f"Item {len(items) - len(left) + 1} of {len(items)}")
+    st.caption(f"Item {len(items) - len(left) + 1} of {len(items)} · answer from the image alone")
     with st.container(horizontal_alignment="center"):
-        st.image(factory.consumption(Path(item["dir"])), width=IMAGE_PX, alt="Task image")
-    st.markdown(item["question"].split("\nEnd your reply")[0])
+        _picture(item, witness=False)
+    st.markdown(_question_text(item))
     with st.form("he_form", border=False):
         reply = _answer_input(item)
         sent = st.form_submit_button("Submit", type="primary", width="stretch")
     if sent:
         if not reply.strip():
-            st.warning("Enter an answer first.", icon=":material/edit:")
+            st.warning(EMPTY_ANSWER, icon=":material/edit:")
             return
         elapsed = time.monotonic() - trial["start"]
-        st.session_state.last_result = calibration.record(item, reply.strip(), elapsed, who)
+        row = calibration.record(item, reply.strip(), elapsed, who)
+        st.session_state.last_result = {"item": item, "row": row}
         st.rerun()
 
 
-def _scoreboard() -> None:
+# ------------------------------------------------------------------ scoreboard
+def _scoreboard(who: str) -> None:
+    mine = _session_rows(who)
+    right = sum(bool(r["correct"]) for r in mine)
+    if mine:
+        st.metric("Your session", f"{right / len(mine):.0%}", f"{right} of {len(mine)} correct",
+                  delta_color="off", delta_arrow="off")  # fmt: skip
+    else:
+        st.metric("Your session", "0 answered", "Submit an item to get a score",
+                  delta_color="off", delta_arrow="off")  # fmt: skip
     rows = present.scoreboard(calibration.summary(), present.model_names())
-    frame = pd.DataFrame(rows).rename(
-        columns={"who": "Solver", "accuracy": "Accuracy", "n": "Items", "shared": "Shared"}
+    frame = pd.DataFrame([r for r in rows if r["who"] != "You"])
+    if frame.empty:
+        st.caption("No model baseline yet: the committed live run is missing.")
+        return
+    frame = frame.rename(
+        columns={"who": "Model", "accuracy": "Accuracy", "n": "Items", "shared": "Shared"}
     )
-    if frame["Shared"].isna().all():  # nothing answered by both you and a model yet
+    frame[["Accuracy", "Shared"]] = frame[["Accuracy", "Shared"]].astype(float) * 100
+    if frame["Shared"].isna().all():  # nothing answered by both a person and a model yet
         frame = frame.drop(columns="Shared")
-    percent = st.column_config.ProgressColumn(format="percent", min_value=0.0, max_value=1.0)
+    percent = st.column_config.ProgressColumn(format="%.1f%%", min_value=0.0, max_value=100.0)
     st.dataframe(
-        frame, hide_index=True, width="stretch", alt="Human versus model accuracy",
+        frame, hide_index=True, width="stretch", alt="Model accuracy on the live benchmark",
         column_config={"Accuracy": percent, "Shared": percent},
     )  # fmt: skip
     st.caption(
-        "Model accuracy comes from the committed live run over its own items. "
-        "A “Shared” column appears once you and a model have answered the same bundle."
+        "Model baselines come from the committed live benchmark run. A Shared column appears "
+        "once people and models have answered the same items."
     )
 
 
+# ------------------------------------------------------------------ page
 if "participant" not in st.session_state:
     st.session_state.participant = f"p-{uuid.uuid4().hex[:6]}"
 card, side = st.columns([2.2, 1], gap="large")
@@ -119,7 +179,9 @@ with side:
                 icon=":material/download:", width="stretch",
             )  # fmt: skip
 with card, st.container(border=True):
-    if chosen is not None:
+    if chosen is None:
+        st.info("Pick an item set under Session to start.", icon=":material/playlist_add:")
+    else:
         _trial(chosen, participant)
 with board.container():
-    _scoreboard()
+    _scoreboard(participant)

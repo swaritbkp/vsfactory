@@ -19,21 +19,51 @@ def app() -> AppTest:
     return AppTest.from_file(str(REPO / "apps" / "inspector.py"), default_timeout=60).run()
 
 
-def test_studio_opens_with_a_certified_sample(app: AppTest) -> None:
+def _footer_shown(app: AppTest) -> bool:
+    return any("BilotaAI" in c.value and "Team Bilota" in c.value for c in app.caption)
+
+
+def test_studio_opens_on_a_certified_tangle(app: AppTest) -> None:
     assert not app.exception, app.exception
     item = app.session_state["item"]
     assert item["certificate"]["verdict"] == "CERTIFIED" and item["task"] is not None
+    assert (item["plugin"], item["family"]) == ("tangle", "T1_TRACE")
     assert [m.label for m in app.metric][:2] == ["Certified answer", "Plugin / family"]
+    assert _footer_shown(app)
+
+
+def test_presets_have_short_single_row_labels() -> None:
+    assert list(present.PRESETS) == ["Clean", "Hard logic", "High stress", "CVD"]
 
 
 @pytest.mark.parametrize("page", ["forensics", "human_eval", "export"])
 def test_other_pages_render(app: AppTest, page: str) -> None:
     app.switch_page(f"app_pages/{page}.py").run()
     assert not app.exception, app.exception
-    if page == "forensics":  # the committed sample shows both diagnoses on open, labelled as sample
-        shown = " ".join(m.value for m in app.markdown)
-        assert "Vision failure" in shown and "Reasoning failure" in shown
+    assert _footer_shown(app)
+    if (
+        page == "forensics"
+    ):  # the committed sample offers both diagnoses on open, labelled as sample
+        options = " ".join(o for group in app.button_group for o in group.options)
+        assert "Sample 1: Vision failure" in options and "Sample 2: Reasoning failure" in options
         assert any("Sample data" in w.value for w in app.warning)
+    if page == "human_eval":  # model baselines show before anyone answers
+        assert app.metric[0].label == "Your session" and app.metric[0].value == "0 answered"
+        board = app.dataframe[0].value
+        assert {"GPT-5.4", "Gemini 2.5 Flash", "Qwen3-VL-235B"} <= set(board["Model"])
+        assert abs(board.set_index("Model").loc["GPT-5.4", "Accuracy"] - 25.2) < 0.1
+
+
+def test_human_eval_rejects_an_empty_answer(app: AppTest) -> None:
+    app.switch_page("app_pages/human_eval.py").run()
+    assert not app.exception, app.exception
+    if app.text_input and any(t.label == "Your answer" for t in app.text_input):
+        next(t for t in app.text_input if t.label == "Your answer").set_value("   ")
+    submit = next(b for b in app.button if b.label == "Submit")
+    submit.click().run()
+    assert not app.exception, app.exception
+    assert any(w.value == "Enter an answer before submitting." for w in app.warning)
+    assert "last_result" not in app.session_state
 
 
 def test_presets_cover_the_knobs_and_scores_name_their_source() -> None:

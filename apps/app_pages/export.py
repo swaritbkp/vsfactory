@@ -1,7 +1,9 @@
-"""Export: three steps from a dataset folder to hashed deliverables, then its lineage."""
+"""Export: three steps on the left, the dataset and what the export wrote on the right."""
 
 from __future__ import annotations
 
+import hashlib
+from collections import Counter
 from pathlib import Path
 
 import pandas as pd
@@ -10,49 +12,91 @@ import streamlit as st
 from knotwork.export.manifest import check_manifest
 from knotwork.export.run import run_export
 from knotwork.freshness import lineage
-from knotwork.studio import forensics, present
-from studio_ui import OUT, dataset_select, relative, resolve
+from knotwork.pipeline.io import read_json
+from knotwork.render.canvas import REPO_ROOT
+from knotwork.studio import factory, forensics, present
+from studio_ui import OUT, dataset_label, dataset_select, relative, resolve
+
+FALLBACKS = ("artifacts/selftest/data/tangle", "artifacts/phase3/bench_split/tangle")
+PREVIEW_PX = 220
+FILE_TABLE_HEIGHT = 260
+
+
+def _preferred() -> str | None:
+    """The batch just built in Studio, else a tangle dataset."""
+    last = st.session_state.get("last_batch_dir")
+    if last and (REPO_ROOT / last / "index.jsonl").is_file():
+        return str(last)
+    return next((f for f in FALLBACKS if (REPO_ROOT / f / "index.jsonl").is_file()), None)
 
 
 def _export(dataset: Path, formats: list[str], out: Path, shard: float, limit: int) -> None:
     chosen = [f for f in formats if f != "manifest"]
-    with st.status("Exporting", expanded=True) as status:
+    with st.status("Exporting dataset…", expanded=True) as status:
         try:
             st.write(f"Reading {len(forensics.bundles(dataset))} bundles")
             code = run_export(
                 dataset, ",".join(chosen) or "manifest", out, limit or None, shard or None
             )
             st.write("Checking every file against the manifest hashes")
-            problems = check_manifest(out) if code == 0 else ["nothing to export"]
+            problems = check_manifest(out) if code == 0 else ["the exporter wrote nothing"]
         except Exception as exc:  # the UI boundary: every failure is shown to the user
             status.update(label="Export failed", state="error")
             st.error(f"{type(exc).__name__}: {exc}")
             return
         if problems:
             status.update(label="Export needs attention", state="error")
-            st.warning("; ".join(problems[:5]))
+            st.warning("Some files do not match the manifest: " + "; ".join(problems[:5]))
             return
-        status.update(label="Export complete", state="complete", expanded=False)
+        status.update(label="Dataset exported", state="complete", expanded=False)
     st.session_state.exported = str(out)
 
 
-def _summary(out: Path) -> None:
-    rows = present.export_summary(out)
+# ------------------------------------------------------------------ right column
+def _preview(dataset: Path) -> None:
+    rows = forensics.bundles(dataset)
     if not rows:
+        st.caption("This dataset has no bundles yet.")
         return
-    a, b, c = st.columns(3)
-    a.metric("Formats", len(rows))
-    b.metric("Files", sum(r["files"] for r in rows))
-    c.metric("Size", present.human_bytes(sum(r["bytes"] for r in rows)))
-    table = pd.DataFrame(
-        [{"Format": r["format"], "Files": r["files"], "Size": present.human_bytes(r["bytes"])}
-         for r in rows]
+    bases = [r for r in rows if r.get("role", "base") == "base"]
+    families = Counter(str(r.get("family", "?")) for r in rows)
+    picture, facts = st.columns([1, 1.6], gap="medium", vertical_alignment="center")
+    with picture:
+        first = dataset / bases[0]["dir"] if bases else None
+        if first is not None and (first / "beauty.png").is_file():
+            st.image(factory.beauty(first, PREVIEW_PX), width=PREVIEW_PX, alt="First item")
+    with facts:
+        a, b = st.columns(2)
+        a.metric("Bundles", len(rows))
+        b.metric("Base items", len(bases))
+        frame = pd.DataFrame([{"Family": k, "Bundles": v} for k, v in sorted(families.items())])
+        st.dataframe(frame, hide_index=True, width="stretch", alt="Bundles per question family")
+
+
+def _result(out: Path) -> None:
+    manifest = out / "dataset_manifest.json"
+    if not manifest.is_file():
+        return
+    data = read_json(manifest)
+    digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    rows = present.export_summary(out)
+    total = sum(r["bytes"] for r in rows)
+    st.success(
+        f"**Dataset exported.** {data.get('n_bundles', '?')} items, "
+        f"{sum(r['files'] for r in rows)} files, {present.human_bytes(total)} in "
+        f"`{relative(out)}`.  \nManifest SHA-256 `{digest}`",
+        icon=":material/check_circle:",
+    )
+    files = pd.DataFrame(
+        [{"Path": f"{relative(out)}/{name}", "Size": present.human_bytes(int(info["bytes"]))}
+         for name, info in sorted(data["artifacts"].items())]
+        + [{"Path": relative(manifest), "Size": present.human_bytes(manifest.stat().st_size)}]
     )  # fmt: skip
-    st.dataframe(table, hide_index=True, width="stretch", alt="Exported files by format")
-    st.caption(f"Everything in `{relative(out)}`, hashed in dataset_manifest.json.")
+    st.dataframe(files, hide_index=True, width="stretch", height=FILE_TABLE_HEIGHT,
+                 alt="Every exported file and its size")  # fmt: skip
     st.download_button(
-        "Download dataset_manifest.json", (out / "dataset_manifest.json").read_bytes(),
-        "dataset_manifest.json", icon=":material/download:", key="ex_manifest",
+        "Download dataset_manifest.json", manifest.read_bytes(), "dataset_manifest.json",
+        icon=":material/download:", key="ex_manifest", width="stretch",
     )  # fmt: skip
 
 
@@ -62,26 +106,29 @@ def _lineage(dataset: Path) -> None:
         return
     nodes = forensics.lineage_nodes(dataset)
     st.caption(f"{len(nodes)} nodes: scene → render → certificate → twin → eval")
-    bundle = st.selectbox("Bundle", [r["bundle_id"] for r in rows], key="ln_bundle")
-    if st.button("Verify against files", icon=":material/fact_check:", key="ln_check"):
+    with st.container(horizontal=True, vertical_alignment="bottom"):
+        bundle = st.selectbox("Bundle", [r["bundle_id"] for r in rows], key="ln_bundle")
+        check = st.button("Verify against files", icon=":material/fact_check:", key="ln_check")
+    if check:
         stored = (dataset / lineage.FILENAME).is_file()
         found = lineage.check_dataset(dataset) if stored else lineage.verify(nodes)
         if found:
-            st.error("; ".join(found[:5]))
+            st.error("Lineage does not match the files: " + "; ".join(found[:5]))
         else:
-            st.success("Lineage is consistent.", icon=":material/check_circle:")
+            st.success("Lineage matches the files on disk.", icon=":material/check_circle:")
     part = forensics.lineage_slice(nodes, str(bundle))
     if part:
         st.graphviz_chart(forensics.lineage_dot(part), alt="Lineage graph of the bundle")
 
 
-_, middle, _ = st.columns([1, 3, 1])
-with middle:
+# ------------------------------------------------------------------ page
+controls, output = st.columns([45, 55], gap="large")
+with controls:
     with st.container(border=True):
-        st.markdown("**1 · Select dataset folder**")
-        dataset = dataset_select("Dataset", "ex_dataset")
+        st.markdown("**1. Choose a dataset**")
+        dataset = dataset_select("Dataset", "ex_dataset", _preferred())
     with st.container(border=True):
-        st.markdown("**2 · Pick formats**")
+        st.markdown("**2. Choose formats**")
         formats = list(
             st.pills(
                 "Formats", list(present.FORMAT_LABELS), selection_mode="multi",
@@ -89,22 +136,37 @@ with middle:
                 key="ex_formats", label_visibility="collapsed",
             )
         )  # fmt: skip
-        st.caption("A manifest with the SHA-256 of every file is written with any export.")
-        with st.popover("Options", icon=":material/tune:"):
+        st.caption("Every export also writes a manifest with the SHA-256 of each file.")
+        with st.expander("Options", icon=":material/tune:"):
             shard = float(st.number_input("Max parquet shard (MB, 0 = one file)", 0.0, 4096.0, 0.0))
             limit = int(st.number_input("Limit bundles (0 = all)", 0, 10_000_000, 0))
             default = relative(OUT / "export" / (dataset.name if dataset else "dataset"))
             folder = st.text_input("Output folder", default, key=f"ex_out_{default}")
     with st.container(border=True):
-        st.markdown("**3 · Export**")
+        st.markdown("**3. Export**")
         out = resolve(folder)
-        if st.button(
+        st.caption(f"Writes to `{relative(out)}`.")
+        go = st.button(
             "Export dataset", type="primary", width="stretch", icon=":material/package_2:",
             disabled=dataset is None or not formats, key="ex_go",
-        ) and dataset is not None:  # fmt: skip
+        )  # fmt: skip
+        if not formats:
+            st.caption("Choose at least one format to export.")
+with output:
+    with st.container(border=True):
+        if dataset is None:
+            st.info("Choose a dataset on the left to preview it.", icon=":material/dataset:")
+        else:
+            st.markdown(f"**{dataset_label(relative(dataset))}**")
+            _preview(dataset)
+    with st.container(border=True):
+        st.markdown("**Export output**")
+        if go and dataset is not None:
             _export(dataset, formats, out, shard, limit)
         if st.session_state.get("exported") == str(out):
-            _summary(out)
+            _result(out)
+        else:
+            st.caption("Nothing exported yet. Press Export dataset to write the files here.")
     if dataset is not None:
-        with st.expander("Lineage", icon=":material/account_tree:"):
+        with st.expander("Manifest & lineage", icon=":material/account_tree:"):
             _lineage(dataset)

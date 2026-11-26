@@ -12,6 +12,17 @@ from knotwork.render.canvas import REPO_ROOT
 from knotwork.studio import forensics
 
 OUT = REPO_ROOT / "artifacts" / "studio"
+FOOTER = (
+    "© 2026 BilotaAI · Team Bilota (Swarit Sharma & Pankaj David) · Knotwork Visual Task Factory"
+)
+SOURCES = (  # folder prefix -> where the dataset came from, in the reader's words
+    ("artifacts/studio/batch/", "Studio batch"),
+    ("artifacts/phase3/bench_split/", "Benchmark split"),
+    ("artifacts/selftest/data/", "Self-test"),
+    ("artifacts/phase2/", "Phase 2 run"),
+    ("artifacts/studio/", "Studio"),
+    ("tests/", "Test fixture"),
+)
 
 
 def relative(path: Path) -> str:
@@ -27,6 +38,30 @@ def resolve(text: str) -> Path:
     return path if path.is_absolute() else REPO_ROOT / path
 
 
+def footer() -> None:
+    """The attribution line every page ends with."""
+    st.divider()
+    st.caption(FOOTER)
+
+
+@st.cache_data(ttl=30, show_spinner=False)
+def _item_count(folder: str) -> int:
+    index = resolve(folder) / "index.jsonl"
+    if not index.is_file():
+        return 0
+    with index.open(encoding="utf-8") as handle:
+        return sum(1 for line in handle if line.strip())
+
+
+def dataset_label(folder: str) -> str:
+    """`Tangle · Benchmark split · 600 items` for a repository-relative dataset folder."""
+    source = next((name for prefix, name in SOURCES if folder.startswith(prefix)), "Folder")
+    name = folder.rstrip("/").rsplit("/", 1)[-1].replace("data_", "").replace("_", " ")
+    count = _item_count(folder)
+    items = f"{count} item{'s' if count != 1 else ''}" if count else "not built yet"
+    return f"{name[:1].upper()}{name[1:]} · {source} · {items}"
+
+
 def dataset_select(label: str, key: str, prefer: str | None = None) -> Path | None:
     """One searchable box over discovered datasets that also accepts a typed folder."""
     options = [relative(p) for p in forensics.find_datasets()]
@@ -36,16 +71,21 @@ def dataset_select(label: str, key: str, prefer: str | None = None) -> Path | No
         options,
         index=index,
         key=key,
+        format_func=dataset_label,
         accept_new_options=True,
-        placeholder="Pick a dataset or type a folder",
+        placeholder="Pick a dataset or type a folder path",
     )
     if not chosen:
-        st.caption("No dataset yet. Build one under Studio, in Batch & OOD Build.")
+        st.caption("No dataset yet. Build one in Studio under Batch & OOD Build.")
         return None
     path = resolve(str(chosen))
     if not (path / "index.jsonl").is_file():
-        st.warning(f"`{chosen}` has no index.jsonl.", icon=":material/folder_off:")
+        st.warning(
+            f"`{chosen}` is not a dataset: it has no index.jsonl. Pick a folder from the list.",
+            icon=":material/folder_off:",
+        )
         return None
+    st.caption(f"Folder: `{relative(path)}`")
     return path
 
 
@@ -58,12 +98,12 @@ def run_with_status(label: str, action: Callable[[], Any]) -> Any:
             status.update(label=f"{label} failed", state="error", expanded=True)
             st.error(f"{type(exc).__name__}: {exc}")
             return None
-        status.update(label=f"{label} done", state="complete")
+        status.update(label=f"{label}: done", state="complete")
     return result
 
 
 def verdict_badge(verdict: str) -> None:
     if verdict == "CERTIFIED":
-        st.badge("CERTIFIED", icon=":material/verified:", color="green")
+        st.badge("Certified", icon=":material/verified:", color="green")
     else:
-        st.badge("QUARANTINED", icon=":material/block:", color="red")
+        st.badge("Quarantined", icon=":material/block:", color="red")

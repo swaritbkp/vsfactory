@@ -24,19 +24,19 @@ AUTO = "auto"
 Colour = Literal["red", "orange", "gray"]
 #: knob values each one-click scenario sets; "auto" keeps the profile's own sampling ranges
 PRESETS: dict[str, dict[str, Any]] = {
-    "Clean baseline": {
+    "Clean": {
         "reasoning_load": 0.2, "visual_stress": 0.0, "occlusion_level": 0.0, "realism": 0.0,
         "color_regime": "unique",
     },
-    "Hard reasoning": {
+    "Hard logic": {
         "reasoning_load": 0.9, "visual_stress": 0.2, "occlusion_level": 0.6, "realism": AUTO,
         "color_regime": AUTO,
     },
-    "High visual stress": {
+    "High stress": {
         "reasoning_load": 0.4, "visual_stress": 0.8, "occlusion_level": 0.4, "realism": 0.9,
         "color_regime": "mono",
     },
-    "CVD check": {
+    "CVD": {
         "reasoning_load": 0.4, "visual_stress": AUTO, "occlusion_level": AUTO, "realism": AUTO,
         "color_regime": "unique",
     },
@@ -202,6 +202,7 @@ def short_model_name(slug: str) -> str:
     known = (
         ("gpt-5.4", "GPT-5.4"),
         ("gemini-2.5-flash", "Gemini 2.5 Flash"),
+        ("qwen3-vl-235b", "Qwen3-VL-235B"),
         ("qwen3-vl", "Qwen3-VL"),
     )
     return next((name for key, name in known if key in slug.lower()), slug)
