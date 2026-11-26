@@ -30,5 +30,5 @@ def test_contact_sheet(
         ]
         assert all(p["bundle_id"] and p["caption"] for p in rows[name]["panels"])
     faults = {f["fault"]: f["code"] for f in meta["faults"]}
-    assert set(faults) == {f"M{i}" for i in range(1, 11)}
+    assert set(faults) == {f"M{i}" for i in range(1, 15)}
     assert faults["M1"] == "E_OOB" and faults["M9"] == "E_NEEDLE_OFFCENTER"

@@ -66,6 +66,8 @@
         "E_LABEL_MISMATCH",
         "E_UNEXPLAINED_INK",
         "E_BEAUTY_MISMATCH",
+        "E_ORACLE_GHOST",
+        "E_CVD_AMBIGUOUS",
         "E_OCCLUDED_CROSSING",
         "E_WITNESS_OCCLUDED",
         "E_TANGENT_CROSSING",

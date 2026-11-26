@@ -50,6 +50,8 @@ class ErrorCode(StrEnum):
     E_LABEL_MISMATCH = "E_LABEL_MISMATCH"
     E_UNEXPLAINED_INK = "E_UNEXPLAINED_INK"
     E_BEAUTY_MISMATCH = "E_BEAUTY_MISMATCH"
+    E_ORACLE_GHOST = "E_ORACLE_GHOST"
+    E_CVD_AMBIGUOUS = "E_CVD_AMBIGUOUS"
     E_OCCLUDED_CROSSING = "E_OCCLUDED_CROSSING"
     E_WITNESS_OCCLUDED = "E_WITNESS_OCCLUDED"
     E_TANGENT_CROSSING = "E_TANGENT_CROSSING"
@@ -76,6 +78,7 @@ CODE_PRIORITY: tuple[ErrorCode, ...] = tuple(ErrorCode)
 class FaultCode(StrEnum):
     M1, M2, M3, M4, M5 = "M1", "M2", "M3", "M4", "M5"
     M6, M7, M8, M9, M10 = "M6", "M7", "M8", "M9", "M10"
+    M11, M12, M13, M14 = "M11", "M12", "M13", "M14"  # panel faults
 
 
 _E = ErrorCode
@@ -94,6 +97,10 @@ FAULT_EXPECTED: dict[FaultCode, ErrorCode] = dict(
             _E.E_SCALE_MISMATCH,
             _E.E_NEEDLE_OFFCENTER,
             _E.E_BEAUTY_MISMATCH,
+            _E.E_CLAIM_MISMATCH,  # M11 socket cables swapped between two gauge ports
+            _E.E_OCCLUDED_CROSSING,  # M12 occluded panel crossing
+            _E.E_SCALE_MISMATCH,  # M13 target gauge needle moved
+            _E.E_LABEL_MISMATCH,  # M14 gauge port labels swapped
         ),
         strict=True,
     )
@@ -101,7 +108,9 @@ FAULT_EXPECTED: dict[FaultCode, ErrorCode] = dict(
 
 #: Which plugin each fault is injected into by `knot mutate`.
 FAULT_PLUGIN: dict[FaultCode, str] = {
-    f: ("gauge" if f in (FaultCode.M8, FaultCode.M9) else "tangle") for f in FaultCode
+    **dict.fromkeys(FaultCode, "tangle"),
+    **dict.fromkeys((FaultCode.M8, FaultCode.M9), "gauge"),
+    **dict.fromkeys((FaultCode.M11, FaultCode.M12, FaultCode.M13, FaultCode.M14), "panel"),
 }
 
 

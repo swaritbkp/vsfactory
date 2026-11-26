@@ -10,6 +10,7 @@ import numpy as np
 from scipy import ndimage
 
 from knotwork.knotcore.contracts import CANVAS_PX, ErrorCode, WitnessCheck
+from knotwork.knotcore.cvd import cvd_checks
 from knotwork.knotcore.gauge import needle
 from knotwork.knotcore.io import BoolArr, Bundle, KernelFault
 from knotwork.knotcore.topo import STRUCT, core_vote, crossings, strand_of
@@ -27,9 +28,14 @@ def _dil(m: BoolArr, n: int) -> BoolArr:
     return np.asarray(ndimage.binary_dilation(m, STRUCT, iterations=n), dtype=np.bool_)
 
 
-def _patch(b: Bundle, xy: list[float]) -> float:
+def _patch(b: Bundle, xy: list[float], top: int) -> float:
+    """Mean luminance of the top object's pixels in the 5x5 patch at xy (the whole patch when it has
+    fewer than 4), so the background halo of a neighbouring crossing does not dilute the colour."""
     x, y = round(xy[0]), round(xy[1])
-    return float(b.lum[max(y - 2, 0) : y + 3, max(x - 2, 0) : x + 3].mean())
+    win = (slice(max(y - 2, 0), y + 3), slice(max(x - 2, 0), x + 3))
+    own = b.ids[win] == top
+    lum = b.lum[win]
+    return float(lum[own].mean() if int(own.sum()) >= 4 else lum.mean())
 
 
 def _owner(b: Bundle, xy: list[float]) -> int:
@@ -79,7 +85,7 @@ def witness(b: Bundle, cfg: dict[str, Any]) -> list[WitnessCheck]:
         points.append(("needle_tip_color", tip, _owner(b, tip)))
     for name, xy, top in points:
         if top in inner:
-            d = abs(_patch(b, xy) - inner[top])
+            d = abs(_patch(b, xy, top) - inner[top])
             out.append(_chk(name, top, d <= 0.10, d, 0.10, E.E_BEAUTY_MISMATCH))
         else:  # background or another object lies where a strand or needle must be on top
             out.append(_chk(name, top or None, False, top, 0.0, E.E_WITNESS_OCCLUDED))
@@ -99,4 +105,4 @@ def witness(b: Bundle, cfg: dict[str, Any]) -> list[WitnessCheck]:
         not (x.x0 >= 0 and x.y0 >= 0 and x.x1 <= CANVAS_PX and x.y1 <= CANVAS_PX) for x in boxes
     )
     out.append(_chk("oob_box", None, bad == 0, bad, 0.0, E.E_OOB))
-    return out
+    return out + cvd_checks(b, cfg)

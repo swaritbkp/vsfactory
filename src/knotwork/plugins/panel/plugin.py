@@ -40,7 +40,7 @@ from knotwork.plugins.gauge.plugin import (
     zone_answer,
 )
 from knotwork.plugins.gauge.render import bezel_width, draw_dial
-from knotwork.plugins.gauge.scale import ZONES, zone_of
+from knotwork.plugins.gauge.scale import ZONES, arc_index, dial_zone, order_with
 from knotwork.plugins.panel import compose
 from knotwork.plugins.panel.programs import PREMISE, program, socket_tid
 from knotwork.plugins.tangle import braid, geom
@@ -101,7 +101,27 @@ def argmax_ok(pay: dict[str, Any]) -> bool:
 
 
 def red_count(pay: dict[str, Any]) -> int:
-    return sum(zone_of(float(d["value"]), tuple(d["zones"])) == "red" for d in pay["dials"])
+    return sum(dial_zone(d) == "red" for d in pay["dials"])
+
+
+def port_swap(pay: dict[str, Any]) -> tuple[int, int]:
+    """M11: the final braid positions of two socket cables whose gauge ports get exchanged (the
+    queried socket's cable is one of them)."""
+    exits, _ = braid.compose(pay["n"], [_letter(x) for x in pay["word"]])
+    ports = [j for j, kind in enumerate(pay["dest_kind"]) if kind == "port"]
+    target = [j for j in ports if pay["sockets"].get(str(exits[j])) == pay["target"]]
+    first = target[0] if target else ports[0]
+    return first, next(j for j in ports if j != first)
+
+
+def faulted_dial(pay: dict[str, Any]) -> dict[str, Any]:
+    """M13: the target gauge (else the first) drawn with its needle moved far outside tolerance."""
+    d = target_gauge(pay) if pay.get("target") else dict(pay["dials"][0])
+    lo, hi = float(d["vmin"]) + 2.0, float(d["vmax"]) - 2.0
+    shift = max(8.0 * float(pay["grade_tol"]), 0.2 * (float(d["vmax"]) - float(d["vmin"])))
+    value = float(d["value"])
+    moved = value + shift if value + shift <= hi else max(lo, value - shift)
+    return dict(d, value=moved)
 
 
 class PanelPlugin:
@@ -218,7 +238,7 @@ class PanelPlugin:
             if family == Family.P1_READ_TRACE.value:
                 g = next(d for d in pay["dials"] if d["name"] == target_gauge(pay)["name"])
                 g["value"] = float(pick_value_binned(rng, g, tol, decile=ordinal(pay)))
-            else:
+            elif family == Family.P2_ZONE_TRACE.value:
                 g = next(d for d in pay["dials"] if d["name"] == target_gauge(pay)["name"])
                 o, draw = ordinal(pay), int(rng.integers(3))
                 zone = str(ZONES[draw if o is None else o % 3])
@@ -226,11 +246,8 @@ class PanelPlugin:
                 if v is None:
                     return False
                 g["value"] = float(v)
-                if family in (f.value for f in PREMISE):
-                    holds = family == Family.P5_PREMISE_CONTROL.value
-                    others = [z for z in ZONES if z != zone]
-                    pick = int(rng.integers(2)) if o is None else (o // 3) % 2
-                    pay["claimed"] = zone if holds else others[pick]
+            else:
+                self._condition_premise(pay, family, rng)
         elif family == Family.P3_ARGMAX_PORT.value:
             for _ in range(60):
                 if argmax_ok(pay):
@@ -250,22 +267,44 @@ class PanelPlugin:
         del gprof
         return True
 
+    def _condition_premise(
+        self, pay: dict[str, Any], family: str, rng: np.random.Generator
+    ) -> None:
+        """Premise items (SPEC D-39): the value's decile is balanced and the arc colour order is
+        random per dial, so the zone named in the question says nothing about the number, and the
+        premise is true or false independently of the text."""
+        o = ordinal(pay)
+        target = target_gauge(pay)["name"]
+        g = next(d for d in pay["dials"] if d["name"] == target)
+        g["value"] = float(pick_value_binned(rng, g, float(pay["grade_tol"]), decile=o))
+        draw = int(rng.integers(3))
+        zone = str(ZONES[draw if o is None else o % 3])
+        for d in pay["dials"]:
+            d["zone_order"] = [ZONES[int(i)] for i in rng.permutation(3)]
+        g["zone_order"] = order_with(rng, zone, arc_index(g["value"], tuple(g["zones"])))
+        others = [z for z in ZONES if z != zone]
+        pick = int(rng.integers(2)) if o is None else (o // 3) % 2
+        pay["claimed"] = zone if family == Family.P5_PREMISE_CONTROL.value else others[pick]
+
     # ------------------------------------------------------------------ render
     def render(
         self, scene: SceneIR, out_dir: Path, fault: FaultCode | None = None
     ) -> RenderManifest:
         pay = scene.payload
         c = make_canvas(pay["render"])
-        paths, crossings, dests = compose.build_paths(pay)
+        swap = port_swap(pay) if fault is FaultCode.M11 else None
+        paths, crossings, dests = compose.build_paths(pay, swap)
+        moved = faulted_dial(pay) if fault is FaultCode.M13 else None
         enclosure(c, pay, [p[0] for p in paths])
         gauges, terms = [], []
         for i, d in enumerate(pay["dials"]):
-            g = draw_dial(c, "panel", d)
+            g = draw_dial(c, "panel", moved if moved and moved["name"] == d["name"] else d)
             cx, cy = d["center"]
             lab = c.new_object(f"panel/label:gauge_G{i + 1}", "label", LABEL_RGB, parent="panel/labels:gauges",
                                label_text=f"G{i + 1}")  # fmt: skip
+            shown = {0: 2, 1: 1}.get(i, i + 1) if fault is FaultCode.M14 else i + 1
             c.text(
-                lab, (cx, cy + compose.DIAL_R + bezel_width(compose.DIAL_R) + 20.0), f"G{i + 1}", 26
+                lab, (cx, cy + compose.DIAL_R + bezel_width(compose.DIAL_R) + 20.0), f"G{shown}", 26
             )
             row = np.nonzero(c.mask_array(g.dial_obj)[int(round(cy))])[0]
             tid = f"panel/terminal:port_g{i + 1}"
@@ -288,7 +327,9 @@ class PanelPlugin:
         pads = [j for j, kind in enumerate(pay["dest_kind"]) if kind == "pad"]
         terms += add_terminal_labels(c, "panel", "end", [np.asarray(dests[j]) for j in pads],
                                      [np.array([-1.0 if pay.get("mirror") else 1.0, 0.0])] * len(pads), [f"pad{j}" for j in pads], [None] * len(pads))  # fmt: skip
-        del fault
+        if fault is FaultCode.M12 and crossings:
+            occ = c.new_object("panel/occluder:o", "occluder", (128, 128, 128))
+            c.disk(occ, tuple(crossings[len(crossings) // 2]["center"]), 2.0 * float(pay["stroke"]))
         realism.add_surface(
             c, pay["surface"], ("label", "needle"), lambda cv: halo_mask(crossings, cv.size)
         )
@@ -336,18 +377,15 @@ class PanelPlugin:
                     expected=float_answer(d["value"]),
                 )
             )
-            out.append(Claim(claim_id=f"zone_{d['name']}", op=Op.ZONE, args=[gid],
-                             expected=zone_answer(zone_of(d["value"], tuple(d["zones"])))))  # fmt: skip
+            zone = zone_answer(dial_zone(d))
+            out.append(Claim(claim_id=f"zone_{d['name']}", op=Op.ZONE, args=[gid], expected=zone))
         return ClaimSet(plugin=self.name, claims=out)
 
     def questions(self, scene: SceneIR, seeds: SeedTree, family: Family) -> QuestionProgram:
         pay = scene.payload
         holds = None
         if family in PREMISE:
-            holds = (
-                zone_of(target_gauge(pay)["value"], tuple(target_gauge(pay)["zones"]))
-                == pay["claimed"]
-            )
+            holds = dial_zone(target_gauge(pay)) == pay["claimed"]
         span = float(pay["dials"][0]["vmax"]) - float(pay["dials"][0]["vmin"])
         return program(family, f"panel/{family.value}/{seeds.digest()[:16]}", pay["target"],
                        sorted(pay["sockets"].values()), pay["claimed"], holds, span)  # fmt: skip
@@ -358,8 +396,7 @@ class PanelPlugin:
         fam = base.family
         holds = None
         if fam in PREMISE:
-            g = target_gauge(pay)
-            holds = zone_of(g["value"], tuple(g["zones"])) == pay["claimed"]
+            holds = dial_zone(target_gauge(pay)) == pay["claimed"]
         return program(fam, base.program_id, pay["target"], sorted(pay["sockets"].values()), pay["claimed"],
                        holds, float(base.difficulty.get("span", 80.0)))  # fmt: skip
 
@@ -372,7 +409,7 @@ class PanelPlugin:
         if fam is Family.P4_COUNT_ZONE:
             return _int(red_count(pay))
         g = target_gauge(pay)
-        v, zone = float(g["value"]), zone_of(g["value"], tuple(g["zones"]))
+        v, zone = float(g["value"]), dial_zone(g)
         if fam is Family.P1_READ_TRACE:
             return float_answer(v)
         if fam is Family.P2_ZONE_TRACE:
@@ -410,7 +447,7 @@ class PanelPlugin:
             return _scene(scene, pay), f"{g['name']} -> {v}"
         if fam is Family.P4_COUNT_ZONE:
             d = pay["dials"][int(rng.integers(pay["k"]))]
-            red = zone_of(d["value"], tuple(d["zones"])) == "red"
+            red = dial_zone(d) == "red"
             v = pick_value(
                 rng, d, tol, zone=["green", "amber"][int(rng.integers(2))] if red else "red"
             )
@@ -420,7 +457,7 @@ class PanelPlugin:
             return _scene(scene, pay), f"{d['name']} {'out of' if red else 'into'} red"
         name = target_gauge(pay)["name"]
         d = next(x for x in pay["dials"] if x["name"] == name)
-        here = zone_of(d["value"], tuple(d["zones"]))
+        here = dial_zone(d)
         if fam is Family.P1_READ_TRACE:
             v = pick_value(rng, d, tol, away_from=float(d["value"]), min_move=5 * tol)
         elif fam is Family.P2_ZONE_TRACE:
@@ -507,6 +544,15 @@ def _top_label(pay: dict[str, Any], strand: int) -> str:
 
 
 def fault_effective(scene: SceneIR, fault: FaultCode) -> bool:
+    pay = scene.payload
+    if fault in (FaultCode.M11, FaultCode.M14):
+        return int(pay["k"]) >= 2
+    if fault is FaultCode.M12:
+        return bool(braid.compose(pay["n"], [_letter(x) for x in pay["word"]])[1])
+    if fault is FaultCode.M13:
+        moved = faulted_dial(pay)
+        old = next(d for d in pay["dials"] if d["name"] == moved["name"])
+        return abs(float(moved["value"]) - float(old["value"])) >= 5.0 * float(pay["grade_tol"])
     return False
 
 

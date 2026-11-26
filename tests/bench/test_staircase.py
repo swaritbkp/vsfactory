@@ -8,7 +8,14 @@ import numpy as np
 import pytest
 from scipy.optimize import brentq
 
-from knotwork.bench.staircase import TARGET, Staircase, expected_level, run_simulated
+from knotwork.bench.staircase import (
+    MAX_REVERSALS,
+    TARGET,
+    Staircase,
+    expected_level,
+    mle_threshold,
+    run_simulated,
+)
 
 
 def observer(k: float, centre: float = 6.0, slope: float = 0.8) -> float:
@@ -27,29 +34,46 @@ def test_threshold_within_1_5_levels_in_90pct_of_200_runs() -> None:
 
 def test_rules() -> None:
     st = Staircase(1, 12)
-    assert st.level == 3
+    assert st.level == 3 and st.max_trials == 75
     st.update(True)
     assert st.level == 3
     st.update(True)
-    assert st.level == 4  # two consecutive correct -> harder
+    assert st.level == 5  # two consecutive correct -> harder, coarse step of 2
     st.update(False)
-    assert st.level == 3 and st.reversals == [4]  # one wrong -> easier (a reversal)
+    assert st.level == 3 and st.reversals == [5]  # one wrong -> easier (a reversal)
     st.update(True)
     st.update(True)
-    assert st.level == 4 and st.reversals == [4, 3]
-    assert st.threshold() == pytest.approx(3.5)
+    assert st.level == 5 and st.reversals == [5, 3]
+    st.update(False)
+    assert st.level == 4 and st.reversals == [5, 3, 5]  # third reversal -> step 1
+    assert st.threshold() == pytest.approx(13 / 3)
 
 
-def test_stops_at_10_reversals_or_max_trials() -> None:
+def test_stops_at_max_reversals_or_max_trials() -> None:
     st = Staircase(1, 12, max_trials=1000)
     while not st.done:
         st.update(len(st.history) % 3 != 2)  # correct, correct, wrong, ...
-    assert len(st.reversals) == 10
+    assert len(st.reversals) == MAX_REVERSALS
     st2 = Staircase(1, 12, max_trials=12)
     while not st2.done:
         st2.update(True)
-    assert len(st2.history) == 12 and st2.level == 9
+    assert len(st2.history) == 12 and st2.level == 12
     assert st2.threshold() == pytest.approx(np.mean([lv for lv, _ in st2.history]))
+
+
+def test_mle_threshold_recovers_a_known_curve() -> None:
+    k_star = brentq(lambda x: observer(x) - TARGET, 1, 12)
+    errors = []
+    for seed in range(20):
+        st = run_simulated(observer, np.random.default_rng(seed), 1, 12)
+        errors.append(abs(mle_threshold(st.history, 1, 12, lambda _: 0.25) - k_star))
+    assert np.mean(np.array(errors) <= 1.5) >= 0.85, errors
+
+
+def test_mle_threshold_clips_separable_data() -> None:
+    assert mle_threshold([(5, True)] * 10, 1, 12) == 12.0
+    assert mle_threshold([(5, False)] * 10, 1, 12) == 1.0
+    assert mle_threshold([], 1, 12) == 1.0
 
 
 def test_bounds_and_expected_level() -> None:

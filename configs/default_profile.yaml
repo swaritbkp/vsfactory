@@ -38,6 +38,13 @@ kernel:
     tolerance_guard_k: 2.0      # tolerance multiplier on resolution-derived sigma
   count:
     min_visible_px: 200
+  cvd:
+    min_delta_e: 8.0              # CIELAB distance under simulated protan / deutan vision
+  oracle:
+    min_delta: 0.05               # beauty-only: luminance step of a path point against its ring
+    min_range: 0.08               # beauty-only: luminance range at crossings, tips, labels, ticks
+    min_strand_fraction: 0.7
+    min_needle_fraction: 0.35
 
 tangle:
   strands: [3, 10]              # inclusive range of n

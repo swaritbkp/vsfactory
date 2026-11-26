@@ -34,7 +34,7 @@ from knotwork.bench.client_base import BudgetExhausted, ReplayMiss, Reply, VLMCl
 from knotwork.bench.client_mock import MockClient
 from knotwork.bench.client_replay import ReplayClient, ReplayRecorder, replay_key
 from knotwork.bench.prompts import image_id, image_png, read_only, trace_only
-from knotwork.bench.staircase import Staircase, expected_level
+from knotwork.bench.staircase import Staircase, expected_level, mle_threshold
 from knotwork.datasets import dataset_dirs
 from knotwork.knotcore.grading import ANSWER_RE, YESNO_RE, extract, grade_prediction
 from knotwork.knotcore.seeds import SeedTree
@@ -169,7 +169,8 @@ def load_pool(data: Path) -> Pool:
 
 # ------------------------------------------------------------------ plan
 def block_sizes(cfg: dict[str, Any], max_trials: int) -> dict[str, int]:
-    plan, scale = cfg["plan"], max_trials / BASE_TRIALS
+    # diagnostic blocks keep their planned size when the staircases get more than BASE_TRIALS
+    plan, scale = cfg["plan"], min(1.0, max_trials / BASE_TRIALS)
     return {k: max(1, math.ceil(int(plan[f"{k}_trials"]) * scale))
             for k in ("ablation", "twin", "gaslight", "composition")}  # fmt: skip
 
@@ -398,16 +399,18 @@ def run_staircase(runner: Runner, items: list[Item], track: str, max_trials: int
             continue
         st.update(out.correct)
         done.append((it, out))
+
+    def m_bar(k: float) -> float:
+        lv = min(by_level, key=lambda x: (abs(x - k), x))
+        return float(np.mean([i.m for i in by_level[lv]]))
+
     exp = None
     if p_true is not None:
-
-        def m_bar(k: float) -> float:
-            lv = min(by_level, key=lambda x: (abs(x - k), x))
-            return float(np.mean([i.m for i in by_level[lv]]))
-
         exp = round(expected_level(p_true, m_bar, lo, hi), 4)
-    return {"threshold_level": round(st.threshold(), 4), "expected_level": exp, "reversals": st.reversals,
-            "trials": len(st.history), "levels": [lo, hi]}, done  # fmt: skip
+    threshold = mle_threshold(st.history, lo, hi, lambda k: 1.0 / m_bar(k))
+    return {"threshold_level": round(threshold, 4), "reversal_level": round(st.threshold(), 4),
+            "expected_level": exp, "reversals": st.reversals, "trials": len(st.history),
+            "levels": [lo, hi]}, done  # fmt: skip
 
 
 def single_switch(item: Item, profile: dict[str, Any], cache: dict[str, set[str]]) -> set[str]:

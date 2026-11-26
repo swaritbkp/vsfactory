@@ -39,7 +39,7 @@ DISPATCH_TARGETS: dict[str, tuple[str, str, str]] = {
 }
 
 PLUGINS = ("tangle", "gauge", "panel")
-FAULTS = tuple(f"M{i}" for i in range(1, 11)) + ("all",)
+FAULTS = tuple(f"M{i}" for i in range(1, 15)) + ("all",)
 CHECKPOINT_DIR = Path(".checkpoints")
 
 
@@ -194,7 +194,7 @@ def verify(path: Path, out: Path | None) -> None:
     default=Path("configs/default_profile.yaml"),
 )
 def mutate(fault: str, n: int, seed: int, out: Path, profile: Path) -> None:
-    """Run the M1-M10 fault-injection conformance matrix."""
+    """Run the M1-M14 fault-injection conformance matrix."""
     _set_network("deny")
     _dispatch("mutate", fault=fault, n=n, seed=seed, out=out, profile=profile)
 
@@ -257,7 +257,7 @@ def export(data: Path, fmt: str, out: Path, limit: int | None) -> None:
 @click.option("--replay-dir", type=click.Path(path_type=Path), default=Path("bench_replay"))
 @click.option("--budget-usd", type=float, default=None)
 @click.option("--track", type=click.Choice(["tangle", "panel", "all"]), default="all")
-@click.option("--max-trials", type=click.IntRange(min=10), default=50)
+@click.option("--max-trials", type=click.IntRange(min=10), default=75)
 @click.option("--seed", type=click.IntRange(min=0), default=0)
 @click.option("--dry-run", is_flag=True, help="Estimate cost only; never touches the network.")
 def bench(

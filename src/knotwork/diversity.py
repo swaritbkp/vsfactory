@@ -109,7 +109,11 @@ def rebuild_scene(ds: Path, task: dict[str, Any], profile: dict[str, Any]) -> Sc
     path = parse_path(task["seed_path"])
     at = SeedTree(root, path)
     prof = dict(
-        profile, _family=task["family"], _split=task["split"], _ordinal=slot_ordinal(ds, path)
+        profile,
+        _family=task["family"],
+        _split=task["split"],
+        _ordinal=slot_ordinal(ds, path),
+        _balance_seed=root,
     )
     scene = get_plugin(task["plugin"]).sample_scene(at.child("scene"), prof)
     if json_digest(scene.model_dump(mode="json")) != task["scene_id"]:

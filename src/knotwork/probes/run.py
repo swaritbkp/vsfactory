@@ -16,7 +16,7 @@ from typing import Any
 import numpy as np
 
 from knotwork.knotcore.seeds import SeedTree
-from knotwork.probes import gbdt, heuristics, text_only
+from knotwork.probes import baselines, gbdt, heuristics, text_only
 from knotwork.probes.items import N_BINS, Item, load_items
 from knotwork.probes.stats import chi2_uniform, near_duplicate_pairs, phash_bits, wilson_upper
 
@@ -100,6 +100,11 @@ def heuristic_predictions(
     return preds, hits
 
 
+def scoring_family(item: Item) -> str:
+    """Row a probe is reported under: the two premise families form one binary yes/no task."""
+    return item.group if item.group == "PREMISE" else item.family
+
+
 def _entry(items: list[Item], idx: list[int], preds: dict[int, str]) -> dict[str, Any]:
     n = len(idx)
     k = sum(preds.get(i) == items[i].target for i in idx)
@@ -146,12 +151,12 @@ def probe_plugin(items: list[Item], folds: int, root: int) -> dict[str, Any]:
         if trace_hits.get(name):
             h = trace_hits[name]
             pooled[name]["trace_hit_rate"] = round(sum(h.values()) / len(h), 6)
-        for fam in sorted({items[i].family for i in idx}):
-            fidx = [i for i in idx if items[i].family == fam]
+        for fam in sorted({scoring_family(items[i]) for i in idx}):
+            fidx = [i for i in idx if scoring_family(items[i]) == fam]
             fam_rows.setdefault(fam, {})[name] = _entry(items, fidx, preds)
     families_out = {}
     for fam in sorted(fam_rows):
-        fitems = [it for it in items if it.family == fam]
+        fitems = [it for it in items if scoring_family(it) == fam]
         families_out[fam] = {
             "n": len(fitems),
             "chance": round(float(np.mean([it.chance for it in fitems])), 6),
@@ -164,6 +169,7 @@ def probe_plugin(items: list[Item], folds: int, root: int) -> dict[str, Any]:
             "probes": pooled,
         },
         "families": families_out,
+        "baselines": baselines.evaluate(items, fold),
     }
 
 
@@ -174,10 +180,12 @@ def balance_tests(items: list[Item]) -> dict[str, dict[str, float]]:
     groups: dict[tuple[str, str, int], list[int]] = defaultdict(list)
     bins: dict[tuple[str, str], list[int]] = defaultdict(list)
     for it in items:
-        if it.option_index is not None and it.n_options >= 2:
+        if it.option_index is not None and it.n_options >= 2 and it.group != "PREMISE":
             groups[(it.plugin, it.family, it.n_options)].append(it.option_index)
         if it.value_bin is not None:
             bins[(it.plugin, it.family)].append(it.value_bin)
+        if it.group == "PREMISE":
+            groups[(it.plugin, "PREMISE_TRUTH", 2)].append(int(it.target == "yes"))
     for (plugin, fam, m), vals in sorted(groups.items()):
         if len(vals) >= MIN_BALANCE_ITEMS:
             c = Counter(vals)

@@ -7,6 +7,7 @@ Untrusted: the kernel never uses this; it interpolates OCR-verified tick values 
 from __future__ import annotations
 
 import math
+from typing import Any
 
 import numpy as np
 
@@ -27,8 +28,27 @@ def sample_zones(rng: np.random.Generator, vmin: float, vmax: float) -> tuple[fl
     return float(z1), float(z2)
 
 
-def zone_of(v: float, zones: tuple[float, float]) -> str:
-    return "green" if v < zones[0] else ("amber" if v < zones[1] else "red")
+def arc_index(v: float, zones: tuple[float, float]) -> int:
+    """Which of the three zone arcs (counted from the scale start) holds ``v``."""
+    return 0 if v < zones[0] else (1 if v < zones[1] else 2)
+
+
+def zone_of(v: float, zones: tuple[float, float], order: tuple[str, ...] = ZONES) -> str:
+    return order[arc_index(v, zones)]
+
+
+def dial_zone(d: dict[str, Any], v: float | None = None) -> str:
+    """Zone name of ``v`` (default: the dial's value) under the dial's own arc colour order."""
+    value = float(d["value"] if v is None else v)
+    low, high = d["zones"]
+    return zone_of(value, (low, high), tuple(d.get("zone_order") or ZONES))
+
+
+def order_with(rng: np.random.Generator, name: str, index: int) -> list[str]:
+    """A colour order that puts ``name`` on arc ``index``; the other two arcs are random."""
+    rest = [z for z in ZONES if z != name]
+    rest = [rest[int(i)] for i in rng.permutation(2)]
+    return [*rest[:index], name, *rest[index:]]
 
 
 def tick_values(vmin: float, vmax: float, n: int = 5) -> list[float]:

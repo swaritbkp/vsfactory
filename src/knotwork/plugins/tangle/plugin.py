@@ -29,7 +29,7 @@ from knotwork.render import realism
 from knotwork.render.canvas import make_canvas, render_cfg
 
 PALETTE = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#882255",
-           "#117733", "#332288", "#000000", "#8C510A", "#01665E"]  # fmt: skip
+           "#117733", "#332288", "#000000", "#8C510A", "#1111FF"]  # fmt: skip
 MONO = "#2F2F2F"
 #: matte industrial backplates (light enough that every palette colour keeps >= 0.2 luminance contrast)
 PLATES = [(226, 226, 220), (222, 224, 226), (230, 226, 216), (218, 222, 218)]
@@ -76,6 +76,16 @@ def sample_geometry(rng: np.random.Generator, n: int, word: list[braid.Letter], 
     params |= {"jitter_amps": (rng.dirichlet([1.0, 1.0, 1.0]) * amp).tolist(),
                "jitter_freqs": [1.0, 2.0, 3.0], "jitter_phases": rng.uniform(0, 2 * math.pi, 3).tolist()}  # fmt: skip
     return params
+
+
+def shuffled_slot(salt: int | None, key: str, index: int, m: int) -> int:
+    """``index mod m`` seen through a run-seeded permutation of each block of ``m`` consecutive
+    indices: every block still uses every slot exactly once, but which item gets which slot no
+    longer follows the generation order (SPEC D-39)."""
+    if salt is None:
+        return index % m
+    block, r = divmod(index, m)
+    return int(SeedTree(int(salt)).child("balance", key, m, block).rng().permutation(m)[r])
 
 
 def _pick(rng: np.random.Generator, weights: dict[str, float]) -> str:
@@ -140,9 +150,11 @@ class TanglePlugin:
             pay["colors"], pay["color_regime"] = [list(hex_rgb(h)) for h in cols], regime
             pay["relief"] = realism.relief_panels(rng)
             if o is not None:
-                pay["answer_slot"] = (
-                    (int(o) // span_n) % n if family == Family.T1_TRACE.value else int(o) % 2
-                )
+                salt = profile.get("_balance_seed")
+                if family == Family.T1_TRACE.value:
+                    pay["answer_slot"] = shuffled_slot(salt, f"T1n{n}", int(o) // span_n, n)
+                else:
+                    pay["answer_slot"] = shuffled_slot(salt, str(family), int(o), 2)
             return SceneIR(plugin=self.name, plugin_version=self.version, seed_path=seeds.path_str,
                            params={"n_strands": n, "layout": params["kind"], "style": pay["style"],
                                    "color_regime": regime}, payload=pay)  # fmt: skip

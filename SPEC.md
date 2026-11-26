@@ -1084,4 +1084,18 @@ spec leaves open. Never silently change a threshold.
   background or foreign object where a strand or needle must be on top; `claims_failed` counts unique
   claims and `E_D1_D3_MISMATCH` is recorded even when a program step faults; `grade_prediction`
   rejects replies that commit to different answers unless `strict_single_answer=False`.
+* D-39: v2 trust gaps (owner direction). (a) Panel render faults M11 (two socket cables exchange
+  gauge ports -> `E_CLAIM_MISMATCH`), M12 (occluded panel crossing -> `E_OCCLUDED_CROSSING`), M13
+  (target needle moved -> `E_SCALE_MISMATCH`), M14 (port labels exchanged -> `E_LABEL_MISMATCH`).
+  (b) `knotcore.oracle` re-reads `beauty.png` alone along kernel-claimed coordinates
+  (`E_ORACLE_GHOST`). (c) `knotcore.cvd` requires distinct strand colours and gauge zone colours to
+  stay >= 8 CIELAB units apart under simulated protanopia and deuteranopia (`E_CVD_AMBIGUOUS`);
+  palette entry #01665E (5.0 units from #882255) became #1111FF. (d) Premise scenes randomise each
+  dial's zone colour order and balance the target value's decile, so the claimed zone carries no
+  numeric information; probes score both premise families as one yes/no task (chance 1/2) and
+  `probes.baselines` requires majority-class, mean-luminance, option-position and text-length
+  baselines <= chance + 0.02. (e) T1 / T3 answer slots are balanced within blocks but shuffled by a
+  run-seeded permutation. (f) The staircase steps by 2 until the third reversal, then 1, runs up to
+  75 trials or 20 reversals, and reports a logistic maximum-likelihood `k*` over all trials; the
+  mean of the last 6 reversals stays as `reversal_level`.
 

@@ -76,7 +76,8 @@ def run_slot(job: dict[str, Any]) -> dict[str, Any]:
     unavailable = twin_unavailable(name)
     receipt = FreshnessReceipt.model_validate(job["receipt"])
     slot = SeedTree(receipt.root_seed).child(name, "slot", i)
-    prof = dict(profile, _family=family, _split=job["split"], _ordinal=job.get("ordinal"))
+    prof = dict(profile, _family=family, _split=job["split"], _ordinal=job.get("ordinal"),
+                _balance_seed=receipt.root_seed)  # fmt: skip
     work = Path(job["work"]) / f"slot{i:05d}"
     quarantine: list[dict[str, Any]] = []
     n_cand = 0

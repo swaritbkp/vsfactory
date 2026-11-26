@@ -53,8 +53,12 @@ Format per entry:
   1/2 x 1/(deciles spanned by the claimed zone) (D-29 amendment); (iii) relax SPEC 8.2 zone ranges to equal
   thirds (still leaves a text hint for true premises). For (b), may I spend one more ~35-min split regeneration
   investigating the tangle residual after Checkpoint 2?
-- Status: OPEN, documented limitation (DATA_CARD "Limitations"). Deferred by the owner after Checkpoint 2;
-  the probe thresholds are unchanged.
+- v2 change (D-39, 2026-11-26): (a) premise scenes now randomise zone colour order and balance value
+  deciles; premise families are scored as one yes/no task; trivial baselines added. (b) T1 / T3 slot
+  order is now shuffled by a run-seeded permutation. The T1 / T3 residual itself is NOT diagnosed:
+  no 600-item split was regenerated.
+- Status: CHANGED, UNVERIFIED. Run `uv run python scripts/verify_phase.py --phase 3 --keep-going`.
+  Probe thresholds are unchanged.
 
 ## 5.6 Mock staircase tolerance (gate `p5.bench_mock`)
 - Verification command: `uv run python scripts/verify_phase.py --phase 5 --keep-going`
@@ -73,8 +77,12 @@ Format per entry:
 - Proposed human decision: pick one: (i) more staircase trials for mocks (e.g. `max_trials` 150 / 20 reversals);
   (ii) widen `STAIRCASE_LEVEL_TOL` for the tangle track; (iii) steeper mock `p_cross` (e.g. 0.10 / 0.15 / 0.25);
   (iv) accept the staircase as a reported (not gated) diagnostic for mocks.
-- Status: OPEN, documented limitation. The harness itself is verified (MLE recovery, composition law,
-  replay, budget guard); only this tolerance on two shallow mock curves fails.
+- v2 change (D-39, 2026-11-26): coarse-then-fine steps, up to 75 trials, logistic maximum-likelihood
+  `k*`. Unit tests of the new rule pass; the mock benchmark gate was not re-run, and the committed
+  replay fixtures must be rebuilt (`uv run python scripts/build_bench_fixtures.py`) because the asked
+  trial sequence changed.
+- Status: CHANGED, UNVERIFIED. Run `uv run python scripts/verify_phase.py --phase 5 --keep-going`.
+  `STAIRCASE_LEVEL_TOL` is unchanged.
 
 ## L-1 Live staircases sit at the floor (not a gate)
 - Observation: on the live run every model fails at 1-2 crossings; Gemini and Qwen dropped from the start

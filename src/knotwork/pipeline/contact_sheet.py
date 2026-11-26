@@ -4,7 +4,7 @@
 
 Rows: tangle / gauge / panel (base, causal twin, nuisance twin) from ``DATA/data_<plugin>``; Pixel-Witness
 Proof strips ``beauty | id_buffer | kernel_overlay`` whose overlays are computed by calling knotcore on
-the bundle files (never plugin geometry); and a fault row M1-M10 from a ``mutate --n 1`` run.
+the bundle files (never plugin geometry); and fault rows M1-M14 from a ``mutate --n 1`` run.
 """
 
 from __future__ import annotations
@@ -188,7 +188,8 @@ def build(
             {"fault": f.value, "code": code, "bundle_id": ex["bundle_id"] if ex else None}
         )
     grid.append(("faults M1-M5", fcells[:5]))
-    grid.append(("faults M6-M10", fcells[5:]))
+    grid.append(("faults M6-M10", fcells[5:10]))
+    grid.append(("panel faults M11-M14", fcells[10:]))
     _compose(grid, out)
     out.with_suffix(".json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
     return meta

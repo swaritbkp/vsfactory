@@ -8,7 +8,8 @@ Targets are class strings so every probe is scored the same way:
 * zone answers -> the zone word, chance 1/3;
 * float answers -> ``bin<b>`` over 10 equal-width bins of the queried gauge's printed scale, chance =
   majority-bin frequency of the family;
-* premise answers -> ``<yes|no>|bin<b>``, chance = 1/2 x majority-bin frequency of the family.
+* premise answers -> the ``yes`` / ``no`` truth token only, chance 1/2, scored over both premise
+  families together (SPEC D-39). Their value deciles are still balance-tested per family.
 """
 
 from __future__ import annotations
@@ -131,8 +132,8 @@ def assign_targets(items: list[Item]) -> None:
             if t == "float":
                 it.target = f"bin{it.value_bin}"
             else:
-                holds = "yes" if a["value"]["premise_holds"] else "no"
-                it.target = f"{holds}|bin{it.value_bin}"
+                it.target = "yes" if a["value"]["premise_holds"] else "no"
+                it.n_options, it.chance = 2, 0.5
         elif t == "label":
             opts = it.options or []
             it.n_options = len(opts)
@@ -158,13 +159,13 @@ def assign_targets(items: list[Item]) -> None:
             raise ValueError(f"unknown answer type {t}")
     by_family: dict[str, list[Item]] = {}
     for it in items:
-        if it.value_bin is not None:
+        if it.value_bin is not None and it.answer["type"] == "float":
             by_family.setdefault(it.family, []).append(it)
     for fam_items in by_family.values():
         counts = Counter(i.value_bin for i in fam_items)
         maj = max(counts.values()) / len(fam_items)
         for it in fam_items:
-            it.chance = maj * (0.5 if it.answer["type"] == "premise" else 1.0)
+            it.chance = maj
 
 
 __all__ = [

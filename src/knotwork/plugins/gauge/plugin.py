@@ -24,7 +24,7 @@ from knotwork.knotcore.contracts import (
 from knotwork.knotcore.seeds import SeedTree
 from knotwork.plugins.gauge import geom
 from knotwork.plugins.gauge.render import M8_SWEEP, M9_SHIFT, bezel_width, draw_dial
-from knotwork.plugins.gauge.scale import ZONES, admissible, sample_zones, zone_of
+from knotwork.plugins.gauge.scale import ZONES, admissible, dial_zone, sample_zones
 from knotwork.plugins.gauge.stem import draw_plate, draw_stem, sample_plate, sample_stem
 from knotwork.render import realism
 from knotwork.render.canvas import make_canvas, render_cfg
@@ -69,9 +69,7 @@ def values_for(d: dict[str, Any], tol_units: float) -> list[int]:
 def pick_value(rng: np.random.Generator, d: dict[str, Any], tol_units: float, zone: str | None = None,
                away_from: float | None = None, min_move: float = 0.0) -> int | None:  # fmt: skip
     """Admissible integer value (optionally in ``zone``, and >= min_move from ``away_from``)."""
-    vals = [
-        v for v in values_for(d, tol_units) if zone is None or zone_of(v, tuple(d["zones"])) == zone
-    ]
+    vals = [v for v in values_for(d, tol_units) if zone is None or dial_zone(d, v) == zone]
     if away_from is not None:
         vals = [v for v in vals if abs(v - away_from) >= min_move]
     return int(vals[int(rng.integers(len(vals)))]) if vals else None
@@ -213,7 +211,7 @@ class GaugePlugin:
         d = scene.payload["dial"]
         return ClaimSet(plugin=self.name, claims=[
             Claim(claim_id="read_g1", op=Op.READ, args=[GID], expected=float_answer(d["value"])),
-            Claim(claim_id="zone_g1", op=Op.ZONE, args=[GID], expected=zone_answer(zone_of(d["value"], tuple(d["zones"])))),
+            Claim(claim_id="zone_g1", op=Op.ZONE, args=[GID], expected=zone_answer(dial_zone(d))),
         ])  # fmt: skip
 
     def questions(self, scene: SceneIR, seeds: SeedTree, family: Family) -> QuestionProgram:
@@ -231,7 +229,7 @@ class GaugePlugin:
         d = scene.payload["dial"]
         if program.family is Family.G1_READ:
             return float_answer(d["value"])
-        return zone_answer(zone_of(d["value"], tuple(d["zones"])))
+        return zone_answer(dial_zone(d))
 
     def geometric_answer(self, scene: SceneIR, program: QuestionProgram) -> Answer | None:
         d = scene.payload["dial"]
@@ -248,7 +246,7 @@ class GaugePlugin:
         if program.family is Family.G1_READ:
             v = pick_value(rng, d, tol, away_from=old, min_move=5 * tol)
         else:
-            here = zone_of(old, tuple(d["zones"]))
+            here = dial_zone(d, old)
             other = [z for z in ZONES if z != here][int(rng.integers(2))]
             v = pick_value(rng, d, tol, zone=other)
         if v is None:

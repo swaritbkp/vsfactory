@@ -603,7 +603,7 @@ def gate_mutate() -> str:
     require(rep["exact_catch_rate"] == 1.0, f"exact_catch_rate {rep['exact_catch_rate']}")
     fq = rep["clean"]["false_quarantine_rate"]
     require(fq <= MAX_FALSE_QUARANTINE, f"clean false-quarantine {fq} > {MAX_FALSE_QUARANTINE}")
-    return f"M1-M10: 100% caught with exact code ({MUTATE_N} each); clean false-quarantine {fq:.3f}"
+    return f"M1-M14: 100% caught with exact code ({MUTATE_N} each); clean false-quarantine {fq:.3f}"
 
 
 CONTACT_SHEET_MIN = (2048, 1536)
@@ -659,8 +659,8 @@ def gate_contact_sheet() -> str:
     )
     faults = {f["fault"] for f in meta["faults"]}
     require(
-        faults == {f"M{i}" for i in range(1, 11)},
-        f"contact sheet must caption M1-M10, got {sorted(faults)}",
+        faults == {f"M{i}" for i in range(1, 15)},
+        f"contact sheet must caption M1-M14, got {sorted(faults)}",
     )
     marker = ART / "phase2" / "CHECKPOINT_1_READY.md"
     marker.write_text(
@@ -778,6 +778,11 @@ def gate_probes() -> str:
         f"dedup {k}: {v['dup_rate']:.4f}"
         for k, v in rep["dedup"].items()
         if v["dup_rate"] > MAX_DUP_RATE
+    ]
+    bad += [
+        f"{plugin}/baseline {name}: above chance+{prow['baselines']['margin']}"
+        for plugin, prow in rep["plugins"].items()
+        for name in prow["baselines"]["violations"]
     ]
     require(not bad, "; ".join(bad))
     return (

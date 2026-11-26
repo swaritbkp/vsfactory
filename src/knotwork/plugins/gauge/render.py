@@ -45,7 +45,8 @@ def draw_dial(
 ) -> GaugeEntry:
     """Draw one dial described by ``d`` and return its manifest entry.
 
-    ``d``: name, center, radius (face), labels, vmin, vmax, zones, value, bezel_rgb, face_rgb,
+    ``d``: name, center, radius (face), labels, vmin, vmax, zones, zone_order (optional colour order
+    of the three arcs), value, bezel_rgb, face_rgb,
     band_inner, label_frac, minor_per_major, unit, serial, surface. The metal bezel is part of the dial
     object (a concentric ring), so the kernel's dial centroid stays the true centre.
     """
@@ -59,7 +60,7 @@ def draw_dial(
     c.disk(dial, (cx, cy), r, beauty_rgb=face_rgb)
     bounds = [vmin, d["zones"][0], d["zones"][1], vmax]
     zones = []
-    for k, zn in enumerate(ZONES):
+    for k, zn in enumerate(d.get("zone_order") or ZONES):
         z = c.new_object(f"{prefix}/zone_arc:{name}_{zn}", "zone_arc", ZONE_RGB[zn], parent=gid)
         a0, a1 = angle(bounds[k + 1], vmin, vmax), angle(bounds[k], vmin, vmax)
         c.arc_band(z, (cx, cy), float(d["band_inner"]) * r, r - 6.0, a0, a1)
