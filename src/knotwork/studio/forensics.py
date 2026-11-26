@@ -10,11 +10,13 @@ from knotwork.freshness import lineage
 from knotwork.knotcore.contracts import DifficultySpec, Family
 from knotwork.knotcore.seeds import SeedTree
 from knotwork.pipeline.certify import Candidate, run_candidate
-from knotwork.pipeline.io import read_json, read_jsonl
+from knotwork.pipeline.counterfactual import run_counterfactual
+from knotwork.pipeline.generate import run_generate
+from knotwork.pipeline.io import append_jsonl, read_json, read_jsonl
 from knotwork.pipeline.telemetry import pareto
 from knotwork.plugins.registry import get_plugin
 from knotwork.render.canvas import REPO_ROOT
-from knotwork.studio.factory import profile
+from knotwork.studio.factory import PROFILE_PATH, profile
 
 SEARCH_ROOTS = (REPO_ROOT / "artifacts", REPO_ROOT / "tests" / "bench" / "fixtures" / "data")
 SEARCH_DEPTH = 4
@@ -69,6 +71,24 @@ def reproduce(dataset: Path, record: dict[str, Any], out: Path) -> Candidate:
     scene = plugin.sample_scene(at.child("scene"), prof, spec)
     question = plugin.questions(scene, at.child("question"), Family(family))
     return run_candidate(plugin, scene, question, out, prof)
+
+
+def demo_suite(out: Path) -> Path:
+    """Generate one fresh tangle item and build its twin suite. No model failed it: the failure row
+    only names the bundle, so the report shows no replies."""
+    data = out / "demo_data"
+    code = run_generate(
+        "tangle", 1, data, 2, "offline", PROFILE_PATH, "dev", False, ["T1_TRACE"], 1,
+        difficulty={"reasoning_load": 0.4},
+    )  # fmt: skip
+    if code != 0:
+        raise RuntimeError("the demo item did not certify")
+    failures = out / "demo_failures.jsonl"
+    failures.unlink(missing_ok=True)
+    append_jsonl(failures, [{"bundle_id": bundles(data)[0]["bundle_id"]}])
+    if run_counterfactual(data, failures, out) != 0:
+        raise RuntimeError("no twin suite was built")
+    return out / "suites.json"
 
 
 def lineage_nodes(dataset: Path) -> list[dict[str, Any]]:

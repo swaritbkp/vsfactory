@@ -13,18 +13,23 @@ from typing import Any
 import numpy as np
 from PIL import Image, ImageDraw
 
+from knotwork.freshness.beacon import offline
+from knotwork.freshness.receipt import build_receipt
 from knotwork.knotcore.contracts import (
     CONSUMPTION_PX,
     DifficultySpec,
     Family,
     FaultCode,
     RenderManifest,
+    Split,
+    TaskBundle,
+    TwinRefs,
 )
 from knotwork.knotcore.cvd import simulate
-from knotwork.knotcore.seeds import SeedTree
+from knotwork.knotcore.seeds import SeedTree, json_digest
 from knotwork.pipeline.certify import Candidate, run_candidate
 from knotwork.pipeline.generate import load_profile
-from knotwork.pipeline.io import read_json
+from knotwork.pipeline.io import read_json, write_task
 from knotwork.plugins.registry import available, fault_effective, get_plugin
 from knotwork.render.canvas import REPO_ROOT
 
@@ -38,6 +43,7 @@ class Generated:
     candidate: Candidate
     fault: FaultCode | None
     attempts: int
+    task: dict[str, Any] | None = None  # the written task.json of a certified, clean item
 
 
 def profile() -> dict[str, Any]:
@@ -70,14 +76,20 @@ def generate_one(
     out: Path,
     difficulty: DifficultySpec | None = None,
     fault: FaultCode | None = None,
+    certify_attempts: int = 1,
+    first_attempt: int = 0,
 ) -> Generated:
-    """Sample, render and certify one item; resample (up to `ATTEMPTS`) while the plugin finds no
-    legible scene or the requested fault would have no effect."""
+    """Sample, render and certify one item. Resamples (up to `ATTEMPTS`) while the plugin finds no
+    legible scene or the requested fault would have no effect, and up to `certify_attempts` times
+    while the kernel quarantines a clean item (the pipeline retries slots the same way). The last
+    candidate is returned either way; a certified clean one is also written as `task.json`."""
     plugin = get_plugin(plugin_name)
     prof = dict(profile(), _family=family)
     takes_dials = "difficulty" in inspect.signature(plugin.sample_scene).parameters
     last = "no attempt made"
-    for attempt in range(ATTEMPTS):
+    certified_runs = 0
+    result: Generated | None = None
+    for attempt in range(first_attempt, ATTEMPTS):
         at = SeedTree(seed).child("studio", plugin_name, family, attempt)
         try:
             kwargs = {"difficulty": difficulty} if takes_dials and difficulty else {}
@@ -89,9 +101,32 @@ def generate_one(
         if fault is not None and not fault_effective(plugin_name, scene, fault):
             last = f"{fault.value} has no effect on the sampled scenes"
             continue
-        candidate = run_candidate(plugin, scene, question, out, prof, fault)
-        return Generated(candidate, fault, attempt + 1)
-    raise RuntimeError(f"no item after {ATTEMPTS} attempts: {last}")
+        directory = out / f"a{attempt}"
+        candidate = run_candidate(plugin, scene, question, directory, prof, fault)
+        certified_runs += 1
+        result = Generated(candidate, fault, attempt + 1)
+        if candidate.certified or fault is not None or certified_runs >= certify_attempts:
+            break
+    if result is None:
+        raise RuntimeError(f"no item after {ATTEMPTS} attempts: {last}")
+    if result.candidate.certified and fault is None:
+        result.task = _write_task(result.candidate, seed, prof)
+    return result
+
+
+def _write_task(candidate: Candidate, seed: int, prof: dict[str, Any]) -> dict[str, Any]:
+    """Make a certified item a complete bundle (`knot verify` accepts it)."""
+    receipt = build_receipt(offline(seed), prof)
+    task = TaskBundle(
+        bundle_id=candidate.bundle_id, plugin=candidate.scene.plugin,
+        family=candidate.question.family, split=Split.DEV, seed_path=candidate.scene.seed_path,
+        scene_id=json_digest(candidate.scene.model_dump(mode="json")), question=candidate.question,
+        answer=candidate.answer, certificate=candidate.certificate,
+        freshness_receipt_id=receipt.receipt_id, twins=TwinRefs(role="base"),
+        canary=receipt.canary, files=candidate.files,
+    )  # fmt: skip
+    write_task(candidate.dir, task)
+    return task.model_dump(mode="json")
 
 
 # ------------------------------------------------------------------ views of a bundle directory

@@ -1,0 +1,55 @@
+# Knotwork Visual Task Factory Studio theme. Native tokens only: no custom CSS and no remote fonts,
+# so the studio loads nothing from outside this machine.
+
+[theme]
+font = "sans-serif"
+codeFont = "monospace"
+baseFontSize = 15
+baseRadius = "10px"
+buttonRadius = "8px"
+showWidgetBorder = true
+headingFontSizes = ["26px", "20px", "17px", "16px", "15px", "14px"]
+headingFontWeights = [700, 600, 600, 600, 600, 600]
+metricValueFontSize = "1.6rem"
+metricValueFontWeight = 600
+paddingTop = "0.75rem"
+paddingBottom = "1.5rem"
+
+[theme.light]
+primaryColor = "#047857"
+linkColor = "#047857"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F7F6"
+textColor = "#0F172A"
+borderColor = "#E2E8F0"
+greenColor = "#047857"
+greenBackgroundColor = "#D1FAE5"
+greenTextColor = "#065F46"
+orangeColor = "#B45309"
+orangeBackgroundColor = "#FEF3C7"
+orangeTextColor = "#92400E"
+redColor = "#BE123C"
+redBackgroundColor = "#FFE4E6"
+redTextColor = "#9F1239"
+chartCategoricalColors = ["#047857", "#B45309", "#BE123C", "#1D4ED8", "#7C3AED"]
+
+[theme.dark]
+primaryColor = "#10B981"
+linkColor = "#34D399"
+backgroundColor = "#0B1120"
+secondaryBackgroundColor = "#111A2E"
+textColor = "#E2E8F0"
+borderColor = "#1E293B"
+greenColor = "#34D399"
+orangeColor = "#FBBF24"
+redColor = "#FB7185"
+chartCategoricalColors = ["#34D399", "#FBBF24", "#FB7185", "#60A5FA", "#A78BFA"]
+
+[browser]
+gatherUsageStats = false   # offline studio: no usage telemetry leaves the machine
+
+[server]
+address = "localhost"      # reachable from this machine only
+
+[client]
+toolbarMode = "minimal"

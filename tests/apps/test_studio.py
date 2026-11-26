@@ -1,24 +1,54 @@
-"""The Studio starts with four tabs, and its pure helpers behave."""
+"""The Studio's pages render on the live API, and its pure helpers behave."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from streamlit.testing.v1 import AppTest
 
 from knotwork.pipeline.io import append_jsonl, write_json
-from knotwork.studio import calibration, factory
+from knotwork.studio import calibration, factory, present
 
 REPO = Path(__file__).resolve().parents[2]
 
 
-def test_app_renders_four_tabs_without_errors() -> None:
-    app = AppTest.from_file(str(REPO / "apps" / "inspector.py"), default_timeout=12).run()
+@pytest.fixture(scope="module")
+def app() -> AppTest:
+    return AppTest.from_file(str(REPO / "apps" / "inspector.py"), default_timeout=60).run()
+
+
+def test_studio_opens_with_a_certified_sample(app: AppTest) -> None:
     assert not app.exception, app.exception
-    labels = [t.label for t in app.tabs]
-    for name in ("Factory Studio", "Forensics & Counterfactuals", "Human Calibration Lab",
-                 "Export & Lineage"):  # fmt: skip
-        assert name in labels
+    item = app.session_state["item"]
+    assert item["certificate"]["verdict"] == "CERTIFIED" and item["task"] is not None
+    assert [m.label for m in app.metric][:2] == ["Certified answer", "Plugin / family"]
+
+
+@pytest.mark.parametrize("page", ["forensics", "human_eval", "export"])
+def test_other_pages_render(app: AppTest, page: str) -> None:
+    app.switch_page(f"app_pages/{page}.py").run()
+    assert not app.exception, app.exception
+
+
+def test_presets_cover_the_knobs_and_scores_name_their_source() -> None:
+    for name, knobs in present.PRESETS.items():
+        assert set(knobs) == set(present.KNOB_DEFAULTS), name
+    plain = present.difficulty_scores("tangle", {}, {"n": 10, "stroke": 8, "surface": {}})
+    assert plain["reasoning"] == (100, "estimated from 10 cables")
+    dialled = present.difficulty_scores("panel", {}, {"difficulty_spec": {"visual_stress": 0.8}})
+    assert dialled["visual"] == (80, "set by dial")
+
+
+def test_diagnosis_separates_seeing_from_reasoning() -> None:
+    assert present.diagnose({})[0] == "Awaiting twin results"
+    assert present.diagnose({"perceptual_clean": True})[0] == "Vision failure"
+    assert present.diagnose({"text_ir_twin": False, "perceptual_clean": False})[0] == (
+        "Reasoning failure"
+    )
+    assert present.diagnose({"palette_swap": False})[0] == "Inconclusive"
+    suite = {"twins": {"text_ir_twin": {"status": "text", "answer": {"type": "int", "value": 3}}}}
+    assert present.grade_twins(suite, {"text_ir_twin": "3"}) == {"text_ir_twin": True}
 
 
 def test_calibration_queue_is_blind_and_records_are_graded(tmp_path: Path) -> None:
@@ -37,6 +67,12 @@ def test_calibration_queue_is_blind_and_records_are_graded(tmp_path: Path) -> No
     assert calibration.record(item, "4", 2.5, "p1", log)["correct"] is False
     result = calibration.summary(log, tmp_path / "none.jsonl")
     assert result["human_overall"] == 0.0 and result["confusion"][0]["response"] == "4"
+    assert present.scoreboard(result, {})[0] == {
+        "who": "You",
+        "accuracy": 0.0,
+        "n": 1,
+        "shared": None,
+    }
 
 
 def test_batch_command_matches_the_cli() -> None:

@@ -27,9 +27,12 @@ def run_export(
     if not items:
         print(f"export: no bundles under {data}")
         return 1
+    chosen = set(fmt.split(","))  # "all", one format, or a comma separated list
+    if "all" in chosen:
+        chosen = {"harbor", "hf", "rlvr"}
     out = Path(out)
     summary: dict[str, object] = {"n_bundles": len(items), "sealed": sum(i.sealed for i in items)}
-    if fmt in ("harbor", "all"):
+    if "harbor" in chosen:
         harbor = out / "harbor"
         shutil.rmtree(harbor, ignore_errors=True)
         harbor.mkdir(parents=True)
@@ -50,10 +53,10 @@ def run_export(
             newline="\n",
         )
         summary["harbor"] = len(records)
-    if fmt in ("hf", "all"):
+    if "hf" in chosen:
         shutil.rmtree(out / "hf", ignore_errors=True)
         summary["hf"] = write_hf(items, out, max_shard_mb)
-    if fmt in ("rlvr", "all"):
+    if "rlvr" in chosen:
         shutil.rmtree(out / "rlvr", ignore_errors=True)
         summary["rlvr"] = write_rlvr(items, out)
     out.mkdir(parents=True, exist_ok=True)
