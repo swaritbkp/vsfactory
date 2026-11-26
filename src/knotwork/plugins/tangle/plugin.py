@@ -180,8 +180,9 @@ class TanglePlugin:
         if fault is FaultCode.M4:
             weights = m4_weights(pay)
         lay = lay_of(pay, weights)
-        realism.draw_relief(c, pay.get("relief", []))
-        realism.corner_screws(c, "tangle")
+        if not pay.get("plain"):
+            realism.draw_relief(c, pay.get("relief", []))
+            realism.corner_screws(c, "tangle")
         terms = render_tangle(c, pay, lay.paths, lay.crossings, fault)
         crossings = lay.crossings
         realism.add_surface(c, pay["surface"], ("label",), lambda cv: halo_mask(crossings, cv.size))

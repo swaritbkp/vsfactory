@@ -207,11 +207,12 @@ class GaugePlugin:
         self, scene: SceneIR, out_dir: Path, fault: FaultCode | None = None
     ) -> RenderManifest:
         c = make_canvas(scene.payload["render"])
-        realism.draw_relief(c, scene.payload.get("relief", []))
-        draw_plate(c, "gauge", scene.payload.get("plate"))
-        realism.corner_screws(c, "gauge")
-        if "stem" in scene.payload:
-            draw_stem(c, "gauge", scene.payload["stem"])
+        if not scene.payload.get("plain"):
+            realism.draw_relief(c, scene.payload.get("relief", []))
+            draw_plate(c, "gauge", scene.payload.get("plate"))
+            realism.corner_screws(c, "gauge")
+            if "stem" in scene.payload:
+                draw_stem(c, "gauge", scene.payload["stem"])
         g = draw_dial(c, "gauge", scene.payload["dial"], fault)
         realism.add_surface(c, scene.payload["surface"])
         return c.finish(out_dir, self.name, gauges=[g])

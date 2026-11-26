@@ -1108,4 +1108,9 @@ spec leaves open. Never silently change a threshold.
   complement; `stats.json` records the overrides so scenes still rebuild from seed paths. Contract
   and profile changes move the protocol commit, so regenerate the golden
   (`knot selftest --update-golden`) and the bench fixtures.
-
+* D-41: `knot counterfactual` (`pipeline.counterfactual`) builds, per failed item, certified
+  `perceptual_clean`, `palette_swap` and `reasoning_step_down` twins by re-sampling the scene from
+  its seed path and editing the plugin payload, plus a `text_ir_twin`. Bundles whose scene the
+  running version cannot re-sample get no visual twin (stated per item); gauge reading questions
+  still get a text twin from kernel evidence. Gauges have no semantic cable palette, so their
+  palette swap rotates housing tones and keeps zone colours.

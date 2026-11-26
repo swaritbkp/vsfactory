@@ -304,7 +304,8 @@ class PanelPlugin:
         swap = port_swap(pay) if fault is FaultCode.M11 else None
         paths, crossings, dests = compose.build_paths(pay, swap)
         moved = faulted_dial(pay) if fault is FaultCode.M13 else None
-        enclosure(c, pay, [p[0] for p in paths])
+        if not pay.get("plain"):
+            enclosure(c, pay, [p[0] for p in paths])
         gauges, terms = [], []
         for i, d in enumerate(pay["dials"]):
             g = draw_dial(c, "panel", moved if moved and moved["name"] == d["name"] else d)

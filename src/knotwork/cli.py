@@ -367,6 +367,37 @@ def telemetry_cmd(compare: tuple[Path, Path] | None, path: Path | None) -> None:
     click.echo(json.dumps(telemetry.load(path), indent=1, sort_keys=True))
 
 
+@cli.command()
+@click.option(
+    "--data",
+    type=click.Path(path_type=Path, exists=True, file_okay=False),
+    required=True,
+    help="Dataset (or folder of bundles) that holds the failed items.",
+)
+@click.option(
+    "--failures",
+    type=click.Path(path_type=Path, exists=True),
+    required=True,
+    help="failures.jsonl, bench trials.jsonl, or a folder of failure.json files.",
+)
+@click.option("--out", type=click.Path(path_type=Path), required=True)
+@click.option(
+    "--profile",
+    type=click.Path(path_type=Path, exists=True, dir_okay=False),
+    default=Path("configs/default_profile.yaml"),
+)
+@click.option("--limit", type=click.IntRange(min=1), default=None, help="At most this many items.")
+def counterfactual(data: Path, failures: Path, out: Path, profile: Path, limit: int | None) -> None:
+    """Build certified diagnostic twin suites for failed items."""
+    _set_network("deny")
+    from knotwork.pipeline.counterfactual import run_counterfactual
+
+    try:
+        sys.exit(run_counterfactual(data, failures, out, profile, limit))
+    except ValueError as exc:
+        raise click.UsageError(str(exc)) from None
+
+
 @cli.command(name="new-plugin")
 @click.argument("name")
 @click.option("--dest", type=click.Path(path_type=Path), default=Path("src/knotwork/plugins"))

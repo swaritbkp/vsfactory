@@ -89,6 +89,7 @@ class TanglePayload(_Payload):
     relief: list[list[float]]
     answer_slot: int | None = None
     difficulty_spec: dict[str, Any] | None = None
+    plain: bool = False  # no screws, enclosure furniture or relief (diagnostic twins)
 
     @model_validator(mode="after")
     def _one_per_strand(self) -> TanglePayload:
@@ -107,6 +108,7 @@ class GaugePayload(_Payload):
     plate: dict[str, Any] | None = None
     relief: list[list[float]]
     difficulty_spec: dict[str, Any] | None = None
+    plain: bool = False  # no screws, enclosure furniture or relief (diagnostic twins)
 
 
 class PanelPayload(_Payload):
@@ -135,6 +137,7 @@ class PanelPayload(_Payload):
     relief: list[list[float]]
     ordinal_hint: int | None = Field(default=None, alias="_ordinal")
     difficulty_spec: dict[str, Any] | None = None
+    plain: bool = False  # no screws, enclosure furniture or relief (diagnostic twins)
 
     @model_validator(mode="after")
     def _wiring(self) -> PanelPayload:
