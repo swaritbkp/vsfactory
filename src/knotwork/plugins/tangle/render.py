@@ -67,6 +67,7 @@ def draw_cables(
     halos: bool = True,
     beauty_rgb: dict[int, RGB] | None = None,
     sleeves: bool = True,
+    restore_crowded: bool = False,
 ) -> list[int]:
     """Soft drop shadows, then every cable in index order with jacket shading, heat-shrink sleeves and
     ferrules at both ends (part of the cable object), then per-crossing halos in increasing x
@@ -98,10 +99,33 @@ def draw_cables(
                     keep_style=True,
                 )
     if halos:
-        for x in sorted(crossings, key=lambda x: (x["center"][0], x["center"][1])):
+        ordered = sorted(crossings, key=lambda x: (x["center"][0], x["center"][1]))
+        for x in ordered:
             top = int(x["over"])
             c.halo_patch(ids[top], paths[top], width, HALO_PX, HALO_RADIUS, tuple(x["center"]))
+        if restore_crowded:
+            for x, radius in crowded(ordered, width):
+                top = int(x["over"])
+                c.halo_patch(ids[top], paths[top], width, HALO_PX, radius, tuple(x["center"]))
     return ids
+
+
+def crowded(crossings: list[dict[str, Any]], width: float) -> list[tuple[dict[str, Any], float]]:
+    """Crossings whose core a neighbour's halo can reach, each with the radius (half the distance to
+    that neighbour) on which its own layering is redrawn after all halos, so no top cable is left
+    broken at its crossing."""
+    reach = HALO_RADIUS + width + HALO_PX
+    out = []
+    for i, x in enumerate(crossings):
+        gaps = [
+            float(np.hypot(*np.subtract(x["center"], y["center"])))
+            for j, y in enumerate(crossings)
+            if j != i
+        ]
+        nearest = min(gaps, default=reach)
+        if nearest < reach:
+            out.append((x, min(HALO_RADIUS, nearest / 2.0)))
+    return out
 
 
 def halo_mask(

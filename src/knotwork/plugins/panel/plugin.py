@@ -327,7 +327,10 @@ class PanelPlugin:
             terms.append(TerminalEntry(terminal_id=tid, role="port", box=box, label_obj=lab))
             gauges.append(g.model_copy(update={"port_terminal": tid}))
         colors = [tuple(x) for x in pay["colors"]]
-        draw_cables(c, "panel", paths, crossings, colors, float(pay["stroke"]), pay["style"])
+        draw_cables(
+            c, "panel", paths, crossings, colors, float(pay["stroke"]), pay["style"],
+            restore_crowded=True,
+        )  # fmt: skip
         n = pay["n"]
         starts = [paths[s][0] for s in range(n)]
         outward = [-unit(paths[s][1] - paths[s][0]) for s in range(n)]

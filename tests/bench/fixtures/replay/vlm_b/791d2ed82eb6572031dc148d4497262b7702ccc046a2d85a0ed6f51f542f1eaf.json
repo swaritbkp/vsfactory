@@ -1,8 +1,8 @@
 {
  "cost_usd": 0.0,
  "request": {
-  "image_id": "b71d488aeea0f85b892ef5a106eddaf1d127147f212f0b4264ec77792be14c6f",
-  "image_sha256": "74f2722eaca689b5274ccd40e2e8c33780dd1bdeb5c58db3dfc0812c7f204679",
+  "image_id": "dcf0d8000f1a5510812b37c1cf5335d48dc00c6f2ec347e05a0e60b7116f3b48",
+  "image_sha256": "4ee9dc72f428718e7bb471b3f77b605c12ca18a869e07a946c5836f5504b0c78",
   "model": "google/gemini-2.5-flash",
   "prompt": "Which gauge (G1-G4) is the cable from socket K plugged into?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
   "seed": 0,

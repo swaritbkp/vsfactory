@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -29,6 +30,10 @@ def test_studio_opens_with_a_certified_sample(app: AppTest) -> None:
 def test_other_pages_render(app: AppTest, page: str) -> None:
     app.switch_page(f"app_pages/{page}.py").run()
     assert not app.exception, app.exception
+    if page == "forensics":  # the committed sample shows both diagnoses on open, labelled as sample
+        shown = " ".join(m.value for m in app.markdown)
+        assert "Vision failure" in shown and "Reasoning failure" in shown
+        assert any("Sample data" in w.value for w in app.warning)
 
 
 def test_presets_cover_the_knobs_and_scores_name_their_source() -> None:
@@ -82,3 +87,17 @@ def test_batch_command_matches_the_cli() -> None:
     )  # fmt: skip
     assert args[:3] == ["generate", "--plugin", "tangle"] and "--reasoning-load" in args
     assert "--visual-stress" not in args and factory.command_line(args).startswith("uv run knot ")
+
+
+def test_committed_sample_opens_with_two_concrete_diagnoses() -> None:
+    sample = REPO / "samples" / "demo_forensics"
+    suites = json.loads((sample / "suites.json").read_text(encoding="utf-8"))["suites"]
+    replies = present.load_twin_results(sample)
+    verdicts = [
+        present.diagnose(present.grade_twins(s, replies[s["bundle_id"]]))[0] for s in suites
+    ]
+    assert verdicts == ["Vision failure", "Reasoning failure"]
+    for suite in suites:
+        assert suite["sample"] and "not a model output" in " ".join(suite["replies"])
+        images = [suite["image"], *(t.get("image") for t in suite["twins"].values())]
+        assert all((REPO / i).is_file() for i in images if i)

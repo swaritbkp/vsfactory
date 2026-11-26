@@ -1118,3 +1118,11 @@ spec leaves open. Never silently change a threshold.
   `.streamlit/config.toml` (no custom CSS, no remote fonts, usage statistics off, localhost only).
   View models live in `knotwork.studio.present`. A certified single item is written as a complete
   bundle; twin diagnoses come only from replies the user enters or a `results.jsonl`.
+* D-45: v2 proof polish. (a) Panel renderer: after all halos, each crossing that a neighbour's
+  halo can reach is layered again on half the distance to that neighbour, so no top cable is left
+  broken at its own crossing (4 of 120 clean panels had failed `crossing_color` for this real
+  defect; 0 of 400 after). Tangle rendering is unchanged. (b) Exhaustive multi-scene and process-
+  pool tests moved to tier2; `tests/pipeline/test_tier1_representative.py` keeps one real path
+  through generate, verify, export, certification and faults in tier1. (c) The Forensics page
+  opens `samples/demo_forensics/` (real certified twins; replies written by
+  `scripts/build_demo_forensics.py` and labelled as not model output).

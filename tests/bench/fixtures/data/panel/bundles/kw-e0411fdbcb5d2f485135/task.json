@@ -1,22 +1,19 @@
 {
  "answer": {
-  "canonical": "no; 15",
+  "canonical": "40",
   "tolerance": 1.6,
-  "type": "premise",
-  "value": {
-   "premise_holds": false,
-   "value": 15.0
-  }
+  "type": "float",
+  "value": 40.0
  },
- "bundle_id": "kw-3db1693ab9b865bb74b7",
+ "bundle_id": "kw-e0411fdbcb5d2f485135",
  "canary": "KNOTWORK-CANARY-1c811935a08fccf7e715d0bfcb48deb7",
  "certificate": {
   "agree": true,
-  "bundle_id": "kw-3db1693ab9b865bb74b7",
+  "bundle_id": "kw-e0411fdbcb5d2f485135",
   "checks": [
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.45039471708571466,
+    "metric": 0.47310734030813073,
     "name": "contrast",
     "obj_id": 79,
     "passed": true,
@@ -24,7 +21,7 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.44507212062539425,
+    "metric": 0.47456551237918987,
     "name": "contrast",
     "obj_id": 80,
     "passed": true,
@@ -32,7 +29,7 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.43455318525479686,
+    "metric": 0.4883039974354123,
     "name": "contrast",
     "obj_id": 81,
     "passed": true,
@@ -40,7 +37,7 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.45174774623923686,
+    "metric": 0.47247761608672745,
     "name": "contrast",
     "obj_id": 82,
     "passed": true,
@@ -48,7 +45,7 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.4546263452735494,
+    "metric": 0.4894779584763732,
     "name": "contrast",
     "obj_id": 83,
     "passed": true,
@@ -56,7 +53,23 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.5643971630378972,
+    "metric": 0.507422732006583,
+    "name": "contrast",
+    "obj_id": 84,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.48084373214788695,
+    "name": "contrast",
+    "obj_id": 85,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.621250732528599,
     "name": "contrast",
     "obj_id": 17,
     "passed": true,
@@ -64,7 +77,7 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.6423541441405525,
+    "metric": 0.6369146579218253,
     "name": "contrast",
     "obj_id": 35,
     "passed": true,
@@ -72,7 +85,7 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.631157794028494,
+    "metric": 0.6524225479005927,
     "name": "contrast",
     "obj_id": 53,
     "passed": true,
@@ -80,7 +93,7 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.663323601248307,
+    "metric": 0.6394232644458013,
     "name": "contrast",
     "obj_id": 71,
     "passed": true,
@@ -88,7 +101,7 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.03074750574279525,
+    "metric": 0.040842560956358964,
     "name": "crossing_color",
     "obj_id": 80,
     "passed": true,
@@ -96,7 +109,15 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.023397053304674204,
+    "metric": 0.018141092529089353,
+    "name": "crossing_color",
+    "obj_id": 81,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.032767083940773545,
     "name": "crossing_color",
     "obj_id": 79,
     "passed": true,
@@ -104,31 +125,71 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.025840786638007568,
+    "metric": 0.015428483750593636,
     "name": "crossing_color",
-    "obj_id": 79,
+    "obj_id": 85,
     "passed": true,
     "threshold": 0.1
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.025593759187027193,
+    "metric": 0.030252872921246177,
     "name": "crossing_color",
-    "obj_id": 79,
+    "obj_id": 81,
     "passed": true,
     "threshold": 0.1
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.02951532781447816,
+    "metric": 0.053368929583809954,
     "name": "crossing_color",
-    "obj_id": 79,
+    "obj_id": 80,
     "passed": true,
     "threshold": 0.1
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.021659884311758804,
+    "metric": 0.04176947198588776,
+    "name": "crossing_color",
+    "obj_id": 85,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.029155461156540358,
+    "name": "crossing_color",
+    "obj_id": 81,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.024370927823207017,
+    "name": "crossing_color",
+    "obj_id": 81,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.04214109252908935,
+    "name": "crossing_color",
+    "obj_id": 81,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.03004063762712858,
+    "name": "crossing_color",
+    "obj_id": 81,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.028803886858573213,
     "name": "crossing_color",
     "obj_id": 83,
     "passed": true,
@@ -136,23 +197,15 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.024719115684307874,
+    "metric": 0.014917702553551071,
     "name": "crossing_color",
-    "obj_id": 83,
+    "obj_id": 84,
     "passed": true,
     "threshold": 0.1
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.02708338235097446,
-    "name": "crossing_color",
-    "obj_id": 83,
-    "passed": true,
-    "threshold": 0.1
-   },
-   {
-    "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.0009755782135076885,
+    "metric": 0.004939643697478985,
     "name": "needle_tip_color",
     "obj_id": 17,
     "passed": true,
@@ -160,7 +213,7 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 9.754532324796061e-05,
+    "metric": 0.001911257560095192,
     "name": "needle_tip_color",
     "obj_id": 35,
     "passed": true,
@@ -168,7 +221,7 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.0042377228035965775,
+    "metric": 0.002156031820728266,
     "name": "needle_tip_color",
     "obj_id": 53,
     "passed": true,
@@ -176,7 +229,7 @@
    },
    {
     "code": "E_BEAUTY_MISMATCH",
-    "metric": 0.0011296773479361755,
+    "metric": 0.0007565497794966847,
     "name": "needle_tip_color",
     "obj_id": 71,
     "passed": true,
@@ -184,7 +237,7 @@
    },
    {
     "code": "E_UNEXPLAINED_INK",
-    "metric": 1.0,
+    "metric": 0.0,
     "name": "unexplained_ink",
     "obj_id": null,
     "passed": true,
@@ -208,7 +261,7 @@
    },
    {
     "code": "E_CVD_AMBIGUOUS",
-    "metric": 14.27878964067752,
+    "metric": 15.453173144362196,
     "name": "cvd_zones",
     "obj_id": null,
     "passed": true,
@@ -216,7 +269,7 @@
    },
    {
     "code": "E_CVD_AMBIGUOUS",
-    "metric": 15.623973204527681,
+    "metric": 16.035584775939405,
     "name": "cvd_zones",
     "obj_id": null,
     "passed": true,
@@ -224,7 +277,7 @@
    },
    {
     "code": "E_CVD_AMBIGUOUS",
-    "metric": 15.921354865808592,
+    "metric": 15.835378663883843,
     "name": "cvd_zones",
     "obj_id": null,
     "passed": true,
@@ -232,7 +285,7 @@
    },
    {
     "code": "E_CVD_AMBIGUOUS",
-    "metric": 16.995995294335543,
+    "metric": 16.476692319798538,
     "name": "cvd_zones",
     "obj_id": null,
     "passed": true,
@@ -280,9 +333,17 @@
    },
    {
     "code": "E_ILLEGIBLE_RES",
-    "metric": 9.12414379544733,
+    "metric": 6.0,
     "name": "stroke_768",
-    "obj_id": 17,
+    "obj_id": 84,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 6.0,
+    "name": "stroke_768",
+    "obj_id": 85,
     "passed": true,
     "threshold": 2.0
    },
@@ -290,13 +351,21 @@
     "code": "E_ILLEGIBLE_RES",
     "metric": 9.486832980505138,
     "name": "stroke_768",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 9.12414379544733,
+    "name": "stroke_768",
     "obj_id": 35,
     "passed": true,
     "threshold": 2.0
    },
    {
     "code": "E_ILLEGIBLE_RES",
-    "metric": 8.746427842267952,
+    "metric": 9.486832980505138,
     "name": "stroke_768",
     "obj_id": 53,
     "passed": true,
@@ -304,7 +373,7 @@
    },
    {
     "code": "E_ILLEGIBLE_RES",
-    "metric": 8.746427842267952,
+    "metric": 9.0,
     "name": "stroke_768",
     "obj_id": 71,
     "passed": true,
@@ -312,7 +381,7 @@
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 66.05768198025976,
+    "metric": 75.59314713792666,
     "name": "crossing_angle",
     "obj_id": 79,
     "passed": true,
@@ -320,7 +389,7 @@
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 64.3337212644497,
+    "metric": 72.46599632104011,
     "name": "crossing_angle",
     "obj_id": 79,
     "passed": true,
@@ -328,7 +397,7 @@
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 73.36559479697063,
+    "metric": 72.85570763076508,
     "name": "crossing_angle",
     "obj_id": 79,
     "passed": true,
@@ -336,15 +405,7 @@
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 82.34152658727444,
-    "name": "crossing_angle",
-    "obj_id": 79,
-    "passed": true,
-    "threshold": 25.0
-   },
-   {
-    "code": "E_TANGENT_CROSSING",
-    "metric": 73.48011079852262,
+    "metric": 72.52969796225183,
     "name": "crossing_angle",
     "obj_id": 79,
     "passed": true,
@@ -352,7 +413,7 @@
    },
    {
     "code": "E_CROSSING_SPACING",
-    "metric": 43.35533905932766,
+    "metric": 38.769552621700406,
     "name": "crossing_spacing",
     "obj_id": 79,
     "passed": true,
@@ -360,7 +421,7 @@
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 66.05768198025976,
+    "metric": 75.59314713792666,
     "name": "crossing_angle",
     "obj_id": 80,
     "passed": true,
@@ -368,7 +429,23 @@
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 64.27251435314032,
+    "metric": 73.00064766087489,
+    "name": "crossing_angle",
+    "obj_id": 80,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 74.1430149774638,
+    "name": "crossing_angle",
+    "obj_id": 80,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 72.97778739515385,
     "name": "crossing_angle",
     "obj_id": 80,
     "passed": true,
@@ -376,7 +453,7 @@
    },
    {
     "code": "E_CROSSING_SPACING",
-    "metric": 100.59797974644661,
+    "metric": 60.94112549695423,
     "name": "crossing_spacing",
     "obj_id": 80,
     "passed": true,
@@ -384,7 +461,7 @@
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 64.29547765161199,
+    "metric": 75.93235170502082,
     "name": "crossing_angle",
     "obj_id": 81,
     "passed": true,
@@ -392,7 +469,7 @@
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 73.36559479697063,
+    "metric": 71.01730432732886,
     "name": "crossing_angle",
     "obj_id": 81,
     "passed": true,
@@ -400,7 +477,7 @@
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 82.34152658727444,
+    "metric": 88.04624315186089,
     "name": "crossing_angle",
     "obj_id": 81,
     "passed": true,
@@ -408,7 +485,23 @@
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 73.48011079852262,
+    "metric": 87.4259759004067,
+    "name": "crossing_angle",
+    "obj_id": 81,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 72.52969796225183,
+    "name": "crossing_angle",
+    "obj_id": 81,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 72.97778739515385,
     "name": "crossing_angle",
     "obj_id": 81,
     "passed": true,
@@ -416,7 +509,7 @@
    },
    {
     "code": "E_CROSSING_SPACING",
-    "metric": 43.35533905932766,
+    "metric": 38.698484809835236,
     "name": "crossing_spacing",
     "obj_id": 81,
     "passed": true,
@@ -424,9 +517,73 @@
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 66.07546063864793,
+    "metric": 75.93235170502082,
     "name": "crossing_angle",
     "obj_id": 82,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 72.46599632104011,
+    "name": "crossing_angle",
+    "obj_id": 82,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 73.00064766087489,
+    "name": "crossing_angle",
+    "obj_id": 82,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 39.35533905932731,
+    "name": "crossing_spacing",
+    "obj_id": 82,
+    "passed": true,
+    "threshold": 32.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 73.09895656090563,
+    "name": "crossing_angle",
+    "obj_id": 83,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 88.04624315186089,
+    "name": "crossing_angle",
+    "obj_id": 83,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 87.4259759004067,
+    "name": "crossing_angle",
+    "obj_id": 83,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 35.87005768508885,
+    "name": "crossing_spacing",
+    "obj_id": 83,
+    "passed": true,
+    "threshold": 32.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 75.5610470242549,
+    "name": "crossing_angle",
+    "obj_id": 84,
     "passed": true,
     "threshold": 25.0
    },
@@ -434,47 +591,55 @@
     "code": "E_CROSSING_SPACING",
     "metric": 1000000000.0,
     "name": "crossing_spacing",
-    "obj_id": 82,
+    "obj_id": 84,
     "passed": true,
     "threshold": 32.0
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 66.07546063864793,
+    "metric": 75.5610470242549,
     "name": "crossing_angle",
-    "obj_id": 83,
+    "obj_id": 85,
     "passed": true,
     "threshold": 25.0
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 64.29547765161199,
+    "metric": 73.09895656090563,
     "name": "crossing_angle",
-    "obj_id": 83,
+    "obj_id": 85,
     "passed": true,
     "threshold": 25.0
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 64.3337212644497,
+    "metric": 71.01730432732886,
     "name": "crossing_angle",
-    "obj_id": 83,
+    "obj_id": 85,
     "passed": true,
     "threshold": 25.0
    },
    {
     "code": "E_TANGENT_CROSSING",
-    "metric": 64.27251435314032,
+    "metric": 72.85570763076508,
     "name": "crossing_angle",
-    "obj_id": 83,
+    "obj_id": 85,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 74.1430149774638,
+    "name": "crossing_angle",
+    "obj_id": 85,
     "passed": true,
     "threshold": 25.0
    },
    {
     "code": "E_CROSSING_SPACING",
-    "metric": 46.426406871192754,
+    "metric": 38.769552621700406,
     "name": "crossing_spacing",
-    "obj_id": 83,
+    "obj_id": 85,
     "passed": true,
     "threshold": 32.0
    },
@@ -482,7 +647,7 @@
     "code": "E_TERMINAL_CLEARANCE",
     "metric": 8.0,
     "name": "terminal_clearance",
-    "obj_id": 80,
+    "obj_id": 82,
     "passed": true,
     "threshold": 8.0
    },
@@ -498,7 +663,7 @@
     "code": "E_TERMINAL_CLEARANCE",
     "metric": 8.0,
     "name": "terminal_clearance",
-    "obj_id": 79,
+    "obj_id": 83,
     "passed": true,
     "threshold": 8.0
    },
@@ -506,13 +671,13 @@
     "code": "E_TERMINAL_CLEARANCE",
     "metric": 8.0,
     "name": "terminal_clearance",
-    "obj_id": 82,
+    "obj_id": 84,
     "passed": true,
     "threshold": 8.0
    },
    {
     "code": "E_TERMINAL_CLEARANCE",
-    "metric": 24.758836806279895,
+    "metric": 18.0,
     "name": "terminal_clearance",
     "obj_id": 79,
     "passed": true,
@@ -520,7 +685,63 @@
    },
    {
     "code": "E_TERMINAL_CLEARANCE",
-    "metric": 25.45584412271571,
+    "metric": 17.0,
+    "name": "terminal_clearance",
+    "obj_id": 80,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 16.0,
+    "name": "terminal_clearance",
+    "obj_id": 81,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 17.0,
+    "name": "terminal_clearance",
+    "obj_id": 82,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 17.0,
+    "name": "terminal_clearance",
+    "obj_id": 83,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 16.0,
+    "name": "terminal_clearance",
+    "obj_id": 84,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 17.0,
+    "name": "terminal_clearance",
+    "obj_id": 85,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 21.095023109728988,
+    "name": "terminal_clearance",
+    "obj_id": 85,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 18.0,
     "name": "terminal_clearance",
     "obj_id": 80,
     "passed": true,
@@ -530,31 +751,7 @@
     "code": "E_TERMINAL_CLEARANCE",
     "metric": 18.0,
     "name": "terminal_clearance",
-    "obj_id": 81,
-    "passed": true,
-    "threshold": 8.0
-   },
-   {
-    "code": "E_TERMINAL_CLEARANCE",
-    "metric": 18.0,
-    "name": "terminal_clearance",
-    "obj_id": 82,
-    "passed": true,
-    "threshold": 8.0
-   },
-   {
-    "code": "E_TERMINAL_CLEARANCE",
-    "metric": 18.0,
-    "name": "terminal_clearance",
-    "obj_id": 83,
-    "passed": true,
-    "threshold": 8.0
-   },
-   {
-    "code": "E_TERMINAL_CLEARANCE",
-    "metric": 24.758836806279895,
-    "name": "terminal_clearance",
-    "obj_id": 83,
+    "obj_id": 79,
     "passed": true,
     "threshold": 8.0
    },
@@ -754,22 +951,6 @@
     "code": "E_LABEL_MISMATCH",
     "metric": 1.0,
     "name": "ocr_768",
-    "obj_id": 84,
-    "passed": true,
-    "threshold": 1.0
-   },
-   {
-    "code": "E_LABEL_MISMATCH",
-    "metric": 1.0,
-    "name": "ocr_768",
-    "obj_id": 85,
-    "passed": true,
-    "threshold": 1.0
-   },
-   {
-    "code": "E_LABEL_MISMATCH",
-    "metric": 1.0,
-    "name": "ocr_768",
     "obj_id": 86,
     "passed": true,
     "threshold": 1.0
@@ -783,8 +964,24 @@
     "threshold": 1.0
    },
    {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 88,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 89,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.96875,
+    "metric": 0.90625,
     "name": "oracle_path",
     "obj_id": 79,
     "passed": true,
@@ -792,7 +989,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.9791666666666666,
+    "metric": 0.9479166666666666,
     "name": "oracle_path",
     "obj_id": 80,
     "passed": true,
@@ -800,7 +997,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.96875,
+    "metric": 0.84375,
     "name": "oracle_path",
     "obj_id": 81,
     "passed": true,
@@ -816,7 +1013,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.9583333333333334,
+    "metric": 0.9166666666666666,
     "name": "oracle_path",
     "obj_id": 83,
     "passed": true,
@@ -824,7 +1021,23 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8541666666666666,
+    "metric": 0.9479166666666666,
+    "name": "oracle_path",
+    "obj_id": 84,
+    "passed": true,
+    "threshold": 0.7
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.9270833333333334,
+    "name": "oracle_path",
+    "obj_id": 85,
+    "passed": true,
+    "threshold": 0.7
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.96875,
     "name": "oracle_path",
     "obj_id": 17,
     "passed": true,
@@ -832,7 +1045,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.875,
+    "metric": 0.8229166666666666,
     "name": "oracle_path",
     "obj_id": 35,
     "passed": true,
@@ -840,7 +1053,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8958333333333334,
+    "metric": 0.9479166666666666,
     "name": "oracle_path",
     "obj_id": 53,
     "passed": true,
@@ -848,7 +1061,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.75,
+    "metric": 1.0,
     "name": "oracle_path",
     "obj_id": 71,
     "passed": true,
@@ -856,7 +1069,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.562563931817696,
+    "metric": 0.5870562290658391,
     "name": "oracle_crossing",
     "obj_id": 79,
     "passed": true,
@@ -864,7 +1077,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.5785032634143153,
+    "metric": 0.599261500270704,
     "name": "oracle_crossing",
     "obj_id": 79,
     "passed": true,
@@ -872,7 +1085,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.5712329485355712,
+    "metric": 0.5899907730850071,
     "name": "oracle_crossing",
     "obj_id": 79,
     "passed": true,
@@ -880,7 +1093,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.5847921845821005,
+    "metric": 0.5965131357746953,
     "name": "oracle_crossing",
     "obj_id": 79,
     "passed": true,
@@ -888,15 +1101,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.572574638338704,
-    "name": "oracle_crossing",
-    "obj_id": 79,
-    "passed": true,
-    "threshold": 0.08
-   },
-   {
-    "code": "E_ORACLE_GHOST",
-    "metric": 0.5685653725184858,
+    "metric": 0.5961487201982627,
     "name": "oracle_crossing",
     "obj_id": 80,
     "passed": true,
@@ -904,7 +1109,23 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.5711374745729443,
+    "metric": 0.5868182796248613,
+    "name": "oracle_crossing",
+    "obj_id": 80,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.592226812399332,
+    "name": "oracle_crossing",
+    "obj_id": 80,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.5865755969050368,
     "name": "oracle_crossing",
     "obj_id": 81,
     "passed": true,
@@ -912,15 +1133,47 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.5725307483766655,
+    "metric": 0.6051199947322312,
     "name": "oracle_crossing",
-    "obj_id": 82,
+    "obj_id": 81,
     "passed": true,
     "threshold": 0.08
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7477133155205695,
+    "metric": 0.6032671103880922,
+    "name": "oracle_crossing",
+    "obj_id": 81,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.5993811234575473,
+    "name": "oracle_crossing",
+    "obj_id": 81,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.5988453270690028,
+    "name": "oracle_crossing",
+    "obj_id": 83,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.5962425353727436,
+    "name": "oracle_crossing",
+    "obj_id": 84,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.6726184943108141,
     "name": "oracle_tip",
     "obj_id": 17,
     "passed": true,
@@ -928,7 +1181,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7131953006476524,
+    "metric": 0.7300117080876027,
     "name": "oracle_tip",
     "obj_id": 35,
     "passed": true,
@@ -936,7 +1189,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7009685952092686,
+    "metric": 0.7022362139702149,
     "name": "oracle_tip",
     "obj_id": 53,
     "passed": true,
@@ -944,7 +1197,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7354673203613705,
+    "metric": 0.7363448653328943,
     "name": "oracle_tip",
     "obj_id": 71,
     "passed": true,
@@ -952,7 +1205,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8401656297292583,
+    "metric": 0.822896183220932,
     "name": "oracle_object",
     "obj_id": 19,
     "passed": true,
@@ -960,7 +1213,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7245931607381022,
+    "metric": 0.7780545952580251,
     "name": "oracle_object",
     "obj_id": 20,
     "passed": true,
@@ -968,7 +1221,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7080902864219628,
+    "metric": 0.722139726939145,
     "name": "oracle_object",
     "obj_id": 21,
     "passed": true,
@@ -976,7 +1229,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7550964799248185,
+    "metric": 0.7908861791254298,
     "name": "oracle_object",
     "obj_id": 22,
     "passed": true,
@@ -984,7 +1237,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7940953060241173,
+    "metric": 0.822032484912702,
     "name": "oracle_object",
     "obj_id": 23,
     "passed": true,
@@ -992,7 +1245,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.5579491071179238,
+    "metric": 0.6365667615769692,
     "name": "oracle_object",
     "obj_id": 24,
     "passed": true,
@@ -1000,7 +1253,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.875942131629949,
+    "metric": 0.8769648073429287,
     "name": "oracle_object",
     "obj_id": 37,
     "passed": true,
@@ -1008,7 +1261,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7856121465753951,
+    "metric": 0.8383883182552376,
     "name": "oracle_object",
     "obj_id": 38,
     "passed": true,
@@ -1016,7 +1269,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7868936528203551,
+    "metric": 0.8006130993172242,
     "name": "oracle_object",
     "obj_id": 39,
     "passed": true,
@@ -1024,7 +1277,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8273133875221335,
+    "metric": 0.8176193929063927,
     "name": "oracle_object",
     "obj_id": 40,
     "passed": true,
@@ -1032,7 +1285,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.859976221816323,
+    "metric": 0.8687577093874408,
     "name": "oracle_object",
     "obj_id": 41,
     "passed": true,
@@ -1040,7 +1293,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.636565016788771,
+    "metric": 0.6602763326526105,
     "name": "oracle_object",
     "obj_id": 42,
     "passed": true,
@@ -1048,7 +1301,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8474570394564143,
+    "metric": 0.8417355679154943,
     "name": "oracle_object",
     "obj_id": 55,
     "passed": true,
@@ -1056,7 +1309,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7631704707182752,
+    "metric": 0.7569387441701887,
     "name": "oracle_object",
     "obj_id": 56,
     "passed": true,
@@ -1064,7 +1317,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7599586754238106,
+    "metric": 0.7605711353993432,
     "name": "oracle_object",
     "obj_id": 57,
     "passed": true,
@@ -1072,7 +1325,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8062819113965539,
+    "metric": 0.7989730642654118,
     "name": "oracle_object",
     "obj_id": 58,
     "passed": true,
@@ -1080,7 +1333,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8425736292011814,
+    "metric": 0.8435211782303026,
     "name": "oracle_object",
     "obj_id": 59,
     "passed": true,
@@ -1088,7 +1341,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.5735949984038241,
+    "metric": 0.6356916481796376,
     "name": "oracle_object",
     "obj_id": 60,
     "passed": true,
@@ -1096,7 +1349,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8859651103969977,
+    "metric": 0.8669354487342724,
     "name": "oracle_object",
     "obj_id": 73,
     "passed": true,
@@ -1104,7 +1357,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7647351435004884,
+    "metric": 0.8160299407969298,
     "name": "oracle_object",
     "obj_id": 74,
     "passed": true,
@@ -1112,7 +1365,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7831463915598252,
+    "metric": 0.7847959494494958,
     "name": "oracle_object",
     "obj_id": 75,
     "passed": true,
@@ -1120,7 +1373,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8210841646358452,
+    "metric": 0.8543637752595838,
     "name": "oracle_object",
     "obj_id": 76,
     "passed": true,
@@ -1128,7 +1381,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.857785735604337,
+    "metric": 0.8867417267289839,
     "name": "oracle_object",
     "obj_id": 77,
     "passed": true,
@@ -1136,7 +1389,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.6661570445884809,
+    "metric": 0.6773129307451713,
     "name": "oracle_object",
     "obj_id": 78,
     "passed": true,
@@ -1144,23 +1397,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.5292584313284442,
-    "name": "oracle_object",
-    "obj_id": 84,
-    "passed": true,
-    "threshold": 0.08
-   },
-   {
-    "code": "E_ORACLE_GHOST",
-    "metric": 0.508688085844738,
-    "name": "oracle_object",
-    "obj_id": 85,
-    "passed": true,
-    "threshold": 0.08
-   },
-   {
-    "code": "E_ORACLE_GHOST",
-    "metric": 0.5337874336281463,
+    "metric": 0.5540365055093177,
     "name": "oracle_object",
     "obj_id": 86,
     "passed": true,
@@ -1168,7 +1405,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.5305406663785657,
+    "metric": 0.5187810553551712,
     "name": "oracle_object",
     "obj_id": 87,
     "passed": true,
@@ -1176,7 +1413,23 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7960016790280949,
+    "metric": 0.5575362388429592,
+    "name": "oracle_object",
+    "obj_id": 88,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.5344031062332512,
+    "name": "oracle_object",
+    "obj_id": 89,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8163535789197165,
     "name": "oracle_object",
     "obj_id": 11,
     "passed": true,
@@ -1184,7 +1437,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8008760451457311,
+    "metric": 0.8083300894198004,
     "name": "oracle_object",
     "obj_id": 12,
     "passed": true,
@@ -1192,7 +1445,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7577591742188285,
+    "metric": 0.7900941079199838,
     "name": "oracle_object",
     "obj_id": 13,
     "passed": true,
@@ -1200,7 +1453,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7800931281938468,
+    "metric": 0.7847191353308896,
     "name": "oracle_object",
     "obj_id": 14,
     "passed": true,
@@ -1208,7 +1461,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.7926061329173317,
+    "metric": 0.8137677261460023,
     "name": "oracle_object",
     "obj_id": 15,
     "passed": true,
@@ -1216,7 +1469,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8632445098405326,
+    "metric": 0.8685585923032748,
     "name": "oracle_object",
     "obj_id": 29,
     "passed": true,
@@ -1224,7 +1477,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8524288282955884,
+    "metric": 0.8582385755732125,
     "name": "oracle_object",
     "obj_id": 30,
     "passed": true,
@@ -1232,7 +1485,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8699481110731735,
+    "metric": 0.8714833485052362,
     "name": "oracle_object",
     "obj_id": 31,
     "passed": true,
@@ -1240,7 +1493,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8433304188193675,
+    "metric": 0.8705787110456669,
     "name": "oracle_object",
     "obj_id": 32,
     "passed": true,
@@ -1248,7 +1501,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8691708893232509,
+    "metric": 0.8622419692497822,
     "name": "oracle_object",
     "obj_id": 33,
     "passed": true,
@@ -1256,7 +1509,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8373400161995763,
+    "metric": 0.8330519489988094,
     "name": "oracle_object",
     "obj_id": 47,
     "passed": true,
@@ -1264,7 +1517,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8293246763421444,
+    "metric": 0.8447923532008539,
     "name": "oracle_object",
     "obj_id": 48,
     "passed": true,
@@ -1272,7 +1525,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8202715896245261,
+    "metric": 0.8371968411903373,
     "name": "oracle_object",
     "obj_id": 49,
     "passed": true,
@@ -1280,7 +1533,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8226258406049388,
+    "metric": 0.8268944498473217,
     "name": "oracle_object",
     "obj_id": 50,
     "passed": true,
@@ -1288,7 +1541,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.865520015869514,
+    "metric": 0.8451369281983473,
     "name": "oracle_object",
     "obj_id": 51,
     "passed": true,
@@ -1296,7 +1549,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8905174728645319,
+    "metric": 0.8782996303470828,
     "name": "oracle_object",
     "obj_id": 65,
     "passed": true,
@@ -1304,7 +1557,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8726361087630384,
+    "metric": 0.8726929086460095,
     "name": "oracle_object",
     "obj_id": 66,
     "passed": true,
@@ -1312,7 +1565,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8829547946625307,
+    "metric": 0.8765045939543714,
     "name": "oracle_object",
     "obj_id": 67,
     "passed": true,
@@ -1320,7 +1573,7 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.892272713238752,
+    "metric": 0.8751037680795234,
     "name": "oracle_object",
     "obj_id": 68,
     "passed": true,
@@ -1328,34 +1581,28 @@
    },
    {
     "code": "E_ORACLE_GHOST",
-    "metric": 0.8606215370839345,
+    "metric": 0.8819395578374509,
     "name": "oracle_object",
     "obj_id": 69,
     "passed": true,
     "threshold": 0.08
    }
   ],
-  "claims_checked": 26,
+  "claims_checked": 35,
   "claims_failed": 0,
   "codes": [],
   "d1": {
-   "canonical": "no; 15",
+   "canonical": "40",
    "tolerance": 0.0,
-   "type": "premise",
-   "value": {
-    "premise_holds": false,
-    "value": 15.0
-   }
+   "type": "float",
+   "value": 40.0
   },
   "d2": null,
   "d3": {
-   "canonical": "no; 14.9676",
-   "tolerance": 0.9371679504996147,
-   "type": "premise",
-   "value": {
-    "premise_holds": false,
-    "value": 14.967640304179753
-   }
+   "canonical": "39.9463",
+   "tolerance": 0.9357278621995568,
+   "type": "float",
+   "value": 39.946276017953096
   },
   "kernel_sha256": "cc915c558ec021270fb01b0baab9726af53c21735be08512ed06d36bceadf42f",
   "kernel_version": "1.0.0",
@@ -1364,241 +1611,213 @@
    {
     "codes": [],
     "evidence": {
-     "end_terminal": "panel/terminal:port_g4",
-     "ocr_text": "G4",
-     "path_px": 7006
+     "end_terminal": "panel/terminal:port_g3",
+     "ocr_text": "G3",
+     "path_px": 4303
     },
     "inputs": [
-     "panel/terminal:start_F"
+     "panel/terminal:start_K"
     ],
     "op": "TRACE",
-    "output": "G4",
+    "output": "G3",
     "step_id": "s0"
    },
    {
     "codes": [],
     "evidence": {
-     "port": "panel/terminal:port_g4"
+     "port": "panel/terminal:port_g3"
     },
     "inputs": [
-     "G4"
+     "G3"
     ],
     "op": "GAUGE_OF",
-    "output": "panel/gauge:g4",
+    "output": "panel/gauge:g3",
     "step_id": "s1"
    },
    {
     "codes": [],
     "evidence": {
      "R": 130.45473569332916,
-     "axis_offset": 0.26648426698354655,
+     "axis_offset": 0.16700303306844688,
      "center": [
-      165.0,
-      795.0
+      401.0,
+      635.0
      ],
-     "hi": 30,
-     "length": 129.0041741323567,
+     "hi": 50,
+     "length": 128.13842448871884,
      "limit": 3.9136420707998747,
-     "lo": 10,
-     "phi_needle": 16.71932805753002,
-     "theta_needle": 208.1126496103035,
+     "lo": 30,
+     "phi_needle": 101.26503482864683,
+     "theta_needle": 123.66479278817438,
      "ticks": [
       {
        "ocr": "10",
        "phi": 0.0,
-       "r": 101.0426263296877,
-       "theta": 224.8319776678335,
+       "r": 100.40923823470301,
+       "theta": 224.92982761682123,
        "v": 10
       },
       {
        "ocr": "30",
-       "phi": 67.31295759663774,
-       "r": 101.24645129695537,
-       "theta": 157.51902007119577,
+       "phi": 67.68080395960888,
+       "r": 100.84641788382967,
+       "theta": 157.24902365721235,
        "v": 30
       },
       {
        "ocr": "50",
-       "phi": 134.5483375120757,
-       "r": 101.00123761617974,
-       "theta": 90.28364015575782,
+       "phi": 135.21207055309208,
+       "r": 101.50123151962246,
+       "theta": 89.71775706372915,
        "v": 50
       },
       {
        "ocr": "70",
-       "phi": 202.1631761013294,
-       "r": 100.65840775565204,
-       "theta": 22.668801566504104,
+       "phi": 202.27251118846462,
+       "r": 100.87035121928567,
+       "theta": 22.657316428356598,
        "v": 70
       },
       {
        "ocr": "90",
-       "phi": 269.8657764956221,
-       "r": 100.73005243940163,
-       "theta": 314.96620117221147,
+       "phi": 269.6955924396086,
+       "r": 100.48408048461712,
+       "theta": 315.2342351772126,
        "v": 90
       }
      ],
      "tip": [
-      79.67811237600921,
-      840.2797272074872
+      347.885726261835,
+      554.9511225691593
      ],
-     "tol": 0.9371679504996147
+     "tol": 0.9357278621995568
     },
     "inputs": [
-     "panel/gauge:g4"
+     "panel/gauge:g3"
     ],
     "op": "READ",
     "output": [
-     14.967640304179753,
-     0.9371679504996147
+     39.946276017953096,
+     0.9357278621995568
     ],
     "step_id": "s2"
-   },
-   {
-    "codes": [],
-    "evidence": {
-     "phi_needle": 16.71932805753002,
-     "zones": {
-      "amber": [
-       219.1213845303339,
-       269.8319776678335
-      ],
-      "green": [
-       -0.16802233216648688,
-       168.5220451938133
-      ],
-      "red": [
-       168.23980225754244,
-       219.272030404524
-      ]
-     }
-    },
-    "inputs": [
-     "panel/gauge:g4"
-    ],
-    "op": "ZONE",
-    "output": "green",
-    "step_id": "s3"
    }
   ],
   "verdict": "CERTIFIED"
  },
- "family": "T_GASLIGHT",
+ "family": "P1_READ_TRACE",
  "files": {
-  "beauty.png": "d653dc9fec899cfa0bef3d054be4654c36978f282b233afcd5c14f8ea250480f",
-  "claims.json": "e336993fda13f52ee9598aaa71dcaccec0885ed4556754d304e9d1b7da4d79e5",
-  "id_buffer.png": "3ec8ad61c92449ec7a974799fa68b36aaf69179d7da8d64b7cea68ab45da9f3f",
-  "manifest.json": "543b1949a10f09e7253c95f8a9e3cd7fb6c88e541174445f4a80efeb4bc84778",
+  "beauty.png": "dcf0d8000f1a5510812b37c1cf5335d48dc00c6f2ec347e05a0e60b7116f3b48",
+  "claims.json": "e5b7b9f206c72203cf0800e3354614f009eaa2576ab8717536ee5ac60a6a57c5",
+  "id_buffer.png": "f674bc9d83e43d0428aae29995cb86a9f8d40e20052c456cb006f5234a81cafe",
+  "manifest.json": "dbca08e78398c1eb5cd0dcf51f70d1959f71b3058d93a9ab24491153768395e5",
   "masks/obj_00001.png": "a88b9e24e74c8ce98fbffc29e69d14bd4af26977832d5a58811635466ec6e1ab",
   "masks/obj_00002.png": "ad37035ca69718201751bde3c326b424a8867abf3ec6bf0cfc66c62ad887363d",
   "masks/obj_00003.png": "923490b307953fca3d100c6e9c9c4a10dca125799b26e59bd8b2393a32a8b250",
   "masks/obj_00004.png": "526dbb84ed9378000c07b41ad6bcea4874519d296be18b8806ae82da8a143036",
   "masks/obj_00005.png": "dbec43ec9b135390e1123b0ffea223947db3481fd7b1cdb95315039dabc685ca",
   "masks/obj_00006.png": "7731ac7b3f754c571cebc882ea001ea6bd51d964778ef8a810159b16dc385dcb",
-  "masks/obj_00007.png": "6fd92bdd87696a7d7f80895cdd34ae84f1c4bd3ec0454fa38ed47dc4fab63d6b",
-  "masks/obj_00008.png": "eb72cda7f829a147a076524abf7f5c051f331182ef73534768b1338325ac8cd6",
-  "masks/obj_00009.png": "dff1a34b63809c4d98b2c90a25900079f4df9fe4c78ca528f057d23a7aa5bc73",
-  "masks/obj_00010.png": "234c46389cb486ece5982a202834b6659605568a3adc89b35b9db2be183da6d7",
-  "masks/obj_00011.png": "c67dff662b43fdf1d7c3a53afc154b01544fe71470b91d93571b3ca645928ec0",
-  "masks/obj_00012.png": "f846886475dc0ddb970a087a2c938dfe3eeff243ffc2e23a4833c585457403dd",
-  "masks/obj_00013.png": "30ad0d8fafa679ed7916953963f33c307a4241eead145d9e528c890bb3636bc0",
-  "masks/obj_00014.png": "92b95360a38e8e1e98976f769f193ca139ad088b636fb5fd627b590bcac0215e",
-  "masks/obj_00015.png": "16f7f854504f84156cf4485a99802bba46c19df7a25c03b5904b59d2311a8441",
-  "masks/obj_00016.png": "dd2ccdad28966cec2cd86bbc6cb0cf22916f7fe4646e729dd7502a4106ef9972",
-  "masks/obj_00017.png": "30c1bb67deae23b266b9b43e7b72a47fef1979f22d3141142c66e1e0121deb38",
-  "masks/obj_00018.png": "76c4dc6181b170f245d66b01d3cd187590fec809c0d76f6a5ca3a9213096239f",
-  "masks/obj_00019.png": "4dd31f72c5207189a2ac0a12d20f02447450a6fba3b71b7eaa186492195d2d09",
-  "masks/obj_00020.png": "a9c9a8232d850d7e05672968c62ef34ff8f70fb1bfde4d19c1c6fe1e4549732b",
-  "masks/obj_00021.png": "416fe513840995af2c352160deb075ff4ee006b9f0a563a0317f929c604d5313",
-  "masks/obj_00022.png": "fdf9d2a2957520ce04a9a2d3e5e2ac64f1881fb17060c8fbd8e89e87b12fffd1",
-  "masks/obj_00023.png": "e7d2d109d883e7e58110c562b50841df88804b36b06a565d9253c11357329f46",
-  "masks/obj_00024.png": "544d9dc0d4d088124110dd443e9b5defc371b589b21f7516ee7e4fa22b6c2ae4",
-  "masks/obj_00025.png": "93e24a043450e6ca6cce835496d69a9bdea6cd750d545a1906bd15e1c5072273",
-  "masks/obj_00026.png": "fcee085a6d24a81d8d89af9f7071c3779982bb8229e4ce38eace586fd0a47236",
-  "masks/obj_00027.png": "53c81415e813121dcad7ee9c250a1b3240a25cee9f8b8e5b2e69ab3017a8e66a",
-  "masks/obj_00028.png": "95bae6d126dd1f317372f835228d9a5d4d4235871b2cc611e1bfd0423bfc303e",
-  "masks/obj_00029.png": "03179c78f8353760f7e003507c90abfa3082df83d7dbde7049a429b13d1be125",
-  "masks/obj_00030.png": "7fd970ee2d918d9f5193de2dc7e57f38b76e99f86dd45e8190a0e81b97193b2e",
-  "masks/obj_00031.png": "75aaa6b2fca716c62252aa2a1b4940e384d0fd2c314f852a2f6bd2588302d88a",
-  "masks/obj_00032.png": "19cd6a3e7f9484b60eb7704377ac7ded79b9814c41edafad1542fc2279d8abb4",
-  "masks/obj_00033.png": "f26144cebf1c2558d384d420eb1a30deed878dab073ad75e7f74b6615a9cfc17",
-  "masks/obj_00034.png": "d36efd16d6ccc08ff48c7a12921b7020253a1f7905d4144e95961568cc0831f9",
-  "masks/obj_00035.png": "84904608f30c1111c29fc6a985105c9b7c90f218e5c0909a912eb12f9c9c6518",
-  "masks/obj_00036.png": "376d2e0b6a8287f2d2a3ac9241d879f2b2b151044de13a572b96e705afef18aa",
-  "masks/obj_00037.png": "c5fc28aeb5e85eba7d13690349f56e3127ad2b78e0b76c0b4a10a79a17cc3dc7",
-  "masks/obj_00038.png": "8e3dae8caed022663890d409e36665b6d3c760130c66caeea8572c843c08faa1",
-  "masks/obj_00039.png": "2b5126d0c2e9443919c840fd03e4a74e77ee0dd299c057b39263291c770b27cb",
-  "masks/obj_00040.png": "e90d994042764a818cdacf0dc7bb0f587e007fe1beb906e896d804c546e6b2aa",
-  "masks/obj_00041.png": "fc820fd4a91e51a9dc8c361a6dfff2164130728ae51f6a0ab484315bd1b3783b",
-  "masks/obj_00042.png": "7c12603850f8ab39e55fa117468fa0288bebe37ff0e1fade177a1f5a17d32a02",
-  "masks/obj_00043.png": "d99d13bf7cf003ff4e2f6d4843866cdd57f6e13218c9da1b46713654b2a62947",
-  "masks/obj_00044.png": "b76859094a66d662aa50ac954f7761edc064d329da0e58f7e415c9566b1d9986",
-  "masks/obj_00045.png": "cccf61921ca11e56879c9ca9efb5e95bd76d0ac70b8b43e948694a2a8ea252a0",
-  "masks/obj_00046.png": "6e0f45691db0ba8c51c080fd405b6770792b9b2a6a37c5aafdcf58ad9fc775ee",
-  "masks/obj_00047.png": "d29b065f579d2030dea00430cad6fa701507347d5060c2277c2a29e6d0679d91",
-  "masks/obj_00048.png": "8c92f6445ba2af80fc149eb04a349241e6cd2997f9bdca06db416e04b1aab571",
-  "masks/obj_00049.png": "e53724a1a76268c866ec5a77654faa3724e7c8d45448a9eba9e7b38aca7c5a35",
-  "masks/obj_00050.png": "93199d64cb7667fa28dd3373c2875103332da70300a13d5459ddb7403153f583",
-  "masks/obj_00051.png": "6c3b32808ee3b797a53b75924d1bf1f62735344a199b73be801dab114e294dc4",
-  "masks/obj_00052.png": "1f2eec8c69882c115c11e0c4b1761a8ce7a04909e969b31551aa2b30c49d0948",
-  "masks/obj_00053.png": "f9d187345ad8547ec524493cdbde58f20c0368c67b53d9ea5fefe8807ed8c2cf",
-  "masks/obj_00054.png": "fe0fa8806f54fe2ff0501df422d8f0f42c469966e9d3c6307ed612d4e011bb9c",
-  "masks/obj_00055.png": "d68177dd0a266ae7ef3d01f197fe10df58095d24350034bed5b5ad14f47f58f9",
-  "masks/obj_00056.png": "dc35959a8e6a47fb2582f826f34a2c0253b12c13a61006e5101f9df85bcf13ca",
-  "masks/obj_00057.png": "338002720e3205626b2ed2386a4208c461af5919a291c6f4d20cf486a5795bf0",
-  "masks/obj_00058.png": "199c1c62c651aae69d5e4e5e8708e259b49ecb300b737bee21222a23869527df",
-  "masks/obj_00059.png": "d35a0ed68f6afead56a359d7eee4399fa746f9cc8e9aca24dd5c219448a74924",
-  "masks/obj_00060.png": "bac50b195878c7d8a09c39c6128abb324146935512f4a2043a10b304c6e95e05",
-  "masks/obj_00061.png": "d1bbaca78a3ce8ea9d8e1413dbb40e795e46264dee1ec2618930b0811df24842",
-  "masks/obj_00062.png": "be37dbc2ff60be906204e92d76a83bbf4e850cd42b1dcade31a50ab56b0a7052",
-  "masks/obj_00063.png": "0aa531f867cab7552798b97a3908a32377e4ab8e72153ed853462e9354bacf41",
-  "masks/obj_00064.png": "2c4f51ce3f4310d22d41db9fb3d56ab721581338a417f526b35f48b0457adb14",
-  "masks/obj_00065.png": "ef7a308ba943b899aae55723ffb3302345cf7de1a6fdb1058e8190e2b27d41ee",
-  "masks/obj_00066.png": "e67101e13b97155fc20c75fcc23f3f855f209c52210b888631ed7333e08d3827",
-  "masks/obj_00067.png": "a478a1ab96fea20a92ac9a5cdb1217b184f548a583f456e71fceab120361f2e8",
-  "masks/obj_00068.png": "1ce7a114f18f035e91a3441acbf6b0954db952be6d7632911251f0284c77ddff",
-  "masks/obj_00069.png": "2c9d06886ed5aec445ecb419c7bc593f14a97868f5ca851e467035ed25fd8075",
-  "masks/obj_00070.png": "61ca15e9dd6d0aa4210095aac0350e28ae7f4a17e68f2da4cd1a43f118f2b47a",
-  "masks/obj_00071.png": "d6c992379e25919273a783174871873f542085f14a237d7d616df824e87113c2",
-  "masks/obj_00072.png": "cc3725da3ce52a3387ec68be8ffa8859ff3fd31d5d053cd0a27e666720205feb",
-  "masks/obj_00073.png": "577a8740a690cdba18a587fdec391ae30643bd4bf57d3338c52dcf6aca8b8e51",
-  "masks/obj_00074.png": "dcb168e8dbbae803542f44c2ed7b4151e2718f714fa6598d41c3edda770049ca",
-  "masks/obj_00075.png": "a5dcaee8585303b52287f739067ed5e32c76f7ef7236ad3ccd8a690bdea38f1f",
-  "masks/obj_00076.png": "707beab83ee5ae73981225a142ad454464ebd9a16ca56248796aebe049a038ab",
-  "masks/obj_00077.png": "2f7265dc11295ca6c0569334ca5a62d4794dbccf61919cf78a653c67a41070fa",
-  "masks/obj_00078.png": "3647afb2cd81ae4927b13f69fb253a0c499f6ea445e6c3103444284d9d9b19b9",
-  "masks/obj_00079.png": "463f1efbf30ee05354a035c875971a69811d2abe4bcc7d0a6d72b398aed09189",
-  "masks/obj_00080.png": "23c68cbc9ed334e3818156cb3cb6bcb42076a9b897356992aa88f9ba9269b5a0",
-  "masks/obj_00081.png": "1dcbc4e47dd11f105059470513adbae18fc4d8858cfa92fdad833adc9825c06b",
-  "masks/obj_00082.png": "e1a565f3753e77c28530f28700713463a7b8939e14f557f00f8b6f27b33bf3cd",
-  "masks/obj_00083.png": "7a339672cb00eb7bfb25ef0c0c60eb042afcb405d641687086d82bf97ba2559f",
-  "masks/obj_00084.png": "bd9d7adf9e519674e8d1fd496e628045782f79449c57ab9a9a7e74ef342eee67",
-  "masks/obj_00085.png": "392f569ab884ca003092a625d86675b52986d611562a95c11f6c162f0e15d184",
-  "masks/obj_00086.png": "be8b6ed4bdeded74a3ad5b5706dde1f2a2f090a10ccbfb519240aa007a1e7b03",
-  "masks/obj_00087.png": "d1cb9fccdf1bb8594fb031678f242fa983dd4a611e79335b6e758813d97c1cec"
+  "masks/obj_00007.png": "add96619fce43306864eff78fa77480f33f76f3ac2d06dae5ff15fcf069ae194",
+  "masks/obj_00008.png": "8fd41a89bbc1b56c68e8a0ee96f8591f2fe017838f731d77b0b6d2e0fef22215",
+  "masks/obj_00009.png": "6a9c4c6d3bd0f77fc280f002f770c8ce8d10689e148947706088fd206aac9219",
+  "masks/obj_00010.png": "11b5d83d60790d6d31e4ccff4b75e303a2d80bebdd3d1a2e9c575f98b0d06257",
+  "masks/obj_00011.png": "bc1bd43c6af158a06ef1470302258da270f02fa4ea4876d0b33e71d85b19036b",
+  "masks/obj_00012.png": "d011077eb1c776a19ac9849d98c5a9228ea8f205bd0e3d74d65ac8382ddece64",
+  "masks/obj_00013.png": "9ca40b7a29a457e246cbdf552d84f3eea4af9e06b09ca774f038bb2cfdb66a3d",
+  "masks/obj_00014.png": "d3259e700479bd9fac333ad789a8fd9409aa5593d2a5caa4f15c29d20293387c",
+  "masks/obj_00015.png": "5a63dca5ac22dd164daa5bc9d0335db5f37fc57bcda1b3f45926aa9e43541616",
+  "masks/obj_00016.png": "20f54abfdd1ea6b2ef5a873c564698dc7d61062a3b0144dd6831c1d0e9abc221",
+  "masks/obj_00017.png": "2b4201b91afe29ad960488cb0aa8a70c01d771f841949490edb068e2a167d34d",
+  "masks/obj_00018.png": "83b164dc130794e380a98b44fb69aec0781f133fbc8464a710feb59fd162da4e",
+  "masks/obj_00019.png": "86c8f36be62243f54b007ce8a9a2a85e0d305745b35419de3d502af11a5e236b",
+  "masks/obj_00020.png": "1d334a53e4fdf75e748441cbfce6b1c3657344d39801bafa50c4180df166bb80",
+  "masks/obj_00021.png": "306a6a97a5df626f84dc93f8163e43bc46d2c713a2ed476d07464eefb4289ac3",
+  "masks/obj_00022.png": "093f55ca998f679adaf4f2ec94951816ba1191c18d910a14d81363c755ed40f5",
+  "masks/obj_00023.png": "190c2086d2c965d7a3534d93881d2cd2ec5c37e2aac8b6713029d2af25eedd08",
+  "masks/obj_00024.png": "827a1d7ed9df637064f07a263dddbbdef81867070d16454cd5c592cc7d1dda30",
+  "masks/obj_00025.png": "8e53a3922943a65cbbc73af85d80a0783207a831e0625390ac4ea90aadb39775",
+  "masks/obj_00026.png": "81515aa433107cdc1cecddbb33af7dbd0454e2ac2d681bc66c2f9fd089f23971",
+  "masks/obj_00027.png": "85dac67e523e4d83836125d3a2777187bb5b34f92b89d988b532fa14f92771df",
+  "masks/obj_00028.png": "b6e5aaf3d2325d623d4c6bd3145debd36894a0798076f76587fc9969a780d4d6",
+  "masks/obj_00029.png": "0e621cf1f634dc2d65d88198ff177df839d2b30515567d7390d274c769aa1e04",
+  "masks/obj_00030.png": "a3d541df700994c30304a68288a20b53e19e0deef387abb6ef9ef4c3d072a4fc",
+  "masks/obj_00031.png": "69c80748bc52073ca253ae576245250fba93f02c9f4bbbf0a479e18522690d6a",
+  "masks/obj_00032.png": "9e5ba08f6a4cbad4e2e92d1ef6f7c6e90b9d8c441dc849e5e98ca049747dbb72",
+  "masks/obj_00033.png": "28bb6b96a9128f30569bd4d18e823f979131e44c06023c9a00ed0d323bb1963c",
+  "masks/obj_00034.png": "b5c9404ad4e594192c05cad65a18c50a6e8cc8c86684eae742b6a64ce3745f8e",
+  "masks/obj_00035.png": "844b0bfd6059711ed071ef8c39a12a930e26b95dace4b60f281a587324a97590",
+  "masks/obj_00036.png": "c4c462b7c037d34b70276a4bc3255d6457ccc3cf61b0a2bc448dc4e3febafae3",
+  "masks/obj_00037.png": "839cc514d68857e9a9093fcafd5a997516b0f271e04e838d7c69fff946896a47",
+  "masks/obj_00038.png": "7cde45297328fbdd9f1d7df8bcd00a85e9f0586d621f77da21aedc6f73ce1a2a",
+  "masks/obj_00039.png": "57d8756c82a0fd3f9ac635c7b218765f4bb515281411e8a0c29fb6c444ba5ef5",
+  "masks/obj_00040.png": "09eb6de3bc72528692274c9bf93d4d3f112c35c602863c737aa5dc4aa525d937",
+  "masks/obj_00041.png": "f9ab0727ca2adc51bc65fe9443fccf8fdc34cde97dd418ff51e9be3576ff4db1",
+  "masks/obj_00042.png": "2e49c6edbe3c237adb9482765594472f7d730c1cc0f003dee10454b1b2c064d3",
+  "masks/obj_00043.png": "32c5aa3417d6e6487fc5f3c30af9cb80b589e2339dbea9d1d89d1cc64a9091d8",
+  "masks/obj_00044.png": "27e9e37dd9500e56940c04ccc896992a8ac2a631049e4a2c2ceba2d6969e4f39",
+  "masks/obj_00045.png": "e52c45050fa8c8c2e72e5c5bffe97a57e5f86c58b0a1712e734ba2f6c28bff41",
+  "masks/obj_00046.png": "b7aff7ce78c3501c0b8fd33fdba07aac2f8f69567dd84c842a7fab0b5354da84",
+  "masks/obj_00047.png": "2898addc266c13dab9249f99c78d0a135d9b4fce06e5b47721a48daa26397864",
+  "masks/obj_00048.png": "ac4668c6d2ef325f1049126b4d633b8fe25db48b4375f364e6faa9177f32d95c",
+  "masks/obj_00049.png": "e8bd54e8517dd1c7db405b6070026e16d4330a7fd12645ccfae85a88a3d79db5",
+  "masks/obj_00050.png": "5842b6e8838b01eccf6fc9a8abb9234748dd7bf882384eb023df3116be7e8f2b",
+  "masks/obj_00051.png": "f8cc7d68d2b7c7b403c7e30b96e856c0ef83e1af21015f59d37ab2b011e3fa0f",
+  "masks/obj_00052.png": "a69d9def20f4d64a020727b628b1e1f29127a0ea5a904e396f8104f2b216ae5c",
+  "masks/obj_00053.png": "2a12c12afa04cbc46cbb118f856e70490d61898e7adfc9ecd5d3a9dcb2778e84",
+  "masks/obj_00054.png": "7aeb3c25eda2d3299c39ba0e1ac3a29d7c1f95399f672fa7295c0c4b9fd67456",
+  "masks/obj_00055.png": "82d784f8e25758f7e6b85864c2fe6c3d5c2bdbb859bc76d1142216804e7eeb0c",
+  "masks/obj_00056.png": "9c319717ad0f62756302848a3763e77a2e22c26d95dab1d7780cb686967732c6",
+  "masks/obj_00057.png": "4eb7b570c2e4410cf564eba8308842a4589d064b0f7fc6cffd672e39e688c2ad",
+  "masks/obj_00058.png": "025e9ee294c3abc2dc06072cb62c04ecf07c3448d5c8e2a14ad7f56b3ec38037",
+  "masks/obj_00059.png": "87837afad434d9ae871fca4538863b9430c82f282d0a657fdcfacd574aa1b87a",
+  "masks/obj_00060.png": "9c3e1d28a5a9e1faf22649e4ef16ee0d778eba9b8658365b2a4079921b813056",
+  "masks/obj_00061.png": "bdb0409245f1b5b5b948641a8194f92ef3e495cc2d2ea395b84b94ede566fc2c",
+  "masks/obj_00062.png": "8089fef4395e47bf984fe35992adcbff1e2f9a197cd4ecf9f6056403f07e3095",
+  "masks/obj_00063.png": "dcb13082159c2f01931d7e6cba0f18c83301ab5a73e85c643f9b7a18021f2e82",
+  "masks/obj_00064.png": "61e1c9fc98a51e70146a914cbe4f1c792bbbac17f85dc479b27f5f215de7d3c9",
+  "masks/obj_00065.png": "924bf09c97e7f9c2e25d81a52c1dd803a504171f0b1f3f00315990647f68a943",
+  "masks/obj_00066.png": "01b1abef6fbc20777300f55e20578118f464ca8aba63f8bd6b8eda448b3f078b",
+  "masks/obj_00067.png": "0e5fefcdc913fe20a957f7c500f658e0dba05f33512fbaf31f1ab28cada91b66",
+  "masks/obj_00068.png": "d50936a01c36b03c18313a029d7151bef24d269f7a4855d68600d892aef6af77",
+  "masks/obj_00069.png": "821f44a5c85114773db00df939a2cacb189f054df8dc2449e22396389d5e45fc",
+  "masks/obj_00070.png": "8b63884cdfeb53dae82c5f0f8227a3cf64f348fe52529e42dada7b39574d9ed3",
+  "masks/obj_00071.png": "43f6a0115996e453034f6e87d88eb6d20313f2473306a1332793e595118f3491",
+  "masks/obj_00072.png": "dfa6ef90b72ec39c640583c16735aa53e7c7d0b35fade7d7cd9126365614dd0c",
+  "masks/obj_00073.png": "a2bbea56450eec218f6a54cf9d2c0ee404165f3b36361ce181fff2ae515fa4b8",
+  "masks/obj_00074.png": "375323dbe2c04018767b2501cb7d472179d4aed88db51d2c01bfc522498afab2",
+  "masks/obj_00075.png": "4ed1a7af97fca79fa40fc7f0f75712cf35eabc922e6780207039d2b97db743b8",
+  "masks/obj_00076.png": "9770e23f6a55d2b62a9ac4192507b83c997f12d26c18f29dbb7a0f69fe93fb81",
+  "masks/obj_00077.png": "a6bbc0c64b625f13e571cfa04e60c250c194c64856e7d7b413e2011cb0ab2a54",
+  "masks/obj_00078.png": "2227b7ece900d74e208c89f8131bfc916eb0142ae786bbd65d2924b9ccd6ccc1",
+  "masks/obj_00079.png": "078ff66ce0a31452f4e5ce0ac3f3aa32faf1b461079235642b4d89fcb22bfb55",
+  "masks/obj_00080.png": "19465ccbec044a97f89f402c72b525fce537ef0608b6d62f0311459cec9cb6ed",
+  "masks/obj_00081.png": "d23ef60fd73515de8c14f82a4f7a7c8dd3ee49d1723ca3c526fc55d3f9ac2447",
+  "masks/obj_00082.png": "751dec16457f0a747a6ea916e362c2bd95e0acc6a674382c1c32bf91cdbb611a",
+  "masks/obj_00083.png": "28b4fadd0d504324f6d7f6bc6faf46d48220eda6efe3340b00c70c7580d68466",
+  "masks/obj_00084.png": "57eeffb7a3e8a68f8709a1782329f6f61c8ae44c029c542a96667de2c88d00bc",
+  "masks/obj_00085.png": "100786540a4f9ad77655a8da7c2321055cfd29cee98e7035e9bcf05733891ab8",
+  "masks/obj_00086.png": "1459830801fba289206698d8440a88885f7110af6516f2b5e5cee1b413a57d43",
+  "masks/obj_00087.png": "04063b4f8e70a2dfb2d8d30342f6942bce970b51e38763d50799e947af5a4214",
+  "masks/obj_00088.png": "9db2f41b46dbc9d3e9eaf2976abe878d5297ecb346070b0b84ae3af565701fc2",
+  "masks/obj_00089.png": "47baeeb8c0f0c56111554d02b29aea4e1adf1b85b7171160d6fc14e6816629e7"
  },
  "freshness_receipt_id": "49a5a40c675d018927095b6bfa89d49b02b8e0fddbf8d39ecd8f20118693a117",
  "plugin": "panel",
  "question": {
-  "answer_type": "premise",
+  "answer_type": "float",
   "difficulty": {
    "n_gauges": 4.0,
    "span": 80.0
   },
   "difficulty_spec": null,
-  "family": "T_GASLIGHT",
+  "family": "P1_READ_TRACE",
   "options": null,
-  "premise": {
-   "claimed_zone": "amber",
-   "holds": false,
-   "text": "the gauge connected to socket F is in the amber zone"
-  },
-  "program_id": "panel/T_GASLIGHT/7dcbe8504eacfb1d",
+  "premise": null,
+  "program_id": "panel/P1_READ_TRACE/74182a35f846dfad",
   "steps": [
    {
     "args": [
-     "panel/terminal:start_F"
+     "panel/terminal:start_K"
     ],
     "op": "TRACE",
     "step_id": "s0"
@@ -1616,20 +1835,13 @@
     ],
     "op": "READ",
     "step_id": "s2"
-   },
-   {
-    "args": [
-     "$s1"
-    ],
-    "op": "ZONE",
-    "step_id": "s3"
    }
   ],
-  "text": "Since the gauge connected to socket F is in the amber zone, what value does it read? First say whether that premise is true (yes/no), then give the reading.\nEnd your reply with a final line of the form 'ANSWER: <yes|no>; <number>'."
+  "text": "Follow the cable from socket K to the gauge it is plugged into. What value does that gauge read?\nEnd your reply with a final line of the form 'ANSWER: <number>'."
  },
- "scene_id": "60867089d77c40def139d176521249aa6c1f0e31ebd7730c4a378f102b90b0ae",
+ "scene_id": "68bfbd4e90a4589dce737443aacc0560dfaefef4e58187184ab8fff07720afe7",
  "schema_version": "1.1.0",
- "seed_path": "s:panel/s:slot/i:5/s:attempt/i:0",
+ "seed_path": "s:panel/s:slot/i:3/s:attempt/i:0",
  "split": "test",
  "twins": {
   "base_id": null,

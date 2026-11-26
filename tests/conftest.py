@@ -31,6 +31,16 @@ MAX_AUTO_WORKERS = 12
 #: test tiers by path prefix, first match wins; everything else is tier1
 TIERS: tuple[tuple[str, str], ...] = (
     ("tests/pipeline/test_selftest.py", "tier2"),
+    # exhaustive multi-scene and process-pool checks: nightly. `test_tier1_representative.py`
+    # keeps one real path through each of these stages in tier1.
+    ("tests/pipeline/test_contact_sheet.py", "tier2"),
+    ("tests/pipeline/test_mutate.py", "tier2"),
+    ("tests/pipeline/test_twins.py", "tier2"),
+    ("tests/pipeline/test_determinism.py", "tier2"),
+    ("tests/pipeline/test_generate.py", "tier2"),
+    ("tests/pipeline/test_verify.py", "tier2"),
+    ("tests/export/test_harbor_oracle.py", "tier2"),
+    ("tests/export/test_hf_rlvr.py", "tier2"),
     ("tests/probes/", "tier2"),
     ("tests/bench/test_stats_budget.py", "tier0"),
     ("tests/bench/", "tier2"),

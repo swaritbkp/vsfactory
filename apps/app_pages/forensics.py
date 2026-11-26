@@ -26,6 +26,8 @@ CARDS = (
     ("text_ir_twin", "Text IR"),
 )
 CARD_HEIGHT = 250
+SAMPLE_REPORT = "samples/demo_forensics"  # committed sample: real twins, written replies
+BUILD_REPORT = "artifacts/studio/counterfactual"
 
 
 def _percent(value: float | None) -> str:
@@ -47,37 +49,53 @@ def _kpis(dataset: Path | None) -> None:
 
 
 # ------------------------------------------------------------------ twins
-def _build(data: str, failures: str, out: Path) -> None:
-    code = run_with_status(
-        "Build twin suites", lambda: run_counterfactual(resolve(data), resolve(failures), out)
-    )
-    if code not in (None, 0):
-        st.warning("No suite was built: the data folder does not hold the failed bundles.")
+def _request(action: str) -> None:
+    """Button callback: new reports are written outside the committed sample and then shown."""
+    st.session_state.cf_out = BUILD_REPORT
+    st.session_state.cf_action = action
 
 
 def _source_controls() -> Path:
+    st.session_state.setdefault("cf_out", SAMPLE_REPORT)
     with st.container(horizontal=True, vertical_alignment="bottom"):
-        folder = st.text_input("Report folder", "artifacts/studio/counterfactual", key="cf_out")
+        st.text_input("Report folder", key="cf_out")
         with st.popover("Build from failures", icon=":material/construction:"):
             data = st.text_input("Data folder", "samples/live_failures", key="cf_data")
             failures = st.text_input(
                 "Failures file or folder", "samples/live_failures", key="cf_fail"
             )
-            build = st.button("Build twin suites", type="primary", width="stretch", key="cf_go")
-        demo = st.button("Demo suite", icon=":material/auto_awesome:", key="cf_demo",
-                         help="Generate a fresh item and build all its twins. No model failed it.")  # fmt: skip
-    out = resolve(folder)
-    if build:
-        _build(data, failures, out)
-    if demo:
+            st.button("Build twin suites", type="primary", width="stretch", key="cf_go",
+                      on_click=_request, args=("build",))  # fmt: skip
+        st.button("Demo suite", icon=":material/auto_awesome:", key="cf_demo", on_click=_request,
+                  args=("demo",), help="Generate a fresh item and build all its twins. No model "
+                  "failed it.")  # fmt: skip
+    out = resolve(str(st.session_state.cf_out))
+    action = st.session_state.pop("cf_action", None)
+    if action == "build":
+        code = run_with_status(
+            "Build twin suites",
+            lambda: run_counterfactual(resolve(data), resolve(failures), out),
+        )
+        if code not in (None, 0):
+            st.warning("No suite was built: the data folder does not hold the failed bundles.")
+    elif action == "demo":
         run_with_status("Generate a demo item and its twins", lambda: forensics.demo_suite(out))
     return out
 
 
+def _image_path(text: str | None) -> Path | None:
+    """Report images are absolute, or repository-relative in the committed sample."""
+    if not text:
+        return None
+    path = resolve(text)
+    return path if path.is_file() else None
+
+
 def _card_body(kind: str, suite: dict[str, Any]) -> None:
     if kind == "original":
-        if suite["image"] and Path(suite["image"]).is_file():
-            st.image(suite["image"], width="stretch", alt="The failed item")
+        original = _image_path(suite["image"])
+        if original:
+            st.image(str(original), width="stretch", alt="The failed item")
         st.markdown(f"Certified **{suite['answer']['canonical']}**")
         for model, reply in sorted(suite["replies"].items()):
             st.caption(f"{present.short_model_name(model)}: {reply[:60]}")
@@ -87,8 +105,9 @@ def _card_body(kind: str, suite: dict[str, Any]) -> None:
         st.badge("Unavailable", color="gray")
         st.caption(twin["reason"])
         return
-    if twin.get("image") and Path(twin["image"]).is_file():
-        st.image(twin["image"], width="stretch", alt=f"{kind} twin")
+    picture = _image_path(twin.get("image"))
+    if picture:
+        st.image(str(picture), width="stretch", alt=f"{kind} twin")
     if twin.get("prompt"):
         with st.container(height=CARD_HEIGHT, border=False):
             st.text(twin["prompt"])
@@ -111,10 +130,25 @@ def _twins() -> None:
     if not suites:
         st.warning("The report holds no suites.")
         return
-    by_label = {f"{s['family']} · {s['bundle_id']}": s for s in suites}
+    recorded_all = present.load_twin_results(out)
+    if any(s.get("sample") for s in suites):
+        st.warning(
+            "Sample data: the items and twins are real certified renders, but the model replies "
+            "were written for this demo. They are not results from any model.",
+            icon=":material/science:",
+        )
+        with st.container(horizontal=True, gap="small"):
+            for s in suites:
+                graded = present.grade_twins(s, recorded_all.get(s["bundle_id"], {}))
+                verdict, _, colour = present.diagnose(graded)
+                st.badge(f"{s.get('sample_title', 'Sample')}: {verdict}", color=colour)
+    by_label = {
+        f"{s.get('sample_title') or s['family']} · {s['family']} · {s['bundle_id']}": s
+        for s in suites
+    }
     suite = by_label[st.selectbox("Item", list(by_label), key="cf_item")]
     bid = suite["bundle_id"]
-    recorded = present.load_twin_results(out).get(bid, {})
+    recorded = recorded_all.get(bid, {})
     replies = {
         kind: str(st.session_state.get(f"reply_{bid}_{kind}", recorded.get(kind, "")))
         for kind in present.DIAGNOSTIC_KINDS
@@ -123,6 +157,8 @@ def _twins() -> None:
     verdict, reason, colour = present.diagnose(solved)
     with st.container(border=True, horizontal=True, vertical_alignment="center"):
         st.badge(verdict, color=colour, icon=":material/diagnosis:")
+        if suite.get("sample"):
+            st.badge("Sample replies", color="gray")
         st.markdown(reason, width="content")
     st.markdown(suite.get("failed_question") or suite["question"].split("\n")[0])
     if not suite["replies"]:

@@ -51,6 +51,7 @@ def test_needle_values_avoid_zone_boundaries(profile: dict[str, Any]) -> None:
     assert zones_seen == {"green", "amber", "red"}
 
 
+@pytest.mark.tier2
 def test_labels_ocr_and_95pct_certify(runs: dict[str, list[dict[str, Any]]]) -> None:
     res = runs["clean"]
     assert not any("E_LABEL_MISMATCH" in r["codes"] or "E_OCR_FAIL" in r["codes"] for r in res)
@@ -58,6 +59,7 @@ def test_labels_ocr_and_95pct_certify(runs: dict[str, list[dict[str, Any]]]) -> 
     assert sum(r["verdict"] == "CERTIFIED" for r in res) >= 38, [r["codes"] for r in res]
 
 
+@pytest.mark.tier2
 @pytest.mark.parametrize("fault", [FaultCode.M8, FaultCode.M9])
 def test_fault_hooks(runs: dict[str, list[dict[str, Any]]], fault: FaultCode) -> None:
     hit = [r for r in runs[fault.value] if r["effective"]]

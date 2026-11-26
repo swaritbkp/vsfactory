@@ -35,6 +35,11 @@ each model's reply; `task.json` is the bundle's full record.
 GPT-5.4's `no` in row 3 is not evidence that it saw the zone: it also answered `no` to all 24
 matched true premises (see `live_run/p5_control.json`).
 
+## `demo_forensics/`: sample data for the Studio's Forensics page
+
+Two tangle items with their certified diagnostic twins. **The model replies are written for the
+demonstration and are not the output of any model**; see `demo_forensics/README.md`.
+
 ## `live_run/`: the live benchmark's own outputs
 
 `bench_report.json` (per-model statistics), `trials.jsonl` (all 997 trials: block, item key, certified

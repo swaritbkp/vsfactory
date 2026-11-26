@@ -42,9 +42,9 @@
  "seed": 3,
  "split": "test",
  "throughput": {
-  "bundles_per_sec": 0.660242,
-  "items_per_sec": 0.660242,
-  "seconds": 9.088
+  "bundles_per_sec": 0.072084,
+  "items_per_sec": 0.072084,
+  "seconds": 83.236
  },
  "workers": 6
 }

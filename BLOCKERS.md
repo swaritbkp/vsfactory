@@ -7,8 +7,8 @@ relaxed to hide any of them (CLAUDE.md law 8).
 
 | # | Limitation | Affects | Status |
 |---|---|---|---|
-| 3.6 | Shortcut-probe residuals (tangle T1/T3; premise families) | gate `p3.probes` only | open: SPEC decision needed for premise families |
-| 5.6 | Mock staircase tolerance for shallow curves | gate `p5.bench_mock` (2 of 6 staircases) | open: tolerance or trial budget decision |
+| 3.6 | Shortcut-probe residuals | gate `p3.probes` only | v1 residuals pass in v2; open on one new row (panel P1 image stats) |
+| 5.6 | Mock staircase and error recovery | gate `p5.bench_mock` | v2 staircases pass 6 of 6; open on mock_a per-crossing recovery (repeated items) |
 | L-1 | Live staircases at the floor | interpretation of live thresholds | documented in README, not a gate |
 
 Claude Code appends here when a task fails verification 3 times (see CLAUDE.md section 4).
@@ -55,10 +55,18 @@ Format per entry:
   investigating the tangle residual after Checkpoint 2?
 - v2 change (D-39, 2026-11-26): (a) premise scenes now randomise zone colour order and balance value
   deciles; premise families are scored as one yes/no task; trivial baselines added. (b) T1 / T3 slot
-  order is now shuffled by a run-seeded permutation. The T1 / T3 residual itself is NOT diagnosed:
-  no 600-item split was regenerated.
-- Status: CHANGED, UNVERIFIED. Run `uv run python scripts/verify_phase.py --phase 3 --keep-going`.
-  Probe thresholds are unchanged.
+  order is now shuffled by a run-seeded permutation.
+- v2 measurement (2026-11-26, gate function `gate_probes` on a fresh 600-per-plugin `test` split,
+  seed 101, artifacts under `artifacts/v2_gates/`): the residuals listed above now pass.
+  tangle/T1 text_only 0.176 vs chance 0.180 (limit 0.232); tangle/T3 gbdt_image_stats 0.495 vs 0.500
+  (limit 0.570); premise yes/no text_only 0.444 and gbdt_image_stats 0.494 vs 0.500 (limit 0.573;
+  the premise target and chance changed in D-39, so these do not compare with the v1 numbers);
+  pooled Wilson upper bounds: tangle text_only 0.293 <= 0.323, panel text_only 0.316 <= 0.370;
+  all 9 balance tests pass (premise bins p = 0.9999 / 0.9945); trivial baselines: no violation;
+  dedup rates tangle 0.0017, gauge 0.0033, panel 0.0100 (the limit is 0.01).
+- v2 remaining failure: panel/P1_READ_TRACE gbdt_image_stats 0.173 (26 of 150) > chance 0.113 + 0.051.
+  This family was not part of the v1 blocker. Not diagnosed.
+- Status: OPEN. Gate `p3.probes` FAILS on that single row. Probe thresholds are unchanged.
 
 ## 5.6 Mock staircase tolerance (gate `p5.bench_mock`)
 - Verification command: `uv run python scripts/verify_phase.py --phase 5 --keep-going`
@@ -78,11 +86,19 @@ Format per entry:
   (ii) widen `STAIRCASE_LEVEL_TOL` for the tangle track; (iii) steeper mock `p_cross` (e.g. 0.10 / 0.15 / 0.25);
   (iv) accept the staircase as a reported (not gated) diagnostic for mocks.
 - v2 change (D-39, 2026-11-26): coarse-then-fine steps, up to 75 trials, logistic maximum-likelihood
-  `k*`. Unit tests of the new rule pass; the mock benchmark gate was not re-run, and the committed
-  replay fixtures must be rebuilt (`uv run python scripts/build_bench_fixtures.py`) because the asked
-  trial sequence changed.
-- Status: CHANGED, UNVERIFIED. Run `uv run python scripts/verify_phase.py --phase 5 --keep-going`.
-  `STAIRCASE_LEVEL_TOL` is unchanged.
+  `k*`. Replay fixtures rebuilt.
+- v2 measurement (2026-11-26, gate function `gate_bench_mock` on the same split, seed 5): all 6 mock
+  staircases are within 1.5 levels (estimate vs expected): mock_a tangle 12.00 / 11.58, panel
+  5.68 / 7.00; mock_b tangle 4.92 / 4.92, panel 5.65 / 6.94; mock_c tangle 3.09 / 2.56, panel
+  2.45 / 3.41 (v1 failed 2 of 6).
+- v2 remaining failure: mock_a per-crossing error estimate 0.013, 95 % CI 0.007-0.020, true 0.04.
+  Cause: items are re-asked when a level has few of them. mock_a's tangle staircase spent 75 trials
+  on 18 distinct items (one 16 times, at level 12), and repeats of a deterministic model are counted
+  as independent trials. The mock_a tangle staircase pass is therefore weak evidence (it sat at the
+  top level).
+- Status: OPEN. Gate `p5.bench_mock` FAILS on the per-crossing check; the staircase-tolerance check
+  itself passes. `STAIRCASE_LEVEL_TOL` is unchanged. Next step: count each item once in
+  `stats.per_crossing` or draw without repeats.
 
 ## L-1 Live staircases sit at the floor (not a gate)
 - Observation: on the live run every model fails at 1-2 crossings; Gemini and Qwen dropped from the start
