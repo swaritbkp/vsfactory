@@ -68,7 +68,8 @@ def test_microcopy_is_factual() -> None:
 
 
 def test_every_tooltip_key_used_by_the_pages_exists() -> None:
-    sources = [REPO / "apps" / "studio_ui.py", *sorted((REPO / "apps" / "app_pages").glob("*.py"))]
+    sources = [REPO / "apps" / "studio_ui.py", REPO / "apps" / "posttrain_ui.py",
+               *sorted((REPO / "apps" / "app_pages").glob("*.py"))]  # fmt: skip
     used = {
         key
         for path in sources

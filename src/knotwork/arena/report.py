@@ -310,6 +310,31 @@ def factory_telemetry(cfg: SessionConfig, items: list[ItemRecord]) -> dict[str, 
     return {"blocks": blocks, "overall": block_stats(items)}
 
 
+def unit_economics(items: list[ItemRecord], vcpu_usd_hr: float | None = None) -> dict[str, Any]:
+    """Single-core certified items / hour and projected $ per 1M certified samples from the
+    session's own observed gen_ms + verify_ms (every attempted item's time is charged)."""
+    from knotwork.posttrain.throughput import DEFAULT_VCPU_USD_HR
+    from knotwork.posttrain.throughput import unit_economics as economics
+
+    return economics([i.gen_ms for i in items], [i.verify_ms for i in items],
+                     sum(i.certified for i in items), None,
+                     DEFAULT_VCPU_USD_HR if vcpu_usd_hr is None else vcpu_usd_hr)  # fmt: skip
+
+
+def _econ_rows(e: dict[str, Any]) -> list[list[Any]]:
+    rate, cost = e["certified_items_per_hour"], e["usd_per_1m_certified"]
+    return [
+        ["Items attempted / certified", f"{e['attempted']:,} / {e['certified']:,}"],
+        ["Busy time (gen + verify)", f"{e['busy_s']:,.1f} s"],
+        ["Seconds per certified item", "—" if e["s_per_certified"] is None
+         else f"{e['s_per_certified']:.3f} s"],
+        ["Certified items / hour (1 vCPU)", "—" if rate is None else f"{rate:,.0f}"],
+        [f"USD per 1M certified samples @ ${e['vcpu_usd_per_hour']}/vCPU-hr",
+         "—" if cost is None else f"${cost:,.2f}"],
+        ["Formula", e["formula"]],
+    ]  # fmt: skip
+
+
 def regression(
     a_cfg: SessionConfig,
     a_trials: dict[str, TrialRecord],
@@ -396,6 +421,7 @@ def compute_metrics(
                     "models": cfg.models_for(b)} for b in cfg.blocks],
         "python": sys.version.split()[0], "platform": platform.platform(),
         "cli": storage.cli_command(storage.resolve(cfg.results_dir)),
+        "temperature": cfg.temperature, "repeats": cfg.repeats,
     }  # fmt: skip
     totals = {
         "trials_planned": cfg.total_trials, "trials_scored": len(scored),
@@ -408,6 +434,7 @@ def compute_metrics(
         "header": header,
         "totals": totals,
         "factory": factory_telemetry(cfg, mine),
+        "unit_economics": unit_economics(mine),
         "leaderboard": leaderboard(cfg, trials),
         "contrasts": contrasts(cfg, trials),
         "taxonomy": taxonomy(cfg, by_key, trials),
@@ -699,9 +726,15 @@ def render_html(m: dict[str, Any], data_dir: Path, brief: str | None = None) -> 
           _trio(b["gen_ms"]), _trio(b["verify_ms"]),
           "—" if b["certified_per_min"] is None else f"{b['certified_per_min']:.1f}"]
          for b in [*f["blocks"], {**f["overall"], "block": "All blocks"}]]))  # fmt: skip
+    if "unit_economics" in m:
+        out.append("<h2>Throughput and unit economics</h2>"
+                   + _html_table(["Measure", "Value"], _econ_rows(m["unit_economics"]))
+                   + "<p class='sub'>From this session's observed gen_ms and verify_ms; vCoT "
+                   "extraction is timed separately by <code>knot bench-throughput</code>.</p>")  # fmt: skip
     meta = [("Session", h["session_name"]), ("Client / organisation", h["client"] or "—"),
             ("Evaluator", h["evaluator"] or "—"), ("Run id", h["run_id"] or "—"),
             ("Mode", "Offline mock (simulated)" if h["simulated"] else "Live (OpenRouter)"),
+            ("Temperature / repeats k", f"{h.get('temperature', 0.0):g} / {h.get('repeats', 1)}"),
             ("State", h["state"]), ("Started (UTC)", h["started_utc"] or "—"),
             ("Finished (UTC)", h["finished_utc"] or "—"),
             ("Wall clock", "—" if h["duration_s"] is None else f"{h['duration_s']:.0f} s"),
@@ -789,8 +822,11 @@ def render_md(m: dict[str, Any], brief: str | None = None) -> str:
         ["Block", "Items", "Certified", "Yield", "gen ms (mean/p50/p95)", "verify ms (mean/p50/p95)"],
         [[b["block"], b["items"], b["certified"], pct(b["yield"]), _trio(b["gen_ms"]),
           _trio(b["verify_ms"])] for b in [*f["blocks"], {**f["overall"], "block": "All"}]]), ""]  # fmt: skip
+    if "unit_economics" in m:
+        out += ["## Throughput and unit economics", "",
+                _md_table(["Measure", "Value"], _econ_rows(m["unit_economics"])), ""]  # fmt: skip
     out += ["## Audit header", "", *[f"- **{k}:** `{h[k]}`" for k in (
-        "session_name", "client", "run_id", "mode", "started_utc", "finished_utc", "git_sha",
+        "session_name", "client", "run_id", "mode", "temperature", "started_utc", "finished_utc", "git_sha",
         "kernel_sha256", "dataset_sha256", "data_dir", "results_dir", "python", "platform", "cli")],
         ""]  # fmt: skip
     out += ["## Methodology & Literature References", "",

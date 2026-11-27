@@ -456,7 +456,7 @@ class Runner:
         from knotwork.bench.prompts import image_png, messages
 
         png = image_png(self.data / item.dir / "beauty.png")
-        body = {"model": model, "messages": messages(png, item.question), "temperature": 0.0,
+        body = {"model": model, "messages": messages(png, item.question), "temperature": self.cfg.temperature,
                 "max_tokens": self.cfg.max_tokens, "usage": {"include": True},
                 "provider": {"data_collection": "deny", "allow_fallbacks": True}}  # fmt: skip
         headers = {"Authorization": f"Bearer {self.key}", "Content-Type": "application/json",

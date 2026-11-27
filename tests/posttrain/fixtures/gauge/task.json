@@ -1,0 +1,368 @@
+{
+ "answer": {
+  "canonical": "83",
+  "tolerance": 1.6,
+  "type": "float",
+  "value": 83.0
+ },
+ "bundle_id": "kw-1aed9a69e2730a6e63d3",
+ "canary": "KNOTWORK-CANARY-1c31ea42cefaec11a2f7c18e1a94c42b",
+ "certificate": {
+  "agree": true,
+  "bundle_id": "kw-1aed9a69e2730a6e63d3",
+  "checks": [
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.6530589254089629,
+    "name": "contrast",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.001616798348813231,
+    "name": "needle_tip_color",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_UNEXPLAINED_INK",
+    "metric": 1.0,
+    "name": "unexplained_ink",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 30.0
+   },
+   {
+    "code": "E_OOB",
+    "metric": 0.0,
+    "name": "oob_mask",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 0.0
+   },
+   {
+    "code": "E_OOB",
+    "metric": 0.0,
+    "name": "oob_box",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 0.0
+   },
+   {
+    "code": "E_CVD_AMBIGUOUS",
+    "metric": 14.79613792715995,
+    "name": "cvd_zones",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 9.12414379544733,
+    "name": "stroke_768",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 18,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 20,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 21,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 22,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.9375,
+    "name": "oracle_path",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 0.35
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.7043368969188729,
+    "name": "oracle_tip",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.853104503230806,
+    "name": "oracle_object",
+    "obj_id": 18,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.746367426122627,
+    "name": "oracle_object",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.7727209084055788,
+    "name": "oracle_object",
+    "obj_id": 20,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8128152443691934,
+    "name": "oracle_object",
+    "obj_id": 21,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8666308642894153,
+    "name": "oracle_object",
+    "obj_id": 22,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8367189715223894,
+    "name": "oracle_object",
+    "obj_id": 10,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8395854399292958,
+    "name": "oracle_object",
+    "obj_id": 11,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8374095409009708,
+    "name": "oracle_object",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.841926549818162,
+    "name": "oracle_object",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8096155410354506,
+    "name": "oracle_object",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 0.08
+   }
+  ],
+  "claims_checked": 2,
+  "claims_failed": 0,
+  "codes": [],
+  "d1": {
+   "canonical": "83",
+   "tolerance": 0.0,
+   "type": "float",
+   "value": 83.0
+  },
+  "d2": {
+   "canonical": "83",
+   "tolerance": 0.0,
+   "type": "float",
+   "value": 83.0
+  },
+  "d3": {
+   "canonical": "83.0303",
+   "tolerance": 0.8776302018941513,
+   "type": "float",
+   "value": 83.03025362069457
+  },
+  "kernel_sha256": "cc915c558ec021270fb01b0baab9726af53c21735be08512ed06d36bceadf42f",
+  "kernel_version": "1.0.0",
+  "ocr_engine": "rapidocr",
+  "steps": [
+   {
+    "codes": [],
+    "evidence": {
+     "R": 138.7149329373379,
+     "axis_offset": 0.3119308703665542,
+     "center": [
+      336.5,
+      820.0
+     ],
+     "hi": 90,
+     "length": 136.3238483891558,
+     "limit": 4.161447988120137,
+     "lo": 70,
+     "phi_needle": 246.3815046310816,
+     "theta_needle": 338.59021430354227,
+     "ticks": [
+      {
+       "ocr": "10",
+       "phi": 0.0,
+       "r": 107.75870627243087,
+       "theta": 224.9717189346239,
+       "v": 10
+      },
+      {
+       "ocr": "30",
+       "phi": 67.6120247592545,
+       "r": 107.80769916847312,
+       "theta": 157.3596941753694,
+       "v": 30
+      },
+      {
+       "ocr": "50",
+       "phi": 134.9717189346239,
+       "r": 108.0,
+       "theta": 90.0,
+       "v": 50
+      },
+      {
+       "ocr": "70",
+       "phi": 202.33141310999332,
+       "r": 107.80769916847312,
+       "theta": 22.640305824630598,
+       "v": 70
+      },
+      {
+       "ocr": "90",
+       "phi": 269.94343786924776,
+       "r": 107.75870627243087,
+       "theta": 315.0282810653761,
+       "v": 90
+      }
+     ],
+     "tip": [
+      432.78380994900454,
+      857.4171323219723
+     ],
+     "tol": 0.8776302018941513
+    },
+    "inputs": [
+     "gauge/gauge:g1"
+    ],
+    "op": "READ",
+    "output": [
+     83.03025362069457,
+     0.8776302018941513
+    ],
+    "step_id": "s0"
+   }
+  ],
+  "verdict": "CERTIFIED"
+ },
+ "family": "G1_READ",
+ "files": {
+  "beauty.png": "556bca483c508d594f47ee92b59e5d1744ec3d20523bbf59bbc4a80ce1660a89",
+  "claims.json": "b3a069c1629dec6f3f9848f39ca374a2963a5a0a8be3e7bb21ec6417fd45e5a3",
+  "id_buffer.png": "2417ff00b1013053b1966aa31219c1b7c3394aaa3c8712363f18c1f3de9c07d5",
+  "manifest.json": "ecd966daa7ff1c39948b781505a12dc8168248929acd7f937df9e0989568ea10",
+  "masks/obj_00001.png": "50ab459906b4c4fc2937d18902fac985bdc4f48d9ab6ceaa0f668a13dd210485",
+  "masks/obj_00002.png": "a88b9e24e74c8ce98fbffc29e69d14bd4af26977832d5a58811635466ec6e1ab",
+  "masks/obj_00003.png": "ad37035ca69718201751bde3c326b424a8867abf3ec6bf0cfc66c62ad887363d",
+  "masks/obj_00004.png": "923490b307953fca3d100c6e9c9c4a10dca125799b26e59bd8b2393a32a8b250",
+  "masks/obj_00005.png": "526dbb84ed9378000c07b41ad6bcea4874519d296be18b8806ae82da8a143036",
+  "masks/obj_00006.png": "279df6420b9343f515b31dee5463474f63c6b32514b6fc2c63a609d3ad6b3ee0",
+  "masks/obj_00007.png": "a962e61ecac04a54f5a45ea6e7b5257d93fe4ab403cf89d9a4f32375d157a264",
+  "masks/obj_00008.png": "9a7e5d55e3495897ec40a597d51bb2492c7a564d1278f7b29afbc94c9fcf6fc2",
+  "masks/obj_00009.png": "e39fa1ec55884b7e28e9d538d8f183f54c49607a38f199721f378665b31c53f9",
+  "masks/obj_00010.png": "8d60bce2ecdaf78ce79da7f2a3ee14593ec884ce75242f0813ab2a3561d159bf",
+  "masks/obj_00011.png": "7654ed45b2d1f0d6810338f8aa0334f1e99d25f0c5f9e05510a0b99efeaa260b",
+  "masks/obj_00012.png": "1af398342fc7f18743281368f4cd5a70a2467885d136bab91a9d1badc9264035",
+  "masks/obj_00013.png": "750092970f2f74f1e544eb3819aec2b34e429bdf57ec63c902552dbb7dcdd801",
+  "masks/obj_00014.png": "2a43ece10bb12baf250cc2a48ba8723f6e264aa84dcf9b3811f78b023506cd8c",
+  "masks/obj_00015.png": "49083bcd8fda33a67547d926594f1f010d7358b634e11c505d87db0bda7a11bc",
+  "masks/obj_00016.png": "adf9248cf8e85a9a2c1026bf0757b837e57237009796e0148bf71eec4687d3db",
+  "masks/obj_00017.png": "1dafa80f1f2962fbabebf27c313dfc0be1c66e7f727ebe3de7e6635502cf93c7",
+  "masks/obj_00018.png": "2a5998c86e4a5ba9a6c10354cd0e7ea9dd9a07386048c9221c632523a9c0784a",
+  "masks/obj_00019.png": "15c0de3d2eae8f94487be671ba34819e650d2e4960e293e3ea12a80657aa322a",
+  "masks/obj_00020.png": "6f180e65eafcbc07d702eb292c3b298a7b9a75d8e9da616fc1f0574db53eb157",
+  "masks/obj_00021.png": "537c0141091b7afa0c208e353d41feb293d5c64d272472e338a91f75b6db184b",
+  "masks/obj_00022.png": "3191bb25231a4813347508b9e2f2e5a13faa68d315d5d4989eb66bf8d5bed308"
+ },
+ "freshness_receipt_id": "2d0045dedd03081562f581d11c258731b090a3d13966050faf924f0895fecaaf",
+ "plugin": "gauge",
+ "question": {
+  "answer_type": "float",
+  "difficulty": {
+   "radius": 128.1798189953911,
+   "span": 80.0
+  },
+  "difficulty_spec": null,
+  "family": "G1_READ",
+  "options": null,
+  "premise": null,
+  "program_id": "gauge/G1_READ/ce56c70b55c614bf",
+  "steps": [
+   {
+    "args": [
+     "gauge/gauge:g1"
+    ],
+    "op": "READ",
+    "step_id": "s0"
+   }
+  ],
+  "text": "What value does the gauge needle point to?\nEnd your reply with a final line of the form 'ANSWER: <number>'."
+ },
+ "scene_id": "8493e9e92a1d060a9d53d2f5c1498e1c8135558eaaad886d10415e09d58e5669",
+ "schema_version": "1.1.0",
+ "seed_path": "s:studio/s:gauge/s:G1_READ/i:0/s:scene",
+ "split": "dev",
+ "twins": {
+  "base_id": null,
+  "causal_id": null,
+  "edit": null,
+  "nuisance_id": null,
+  "pixel_diff_frac": null,
+  "role": "base"
+ }
+}

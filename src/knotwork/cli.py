@@ -406,6 +406,69 @@ def counterfactual(data: Path, failures: Path, out: Path, profile: Path, limit: 
         raise click.UsageError(str(exc)) from None
 
 
+@cli.command(name="serve-verifier")
+@click.option("--host", default="127.0.0.1", show_default=True, help="Bind address (loopback).")
+@click.option("--port", type=click.IntRange(0, 65535), default=8090, show_default=True)
+def serve_verifier(host: str, port: int) -> None:
+    """Stateless RLVR verifier: GET /health, POST /score, POST /score_batch (offline)."""
+    _set_network("deny")
+    from knotwork.posttrain.server import run
+
+    sys.exit(run(host, port))
+
+
+@cli.command(name="bench-throughput")
+@click.option("--domain", type=click.Choice(["rack_patch", "tangle", "gauge", "panel"]),
+              default="rack_patch", show_default=True)  # fmt: skip
+@click.option("--n", "n", type=click.IntRange(min=1), default=4, show_default=True)
+@click.option("--preset", type=click.Choice(["Clean", "Hard logic", "High stress", "CVD"]),
+              default="Clean", show_default=True)  # fmt: skip
+@click.option("--vcpu-usd-hr", type=click.FloatRange(min=0.0), default=0.04, show_default=True,
+              help="Hourly price of one vCPU (spot-cloud baseline).")  # fmt: skip
+@click.option("--out", type=click.Path(path_type=Path), default=None,
+              help="Keep the generated bundles here (default: a temporary folder).")  # fmt: skip
+@click.option("--json", "json_out", type=click.Path(path_type=Path), default=None)
+def bench_throughput(
+    domain: str, n: int, preset: str, vcpu_usd_hr: float, out: Path | None, json_out: Path | None
+) -> None:
+    """Measure gen / verify / vCoT ms per item and project USD per 1M certified samples."""
+    _set_network("deny")
+    from knotwork.posttrain.throughput import run
+
+    sys.exit(run(domain, n, out, json_out, vcpu_usd_hr, preset))
+
+
+@cli.command(name="posttrain-pack")
+@click.option("--results-dir", type=click.Path(path_type=Path, exists=True, file_okay=False),
+              required=True, help="A Model Arena session's results folder.")  # fmt: skip
+@click.option("--train-budget", type=click.IntRange(min=1), default=None)
+def posttrain_pack(results_dir: Path, train_budget: int | None) -> None:
+    """Export SFT / DPO / GRPO records, curriculum spec, RLVR kit and provenance for a session."""
+    _set_network("deny")
+    from knotwork.posttrain.curriculum import export_pack
+
+    try:
+        done = export_pack(results_dir, train_budget=train_budget)
+    except ValueError as exc:
+        raise click.UsageError(str(exc)) from None
+    click.echo(json.dumps({k: str(v) for k, v in done.items()}, indent=1, sort_keys=True))
+
+
+@cli.command(name="posttrain-generate")
+@click.option("--spec", type=click.Path(path_type=Path, exists=True, dir_okay=False),
+              required=True, help="curriculum_spec.json from posttrain-pack.")  # fmt: skip
+@click.option("--split", type=click.Choice(["train", "ood"]), default="train", show_default=True)
+@click.option("--out", type=click.Path(path_type=Path), required=True)
+@click.option("--workers", type=click.IntRange(min=1), default=1)
+@click.option("--limit", type=click.IntRange(min=1), default=None, help="Items per block cap.")
+def posttrain_generate(spec: Path, split: str, out: Path, workers: int, limit: int | None) -> None:
+    """Render seed-disjoint training (or fresh OOD eval) items from a curriculum spec."""
+    _set_network("deny")
+    from knotwork.posttrain.curriculum import generate_from_spec
+
+    sys.exit(generate_from_spec(spec, out, split, workers, limit))
+
+
 @cli.command(name="new-plugin")
 @click.argument("name")
 @click.option("--dest", type=click.Path(path_type=Path), default=Path("src/knotwork/plugins"))

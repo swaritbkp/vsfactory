@@ -29,6 +29,7 @@ from knotwork.arena.schemas import (
 )
 from knotwork.pipeline.io import read_json
 from knotwork.studio import factory, forensics, guide
+from posttrain_ui import posttrain_tab
 from studio_ui import relative, run_with_status
 
 WS = storage.Workspace()
@@ -145,6 +146,7 @@ def _load_form(cfg: SessionConfig) -> None:
     ss.ar_mode = next(k for k, v in MODES.items() if v == cfg.mode)
     ss.ar_cap, ss.ar_conc, ss.ar_rpm = cfg.spend_cap_usd, cfg.max_concurrency, cfg.rpm
     ss.ar_repeats = cfg.repeats
+    ss.ar_temperature = cfg.temperature
     known = set(_catalog(bool(ss.get("ar_live_catalog"))).ids())
     extra = [m for b in cfg.blocks for m in cfg.models_for(b) if m not in known]
     ss.ar_custom_models = list(dict.fromkeys([*ss.ar_custom_models, *extra]))
@@ -337,14 +339,18 @@ def _mode_card() -> dict[str, Any]:
                        help=guide.tip("ar_cap"))  # fmt: skip
         b.number_input("Max concurrency", 1, 8, 2, key="ar_conc", help=guide.tip("ar_conc"))
         c.number_input("Rate limit (RPM)", 1, 1000, 60, key="ar_rpm", help=guide.tip("ar_rpm"))
-        st.number_input("Repeats per item (k)", 1, MAX_REPEATS, 1, key="ar_repeats",
-                        help=guide.tip("ar_repeats"))  # fmt: skip
+        k, t = st.columns(2)
+        k.number_input("Repeats per item (k)", 1, MAX_REPEATS, 1, key="ar_repeats",
+                       help=guide.tip("ar_repeats"))  # fmt: skip
+        t.slider("Temperature", 0.0, 1.0, 0.0, 0.05, key="ar_temperature",
+                 help=guide.tip("ar_temperature"))  # fmt: skip
         delay = 0.0
         if mode == "mock":
             delay = float(st.number_input("Simulated latency per call (s)", 0.0, 5.0, 0.2, 0.1,
                                           key="ar_delay", help=guide.tip("ar_delay")))  # fmt: skip
     return {"mode": mode, "cap": float(ss.ar_cap), "conc": int(ss.ar_conc),
-            "rpm": int(ss.ar_rpm), "delay": delay, "repeats": int(ss.ar_repeats)}  # fmt: skip
+            "rpm": int(ss.ar_rpm), "delay": delay, "repeats": int(ss.ar_repeats),
+            "temperature": float(ss.ar_temperature)}  # fmt: skip
 
 
 def _models_card(live_mode: bool) -> tuple[list[str], catalog.Catalog]:
@@ -490,6 +496,7 @@ def _build_config(setup: dict[str, Any], mode: dict[str, Any], models: list[str]
         blocks=[BlockSpec.model_validate(b) for b in blocks],
         spend_cap_usd=mode["cap"], max_concurrency=mode["conc"], rpm=mode["rpm"],
         mock_delay_s=mode["delay"], repeats=mode["repeats"],
+        temperature=mode.get("temperature", 0.0),
     )  # fmt: skip
 
 
@@ -944,11 +951,15 @@ def _session_view(slug: str) -> None:
     _controls(entry_dir, cfg, state, running)
     st.fragment(run_every=2.0 if running else None)(_live_body)(entry_dir, cfg, running)
     trials = storage.load_trials(entry_dir)
-    inspect, rep, diff = st.tabs(["Item inspector", "Report", "Compare"])
+    inspect, rep, post, diff = st.tabs(
+        ["Item inspector", "Report", "Post-Training Pack", "Compare"]
+    )
     with inspect:
         _inspector(cfg)
     with rep:
         _report_tab(cfg, entry_dir)
+    with post:
+        posttrain_tab(cfg, entry_dir)
     with diff:
         _compare_tab(cfg, trials)
 

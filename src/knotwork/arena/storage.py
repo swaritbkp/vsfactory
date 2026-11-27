@@ -138,6 +138,7 @@ def campaign_spec(cfg: SessionConfig) -> dict[str, Any]:
         "spend_cap_usd": cfg.spend_cap_usd,
         "max_concurrency": cfg.max_concurrency,
         "rpm": cfg.rpm,
+        "temperature": cfg.temperature,
         "total_items": cfg.total_items,
         "total_trials": cfg.total_trials,
         "cli": cli_command(Path(cfg.results_dir)),

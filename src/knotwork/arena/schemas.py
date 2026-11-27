@@ -105,6 +105,9 @@ class SessionConfig(_Record):
     max_tokens: int = Field(default=512, ge=16, le=8192)
     mock_delay_s: float = Field(default=0.0, ge=0.0, le=5.0)
     repeats: int = Field(default=1, ge=1, le=MAX_REPEATS)  # k: asks per (item, model)
+    #: sampling temperature of live calls; 0.0 (the default) keeps answers deterministic, > 0 with
+    #: k > 1 measures stochastic pass@k vs. pass^k and yields Best-of-N preference pairs
+    temperature: float = Field(default=0.0, ge=0.0, le=1.0)
     created_utc: str = ""
     run_id: str = ""
 

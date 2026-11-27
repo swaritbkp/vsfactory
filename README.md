@@ -174,12 +174,71 @@ The image is Python 3.12 slim built with `uv sync --locked`. It runs as the non-
 | `src/knotwork/render/` · `pipeline/` | renderer (2× beauty, 1× non-AA masks and id buffer) · generate / certify / verify / mutate / twins |
 | `src/knotwork/arena/` | Model Arena engine: sessions storage, catalog, resumable runner, report engine, Forensics loop |
 | `src/knotwork/studio/` | Studio logic: factory, fault proofs, forensics, presentation |
+| `src/knotwork/posttrain/` | post-training engine: grounded vCoT, RLVR reward + verifier server, curriculum and pack exporter, throughput |
 | `src/knotwork/export/` · `bench/` · `probes/` · `freshness/` | Harbor / HF / RLVR exporters · staircase bench · shortcut probes · beacon seeds and burn ledger |
 | `apps/` | Streamlit entry `inspector.py` and the 5 pages in `app_pages/` |
 | `samples/` | browsable twins, live failures, live-run outputs, demo forensics, default fault proof |
 | `tests/` | offline suite, tiered: `tier0` + `tier1` in `ci.yml`, `tier2` in `nightly.yml` |
 | `Dockerfile` · `.github/workflows/` | offline image · CI (`ci.yml`) and nightly (`nightly.yml`) |
 | `SPEC.md` · `VERIFICATION.md` · `DATA_CARD.md` · `BLOCKERS.md` | spec and decision log · gate results · data card · open limitations |
+
+## Post-Training Engine (Grounded vCoT, RLVR Verifier & Adaptive GRPO)
+
+`knotwork.posttrain` turns certified items and Arena sessions into training data and a verifier, offline
+and without touching `knotcore` (it only calls the kernel's grader and topology primitives).
+
+* **Grounded visual chain-of-thought (vCoT).** Each certified bundle yields a step-by-step trace
+  whose every step is boxed on real pixels: terminal and label boxes from the manifest, crossings
+  from the kernel's geodesic-ordered mask overlaps (over / under from the id buffer), dial, scale
+  labels and needle from the gauge masks and the READ witness. The SFT target is
+  `<think>Step k (...): ... <box>[x1, y1, x2, y2]</box> ...</think>` then `\boxed{answer}`, with
+  boxes on a 0–1000 grid. No model writes it, so it cannot hallucinate. Studio shows it as the
+  **vCoT Steps** view.
+* **Anti-reward-hacking RLVR reward.** `knotwork.posttrain.reward.compute_score(data_source,
+  solution_str, ground_truth, extra_info)` is the native `verl` custom-reward signature. It returns
+  `score` = 0.60 outcome (the kernel grader on `\boxed{}`) + 0.25 spatial grounding (one-to-one
+  greedy IoU against the certified boxes, divided by max(predicted, certified), so spraying boxes
+  does not pay) + 0.15 format and calibrated abstention. A wrong answer earns half the process
+  credit, so it stays below 0.25. A right answer with zero grounding raises `reward_hack_flag`.
+* **Stateless verifier server.** It binds to localhost only, has no outbound network
+  access, and works under `KNOTWORK_NETWORK=deny`:
+
+  ```bash
+  uv run knot serve-verifier --host 127.0.0.1 --port 8090
+  curl -s localhost:8090/health
+  curl -s -X POST localhost:8090/score -d '{"solution_str": "<think>...</think>\\boxed{07}", "ground_truth": "07"}'
+  ```
+
+  `POST /score_batch` takes `{"items": [...]}` from distributed rollout workers.
+* **Adaptive curriculum and Post-Training Pack.** Model Arena's **Post-Training Pack** tab (or
+  `uv run knot posttrain-pack --results-dir <session>/results`) sorts every block and model by
+  accuracy into **Saturated** (> 75 %), **GRPO Frontier** (20–75 %, where a binary-reward GRPO
+  group's variance p(1−p) is large) and **SFT Cold-Start** (< 20 %, vanishing advantage). It then
+  writes `sft_grounded_vcot.jsonl`, `dpo_preferences.jsonl` (real failed replies as rejected),
+  `grpo_rlvr_verl.parquet` / `.jsonl`, and `curriculum_spec.json`. Training seeds start strictly above
+  every evaluated seed, with a fresh OOD eval range above them; generate them with
+  `knot posttrain-generate --spec ... --split train`. It also writes `rlvr_kit/`
+  (a self-contained `knotwork_verl_reward.py`, `run_verl_grpo.sh` using
+  `reward.custom_reward_function.path` / `.name`, and `run_trl_grpo.py`) and
+  `provenance_attestation.json` (git and kernel hashes, dataset and eval-seed hashes,
+  `train_seed_disjoint`, and the one external asset, the bundled DejaVu font), all in one ZIP.
+  The Arena's **Temperature** control (default 0) makes k > 1 repeats stochastic, which
+  separates pass@k from pass^k and yields Best-of-N preference pairs.
+* **Throughput and unit economics.** This command measures `gen_ms`, `verify_ms` and `vcot_ms`
+  per item and prints its cost formula:
+
+  ```bash
+  uv run knot bench-throughput --domain rack_patch --n 4 --vcpu-usd-hr 0.04
+  ```
+
+  On a laptop core: 4 / 4 certified rack items, about 544 certified items per hour, about $74 per
+  1M certified samples at $0.04 per vCPU-hour. Arena reports include the same table from each
+  session's observed timings.
+
+Credits: grounding every reasoning step in a box, and scoring answer–grounding consistency, follows
+**MM-GCoT** (Wu et al., CVPR 2026 [8]). Rewarding the visual-evidence trajectory, not only the final
+answer, in multimodal RLVR follows **TGRL** (Lu et al., 2026 [9]). Knotwork's version is
+deterministic: the reference trajectory comes from certified masks, not a stronger model.
 
 ## Related work and research positioning
 
@@ -200,6 +259,8 @@ The image is Python 3.12 slim built with `uv sync --locked`. It runs as the non-
 5. J. Roberts et al. *ZeroBench: An Impossible Visual Benchmark for Contemporary Large Multimodal Models.* ICML 2026 (PMLR 306). [arXiv:2502.09696](https://arxiv.org/abs/2502.09696)
 6. Y. Feng et al. *VisualSphinx: Large-Scale Synthetic Vision Logic Puzzles for RL.* 2025. [arXiv:2505.23977](https://arxiv.org/abs/2505.23977)
 7. E. B. Wilson. *Probable inference, the law of succession, and statistical inference.* JASA 22(158), 1927. Used for every 95 % binomial interval.
+8. Q. Wu, X. Yang, Y. Zhou et al. *Grounded Chain-of-Thought for Multimodal Large Language Models.* CVPR 2026. [arXiv:2503.12799](https://arxiv.org/abs/2503.12799)
+9. J. Lu, J. Wu, J. Li, K. Huang, S. Yang, M. Chen, J. Wu, K. Liu, X. Wang. *Beyond Where to Look: Trajectory-Guided Reinforcement Learning for Multimodal RLVR.* 2026. [arXiv:2603.26126](https://arxiv.org/abs/2603.26126)
 
 ## Honest disclosures and current limits
 

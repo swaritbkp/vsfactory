@@ -147,3 +147,28 @@ def test_pages_render_with_guided_mode_on_and_off(app: AppTest, page: str, guide
     assert bool(strip) is guided
     assert app.toggle(key="guided_mode").value is guided
     assert any(b.label == "Quick tour" for b in app.button) and _footer_shown(app)
+
+
+def _protos(app: AppTest) -> str:
+    out: list[str] = []
+
+    def walk(node: object) -> None:
+        for child in getattr(node, "children", {}).values():
+            out.append(str(getattr(child, "proto", "")))
+            walk(child)
+
+    walk(app.main)
+    return " ".join(out)
+
+
+def test_vcot_steps_view_draws_the_grounded_trace(app: AppTest) -> None:
+    app.switch_page("app_pages/studio.py").run()
+    app.segmented_control(key="view").set_value("vCoT Steps").run()
+    assert not app.exception, app.exception
+    assert os.environ["KNOTWORK_NETWORK"] == "deny"
+    panel = next(e for e in app.expander if e.label == "Grounded Visual CoT (SFT trace)")
+    trace = panel.code[0].value
+    assert trace.startswith("<think>\nStep 1 (perception):") and "<box>[" in trace
+    assert trace.endswith("\\boxed{" + app.session_state["item"]["answer"] + "}")
+    assert "Reasoning" in panel.dataframe[0].value.columns
+    assert "grounded steps" in _protos(app)

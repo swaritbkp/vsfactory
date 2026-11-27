@@ -10,17 +10,19 @@ from typing import Any
 import streamlit as st
 from PIL import Image
 
+from knotwork.posttrain import vcot
 from knotwork.studio import factory, forensics, guide, present
 from knotwork.studio.present import AUTO
 from studio_ui import OUT, relative, resolve, run_with_status, verdict_badge
 
-VIEWS = ("Beauty", "Witness Overlay", "ID Buffer", "CVD Simulation")
+VIEWS = ("Beauty", "Witness Overlay", "ID Buffer", "CVD Simulation", "vCoT Steps")
 CAPTIONS = {
     "Beauty": "What a model sees (rendered at 1024 px).",
     "Witness Overlay": "Kernel evidence: terminals (green), crossings (cyan), needle axis (magenta), "
     "OCR labels (amber); failed checks in red.",
     "ID Buffer": "Modal object ids: the visible owner of every pixel.",
     "CVD Simulation": "The same image under simulated colour-vision deficiency.",
+    "vCoT Steps": "Grounded reasoning steps, numbered in order, boxed on the object masks they read.",
 }
 LEVELS = [AUTO, *(i / 10 for i in range(11))]
 IMAGE_PX = 560
@@ -242,7 +244,39 @@ def _image(directory: str, view: str, deficiency: str, certificate: str) -> Imag
         return factory.id_buffer_image(bundle)
     if view == "CVD Simulation":
         return factory.cvd_preview(bundle, deficiency)
+    if view == "vCoT Steps":
+        trace = _trace(directory, certificate)
+        if trace is not None:
+            return vcot.overlay(factory.beauty(bundle), vcot.VCoTTrace.model_validate(trace))
     return factory.beauty(bundle)
+
+
+@st.cache_data(show_spinner=False, max_entries=48)
+def _trace(directory: str, certificate: str) -> dict[str, Any] | None:
+    """The grounded vCoT trace of a certified item (None when it is not certified)."""
+    if json.loads(certificate).get("verdict") != "CERTIFIED":
+        return None
+    trace = vcot.try_extract(Path(directory))
+    return None if trace is None else trace.model_dump()
+
+
+def _vcot_panel(item: dict[str, Any]) -> None:
+    """Step table and the exact SFT target string of the grounded trace."""
+    trace = _trace(item["dir"], json.dumps(item["certificate"]))
+    with st.expander("Grounded Visual CoT (SFT trace)", icon=":material/route:",
+                     expanded=st.session_state.get("view") == "vCoT Steps"):  # fmt: skip
+        if trace is None:
+            st.caption("Only certified items get a grounded trace: the kernel must agree first.")
+            return
+        st.caption(guide.tip("vcot_steps"))
+        rows = [{"Step": s["step_idx"], "Phase": s["phase"], "Evidence": s["evidence_label"],
+                 "Box (0-1000)": str(s["bbox_norm_1000"]), "Reasoning": s["text"]}
+                for s in trace["steps"]]  # fmt: skip
+        st.dataframe(rows, hide_index=True, width="stretch", column_config={
+            "Step": st.column_config.NumberColumn(width="small"),
+            "Box (0-1000)": st.column_config.TextColumn(help=guide.tip("vcot_box")),
+        })  # fmt: skip
+        st.code(trace["formatted_cot"], language=None, wrap_lines=True)
 
 
 def _summary(item: dict[str, Any]) -> None:
@@ -327,12 +361,20 @@ def _stage() -> None:
                 st.caption("Colour carries no meaning in this scene, so the gate does not apply.")
         if view == "Witness Overlay":
             _witness_pill(item["certificate"])
+        if view == "vCoT Steps":
+            trace = _trace(item["dir"], json.dumps(item["certificate"]))
+            if trace is None:
+                st.caption("Not certified, so there is no grounded trace to draw.")
+            else:
+                st.badge(f"{len(trace['steps'])} grounded steps · answer {trace['final_answer']}",
+                         color="green", icon=":material/route:")  # fmt: skip
     with st.container(border=True):
         st.caption("Question")
         question = item["question"]
         st.markdown(question["text"].replace("\n", "  \n"))
         if question.get("options"):
             st.caption("Options: " + " · ".join(question["options"]))
+    _vcot_panel(item)
     with st.expander("certificate.json and task.json", icon=":material/data_object:"):
         certificate, task = st.tabs(["certificate.json", "task.json"])
         certificate.json(item["certificate"], expanded=1)

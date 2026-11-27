@@ -137,3 +137,29 @@ def test_export_paths_are_relative_to_the_output_folder(tmp_path: Path) -> None:
     ]  # fmt: skip
     assert all(str(tmp_path) not in r["Path"] for r in rows)
     json.dumps(rows)
+
+
+def test_arena_temperature_control_and_post_training_tab(monkeypatch, tmp_path: Path) -> None:  # type: ignore[no-untyped-def]
+    from posttrain_fixtures import session
+
+    root = tmp_path / "ws"
+    monkeypatch.setenv(storage.ROOT_ENV, str(root))
+    cfg = session(root)
+    storage.Workspace().register(cfg)
+    app = _app(monkeypatch, root)
+    app.switch_page("app_pages/arena.py").run()
+    temp = next(s for s in app.slider if s.label == "Temperature")
+    assert temp.value == 0.0 and not app.exception
+    next(b for b in app.sidebar.button if b.label == cfg.session_name).click().run()
+    assert not app.exception, app.exception
+    metrics = {m.label: m.value for m in app.metric}
+    assert metrics["GRPO frontier"] == "2" and metrics["SFT cold-start"] == "1"
+    assert metrics["Saturated"] == "1" and metrics["Train seeds from"] == "10,000"
+    assert float(metrics["Composite"]) >= 0.99 and metrics["Grounding IoU"] == "1.00"
+    examples = next(g for g in app.button_group if "Lucky guess (no boxes)" in g.options)
+    examples.set_value("Lucky guess (no boxes)").run()
+    assert "Reward-hack flag" in " ".join(str(getattr(e, "proto", "")) for e in _walk(app.main, []))
+    next(b for b in app.button if b.label == "Export post-training pack").click().run()
+    assert not app.exception, app.exception
+    assert (storage.resolve(cfg.results_dir) / "posttrain_pack.zip").is_file()
+    assert any(d.label == "Download posttrain_pack.zip" for d in app.get("download_button"))
