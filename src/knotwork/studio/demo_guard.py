@@ -10,8 +10,11 @@ When on:
   Register existing folder) must resolve, after symlinks and `..`, inside `/tmp/knotwork_demo/`;
   relative paths are placed under it;
 * Studio batches, Arena items per block, blocks, repeats and the live spend cap are capped;
-* the server never reads `OPENROUTER_API_KEY` (or `.env`): runs default to Offline Mock and a live
-  run needs a key the visitor types, kept in their browser session only.
+* the server never reads `OPENROUTER_API_KEY` (or `.env`), and Model Arena runs Offline Mock only:
+  the Live mode and every API key field are hidden, and the launch handler forces `mode="mock"`
+  with no key, so no visitor can make the hosted server spend money or reach the network;
+* the `Import campaign.yaml` uploader is hidden and external `knotwork.plugins` entry points are
+  not loaded (only the four built-in plugins run).
 """
 
 from __future__ import annotations
@@ -24,9 +27,10 @@ from typing import Any
 ENV = "KNOTWORK_PUBLIC_DEMO"
 SANDBOX_ROOT = Path("/tmp/knotwork_demo")
 BANNER = (
-    "Live Interactive Sandbox (capped at 10 items/block · ephemeral `/tmp` storage · zero server "
-    "API keys). Run locally via Docker for unlimited air-gapped 100k+ campaigns."
+    "Live Interactive Sandbox (Offline Mock only · capped at 10 items/block · ephemeral /tmp "
+    "storage)"
 )
+OFFLINE_MODE = "mock"
 
 
 @dataclass(frozen=True)
@@ -95,12 +99,34 @@ def server_api_key(name: str = "OPENROUTER_API_KEY") -> str | None:
     return os.environ.get(name, "").strip() or None
 
 
+def execution_modes(modes: dict[str, str]) -> dict[str, str]:
+    """The Arena execution modes a visitor may pick: Offline Mock only in the public demo."""
+    if not is_public_demo():
+        return dict(modes)
+    return {label: mode for label, mode in modes.items() if mode == OFFLINE_MODE}
+
+
+def offline_only(cfg: Any) -> Any:
+    """In the public demo, the session config forced to Offline Mock (server-side enforcement of
+    what the UI hides); unchanged otherwise."""
+    if is_public_demo() and getattr(cfg, "mode", OFFLINE_MODE) != OFFLINE_MODE:
+        return cfg.model_copy(update={"mode": OFFLINE_MODE})
+    return cfg
+
+
+def campaign_import_allowed() -> bool:
+    """Whether Model Arena shows the `Import campaign.yaml` uploader (never in the public demo)."""
+    return not is_public_demo()
+
+
 def config_problems(cfg: Any, root: Path | None = None) -> list[str]:
     """Why an Arena SessionConfig breaks the demo limits (empty list = fine, always outside it)."""
     lim = limits()
     if lim is None:
         return []
     problems = []
+    if getattr(cfg, "mode", OFFLINE_MODE) != OFFLINE_MODE:
+        problems.append("The sandbox runs Offline Mock only.")
     if len(cfg.blocks) > lim.max_blocks:
         problems.append(f"The sandbox runs at most {lim.max_blocks} blocks.")
     if any(b.n > lim.block_items for b in cfg.blocks):
@@ -117,7 +143,7 @@ def config_problems(cfg: Any, root: Path | None = None) -> list[str]:
 
 
 __all__ = [
-    "BANNER", "DEMO_LIMITS", "ENV", "SANDBOX_ROOT", "Limits", "SandboxViolation", "cap",
-    "config_problems", "confine", "is_public_demo", "limits", "path_problem", "sandbox_root",
-    "server_api_key",
+    "BANNER", "DEMO_LIMITS", "ENV", "OFFLINE_MODE", "SANDBOX_ROOT", "Limits", "SandboxViolation",
+    "campaign_import_allowed", "cap", "config_problems", "confine", "execution_modes",
+    "is_public_demo", "limits", "offline_only", "path_problem", "sandbox_root", "server_api_key",
 ]  # fmt: skip

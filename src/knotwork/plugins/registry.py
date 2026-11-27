@@ -13,12 +13,15 @@ External registrations are validated before use and never crash the registry: a 
 collides with a local plugin, a load error, a missing protocol method or attribute, or an entry
 point whose name differs from `PLUGIN.name` is *rejected* and reported by `knot plugins` with the
 reason. Plugins stay untrusted either way: the kernel re-derives every answer from pixels.
+In the public demo (`KNOTWORK_PUBLIC_DEMO=1`) entry points are not scanned at all, so only the
+local plugins load.
 """
 
 from __future__ import annotations
 
 import functools
 import importlib
+import os
 from dataclasses import asdict, dataclass
 from importlib import metadata
 from pathlib import Path
@@ -29,6 +32,7 @@ from knotwork.knotcore.contracts import FaultCode, SceneIR, TaskPlugin
 
 NAMES = ("tangle", "gauge", "panel")
 ENTRY_POINT_GROUP = "knotwork.plugins"
+PUBLIC_DEMO_ENV = "KNOTWORK_PUBLIC_DEMO"  # same switch as knotwork.studio.demo_guard
 #: the TaskPlugin protocol: methods an external plugin must provide, and attributes it must set
 REQUIRED_METHODS = ("sample_scene", "render", "claims", "questions", "symbolic_answer",
                     "geometric_answer", "causal_twin", "nuisance_twin")  # fmt: skip
@@ -85,6 +89,8 @@ def _dist(ep: Any) -> str:
 @functools.lru_cache(maxsize=1)
 def _external() -> tuple[dict[str, Any], tuple[PluginInfo, ...]]:
     """(accepted name -> module-like holder, every external registration with its status)."""
+    if os.environ.get(PUBLIC_DEMO_ENV) == "1":  # hosted sandbox: never load third-party code
+        return {}, ()
     local = set(_local())
     accepted: dict[str, Any] = {}
     infos: list[PluginInfo] = []

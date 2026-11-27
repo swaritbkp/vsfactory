@@ -56,9 +56,11 @@ RELIABILITY_GAP = 0.10
 #: Methodology & Literature References printed at the foot of report.html / report.md
 REFERENCES: tuple[str, ...] = (
     "Wilson, E. B. (1927). Probable inference, the law of succession, and statistical inference. "
-    "JASA 22(158). Used for every 95% binomial score interval in this report.",
+    "JASA 22(158), 209-212. https://doi.org/10.1080/01621459.1927.10502953. Used for every 95% "
+    "binomial score interval in this report.",
     "Roberts, J. et al. ZeroBench: An Impossible Visual Benchmark for Contemporary Large "
-    "Multimodal Models. ICML 2026 (PMLR 306), arXiv:2502.09696. Source of the pass@k / pass^k "
+    "Multimodal Models. ICML 2026, arXiv:2502.09696 (https://arxiv.org/abs/2502.09696). Source of "
+    "the pass@k / pass^k "
     "reliability protocol used when a session asks each item k > 1 times.",
     "Rahmanzadehgervi, P. et al. Vision language models are blind. ACCV 2024, arXiv:2407.06581. "
     "VLMs fail simple 2-D geometric tasks such as line intersections and path following.",

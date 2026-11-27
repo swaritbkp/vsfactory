@@ -367,9 +367,10 @@ TOOLTIPS: Final[dict[str, str]] = {
     "pt_example": "Start from the certified vCoT, a lucky guess with no boxes, or a wrong answer.",
     "pt_rollout": "Paste any reply: <think> with <box>[x1, y1, x2, y2]</box> steps, then "
     "\\boxed{answer}. Scored live as you edit.",
-    "pt_score": "0.60 outcome + 0.25 grounding + 0.15 format and abstention. A wrong answer earns "
-    "half the process credit, so it stays below 0.25.",
-    "pt_outcome": "1 when the boxed answer matches the certified one under the kernel's grader.",
+    "pt_score": "0.60 outcome + 0.25 grounding + 0.15 format. A wrong answer stays below 0.25; a "
+    "right answer with zero grounding gets no outcome credit (at most 0.15).",
+    "pt_outcome": "1 when the boxed answer matches the certified one under the kernel's grader "
+    "(raw correctness, shown even when the grounding gate withholds its credit).",
     "pt_iou": "Spatial Grounding IoU: one-to-one matched IoU of your boxes to the certified steps, "
     "over max(yours, certified). Extra boxes lower it.",
     "pt_format": "1 for <think>...</think> then one \\boxed{}, 0.5 for a bare answer.",

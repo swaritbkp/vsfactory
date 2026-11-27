@@ -1,0 +1,63 @@
+Knotwork verification log (post-freeze fixes, SPEC D-48)
+date_utc: 2026-11-27T09:15:28Z
+branch: main  base_commit: a079080 (+ the changes committed with this log)
+platform: MINGW64_NT-10.0-26300 / 3.11.15  KNOTWORK_NETWORK=deny
+
+[2026-11-27T09:15:28Z] $ uv run ruff check .
+    All checks passed!
+    -> exit 0 (0 s)  [ruff-check]
+
+[2026-11-27T09:15:29Z] $ uv run ruff format --check .
+    249 files already formatted
+    -> exit 0 (1 s)  [ruff-format]
+
+[2026-11-27T09:15:29Z] $ uv run mypy
+    Success: no issues found in 127 source files
+    -> exit 0 (0 s)  [mypy]
+
+[2026-11-27T09:15:30Z] $ uv run lint-imports
+    knotcore must not import network, UI, ML-probe or scene-geometry libraries KEPT
+    tangle and gauge plugins must be mutually independent (only panel may compose 
+    them) KEPT
+    Contracts: 3 kept, 0 broken.
+    -> exit 0 (0 s)  [lint-imports]
+
+[2026-11-27T09:15:53Z] $ uv run pytest -n auto -q -p no:cacheprovider tests/apps/test_studio.py
+    ......................                                                   [100%]
+    22 passed in 21.84s
+    -> exit 0 (23 s)  [studio-xdist-1/3]
+
+[2026-11-27T09:16:15Z] $ uv run pytest -n auto -q -p no:cacheprovider tests/apps/test_studio.py
+    ......................                                                   [100%]
+    22 passed in 21.25s
+    -> exit 0 (22 s)  [studio-xdist-2/3]
+
+[2026-11-27T09:16:37Z] $ uv run pytest -n auto -q -p no:cacheprovider tests/apps/test_studio.py
+    ......................                                                   [100%]
+    22 passed in 21.26s
+    -> exit 0 (22 s)  [studio-xdist-3/3]
+
+[2026-11-27T09:16:51Z] $ uv run pytest -n 0 -q -p no:cacheprovider tests/conformance/test_cli.py tests/posttrain/ tests/apps/test_demo_guard.py
+    ........................................................................ [100%]
+    72 passed in 12.53s
+    -> exit 0 (14 s)  [cli-posttrain-demo]
+
+[2026-11-27T09:19:19Z] $ uv run pytest -m tier0 or tier1 -q -p no:cacheprovider
+    =========================== short test summary info ===========================
+    SKIPPED [1] tests\conformance\test_offline_guard.py:47: AF_UNIX path sockets are POSIX-only here
+    455 passed, 1 skipped, 104 deselected, 3 warnings in 146.33s (0:02:26)
+    -> exit 0 (148 s)  [tier0+tier1]
+
+[2026-11-27T09:19:19Z] $ uv run knot selftest --seeds-only
+    {"ok": true, "vector": {"array_u16": "4920aaab215d4d6c539b2f372b7068d52a85cd709277f2bd4edea5361a53d28f", "bundle_id": "kw-3097ec38135e5cb9475b", "canary": "KNOTWORK-CANARY-aa13dca9f5db55b1d849e538bcf08605", "child_int": "dc14429ef3b92971", "rng_draws": "08ed185129a1c833612abfcd64009664f22f7c06df27c11f7d271d3639aaaf2f", "root_seed": "6f90f59ab594e6c94856b16cd7563439"}}
+    -> exit 0 (0 s)  [selftest-seeds]
+
+[2026-11-27T09:19:19Z] $ docs checks: docs_problems(), relative links, control characters, buzzwords
+    docs_problems(): [] (empty)
+    markdown files checked: 22
+    broken relative links: 0
+    files with control characters: 0
+    acquisition-grade / enterprise occurrences: 0
+    -> exit 0 (0 s)  [docs-checks]
+
+OVERALL: PASS

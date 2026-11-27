@@ -14,7 +14,9 @@ w_o = 0.60, w_g = 0.25, w_f = 0.15. Rules that keep the reward honest:
 * when the outcome is wrong, grounding and format earn only `WRONG_PROCESS_SCALE` of their weight,
   so a wrong answer always scores below 0.25 with the default weights;
 * a correct answer with zero grounding when grounding was asked for raises `reward_hack_flag`
-  (a lucky or memorised guess, not a grounded read);
+  (a lucky or memorised guess, not a grounded read) and is gated: its outcome credit is withheld
+  (`effective_outcome_score` 0.0, raw correctness kept in `outcome_score`), so it scores at most
+  the format weight (0.15 by default) and cannot harvest positive RL advantage over grounded reads;
 * on a false-premise task, accepting the premise is a confident hallucination (abstention 0).
 
 Without reference boxes the grounding weight is dropped and the other two weights renormalised.
@@ -195,17 +197,21 @@ def score_rollout(
     process = w["grounding"] * g_iou + w["format"] * 0.5 * (fmt + abst)
     if outcome < 1.0:
         process *= WRONG_PROCESS_SCALE
-    score = w["outcome"] * outcome + process
+    hack = bool(outcome == 1.0 and asked and g_iou == 0.0)
+    effective = 0.0 if hack else outcome  # ungrounded guess: no outcome credit, format only
+    score = w["outcome"] * effective + process
     return {
         "score": round(min(1.0, max(0.0, score)), 6),
         "outcome_score": float(outcome),
+        "effective_outcome_score": float(effective),
+        "grounding_gated": hack,
         "grounding_iou": round(g_iou, 6),
         "format_score": fmt,
         "abstention_score": abst,
         "matched_boxes": int(matched),
         "pred_boxes": len(pred),
         "ref_boxes": len(ref),
-        "reward_hack_flag": bool(outcome == 1.0 and asked and g_iou == 0.0),
+        "reward_hack_flag": hack,
         "extracted": final.strip()[:120],
         "weights": {k: round(v, 6) for k, v in w.items()},
     }

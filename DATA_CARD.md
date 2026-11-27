@@ -139,6 +139,23 @@ detectably between true and false premises:
 Report a false-premise rejection rate only beside a true-premise control. On its own it cannot
 separate response bias from premise checking.
 
+### v2 live 4-domain audit (2026-11-27)
+
+A second live run covered all four domains with fresh items: `rack_patch` standard colour and
+monochrome, `tangle` monochrome, `gauge` aged dial and `panel` Hard logic, 12 items per block, the same
+three models, *k* = 3 repeats at temperature 0.7. 59 of 60 items were certified; 531 calls were
+issued, 530 scored, 1 API error, $0.6727 spent. Overall accuracy: GPT-5.4 44.6 %, Gemini 2.5 Flash
+28.4 %, Qwen3-VL-235B-A22B 26.6 %. On `rack_patch`, GPT-5.4 fell from 61.1 % with unique cable
+colours to 27.3 % with monochrome cables (Fisher p = 0.007). 11 of 15 block × model cells show a
+`pass@3 − pass^3` gap of 10 points or more.
+
+The post-training pack exported from this session contains **55 SFT** grounded-vCoT records,
+**354 DPO** preference pairs and **59 GRPO** prompts (8 GRPO Frontier, 7 SFT Cold-Start, 0
+Saturated block × model cells), with training seeds 10,000–10,599 disjoint from the evaluation seeds
+(≤ 2,626) and a fresh OOD range from 20,000. The pack itself is not committed. Its counts, frontier
+table and provenance attestation are in
+[`docs/evidence/v2_live_audit/posttrain_summary.json`](docs/evidence/v2_live_audit/posttrain_summary.json).
+
 ## Intended use
 
 - Evaluating and diagnosing vision-language models on cable tracing, crossing counting, gauge
@@ -161,8 +178,8 @@ decisions.
 - **Shortcut audit** (`BLOCKERS.md` 3.6). The v1 leaks in `tangle` T1/T3 and the premise families
   pass in v2. One row still beats chance: `panel` P1_READ_TRACE under GBDT image statistics, 0.173
   against a 0.164 limit. All other probe, balance and duplicate checks pass.
-- **`rack_patch` coverage.** It has no live VLM results and is not in the golden set. Its shortcut
-  probes have not been run on a full split.
+- **`rack_patch` coverage.** Its live results come from one small audit (12 items per block). It is
+  not in the golden set, and its shortcut probes have not been run on a full split.
 - **Gauge scales.** All gauge scales are linear.
 - **Reproducibility.** Raster bits reproduce on the platform that recorded the golden. On other
   platforms answers and verdicts reproduce, but bundle ids may differ (SPEC D-35).

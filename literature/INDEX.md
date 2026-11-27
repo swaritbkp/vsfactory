@@ -1,0 +1,28 @@
+# Literature archive
+
+The nine works cited in [`README.md`](../README.md#references-and-methodology-basis), each checked on
+2026-11-27 against its authoritative landing page. Full BibTeX is in [`references.bib`](references.bib).
+
+**Archiving rule.** A PDF is stored here only when its landing page grants third-party redistribution
+(CC BY 4.0 or CC BY-SA 4.0) **and** the file is at most 10 MB. Works under the arXiv non-exclusive
+distribution license, and paywalled publisher copies, are kept as link plus BibTeX only. Archived
+PDFs are unmodified copies and remain under their original licenses, with attribution to their
+authors. They are not covered by Knotwork's MIT license.
+
+Archived: 3 PDFs, 23,452,723 bytes (22.4 MiB) in total.
+
+| Key | Title and authors | Venue, year | Primary URL | Verified license | Local copy (SHA-256) or reason omitted | How Knotwork uses it |
+|---|---|---|---|---|---|---|
+| `wilson1927probable` | *Probable Inference, the Law of Succession, and Statistical Inference*. E. B. Wilson | JASA 22(158):209–212, 1927 | [doi:10.1080/01621459.1927.10502953](https://doi.org/10.1080/01621459.1927.10502953) | Publisher copyright (Taylor & Francis); not open | Omitted: no open license (the publisher page returned HTTP 403 to automated access). Link and BibTeX only | Wilson 95 % score intervals on every accuracy in Model Arena reports and gates. |
+| `friedman2023vendi` | *The Vendi Score: A Diversity Evaluation Metric for Machine Learning*. D. Friedman, A. B. Dieng | TMLR, 2023 | [arXiv:2210.02410](https://arxiv.org/abs/2210.02410) | [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) | [`pdfs/friedman2023vendi_arxiv2210.02410v2.pdf`](pdfs/friedman2023vendi_arxiv2210.02410v2.pdf) (8,771,657 B)<br>`6882e9fd9c43326b9e4772c432f280a56af68c639cc1d169b238d6e03aee61fb` | `knot diversity` reports the Vendi score over structural embeddings of certified items. |
+| `rahmanzadehgervi2024blind` | *Vision Language Models Are Blind: Failing to Translate Detailed Visual Features into Words*. P. Rahmanzadehgervi, L. Bolton, M. R. Taesiri, A. T. Nguyen | ACCV, 2024 | [arXiv:2407.06581](https://arxiv.org/abs/2407.06581) | [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) | Omitted: the v6 PDF is larger than the 10 MB per-file limit. [PDF link](https://arxiv.org/pdf/2407.06581v6) | Elementary 2-D tracing and crossing tasks (tangle, rack) serve as a perception probe. |
+| `lee2025vlindbench` | *VLind-Bench: Measuring Language Priors in Large Vision-Language Models*. K. Lee, M. Kim, S. Yoon, M. Kim, D. Lee, H. Koh, K. Jung | Findings of NAACL, 2025 | [arXiv:2406.08702](https://arxiv.org/abs/2406.08702) | [CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/) | [`pdfs/lee2025vlindbench_arxiv2406.08702v4.pdf`](pdfs/lee2025vlindbench_arxiv2406.08702v4.pdf) (9,115,175 B)<br>`9dd858b42b8c4dbcd24f85ab3944f20d69ec21c08fbe60807268dc8d3efb6155` | Counterfactual twins separate visual evidence from language priors. |
+| `sun2026prive` | *Seeing What Is Actually There: PriVE-Bench and PriVE-Tools for Counterfactual Evaluation of Agentic Visual Evidence in VLMs*. J. Sun et al. (11 authors) | EMNLP, 2026 | [ACL Anthology 2026.emnlp-main.760](https://aclanthology.org/2026.emnlp-main.760/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (ACL Anthology) | Omitted: the PDF is larger than the 10 MB per-file limit. [PDF link](https://aclanthology.org/2026.emnlp-main.760.pdf) | Causal and nuisance twins with a vision-vs-reasoning diagnosis in Forensics. |
+| `roberts2026zerobench` | *ZeroBench: An Impossible Visual Benchmark for Contemporary Large Multimodal Models*. J. Roberts et al. (34 authors) | ICML, 2026 | [arXiv:2502.09696](https://arxiv.org/abs/2502.09696) | [arXiv non-exclusive distribution 1.0](http://arxiv.org/licenses/nonexclusive-distrib/1.0/) | Omitted: arXiv non-exclusive license. Link and BibTeX only | `pass@k` / `pass^k` reliability over k repeated attempts in Model Arena. |
+| `feng2025visualsphinx` | *VisualSphinx: Large-Scale Synthetic Vision Logic Puzzles for RL*. Y. Feng et al. (8 authors) | arXiv, 2025 | [arXiv:2505.23977](https://arxiv.org/abs/2505.23977) | [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) | [`pdfs/feng2025visualsphinx_arxiv2505.23977v2.pdf`](pdfs/feng2025visualsphinx_arxiv2505.23977v2.pdf) (5,565,891 B)<br>`71b432c94fe43c70a82a84fd3c1b11cb6f0c5d64bcb9829f95d9229735feaf8b` | Synthetic visual reasoning data with verifiable answers for RL (the GRPO pack). |
+| `wu2025gcot` | *Grounded Chain-of-Thought for Multimodal Large Language Models*. Q. Wu, X. Yang, Y. Zhou et al. (7 authors) | arXiv, 2025 | [arXiv:2503.12799](https://arxiv.org/abs/2503.12799) | [arXiv non-exclusive distribution 1.0](http://arxiv.org/licenses/nonexclusive-distrib/1.0/) | Omitted: arXiv non-exclusive license. Link and BibTeX only | Box-grounded vCoT steps and answer–grounding consistency in SFT traces. |
+| `lu2026tgrl` | *Beyond Where to Look: Trajectory-Guided Reinforcement Learning for Multimodal RLVR*. J. Lu et al. (9 authors) | arXiv, 2026 | [arXiv:2603.26126](https://arxiv.org/abs/2603.26126) | [arXiv non-exclusive distribution 1.0](http://arxiv.org/licenses/nonexclusive-distrib/1.0/) | Omitted: arXiv non-exclusive license. Link and BibTeX only | The reward credits the grounded visual-evidence trajectory, not only the answer. |
+
+Venue notes. For ZeroBench the venue comes from the arXiv comment ("Accepted at ICML 2026"). The arXiv
+pages for BlindTest and Vendi show no journal reference, so their ACCV 2024 and TMLR 2023 venues are
+kept as cited. VisualSphinx, MM-GCoT and TGRL are cited as arXiv preprints.

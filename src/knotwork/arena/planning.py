@@ -102,7 +102,12 @@ def start(
     resume: bool = False,
 ) -> tuple[list[str], object | None]:
     """Validate the folders, write the session files (no secrets), register it and start the
-    runner. Returns (problems, process); nothing is started when there are problems."""
+    runner. Returns (problems, process); nothing is started when there are problems. In the public
+    demo the run is forced to Offline Mock with no key, whatever the caller asked for."""
+    from knotwork.studio import demo_guard
+
+    if demo_guard.is_public_demo():
+        cfg, api_key = demo_guard.offline_only(cfg), None
     if not cfg.run_id:
         cfg = cfg.model_copy(update={"run_id": uuid.uuid4().hex[:12]})
     if not cfg.created_utc:
@@ -128,6 +133,10 @@ def resume(
     cfg = storage.load_config(results_dir)
     if cfg is None:
         return [f"No valid config.json in {results_dir}."], None
+    from knotwork.studio import demo_guard
+
+    if demo_guard.is_public_demo() and cfg.mode != demo_guard.OFFLINE_MODE:
+        return ["The public sandbox resumes Offline Mock sessions only."], None
     status = storage.read_status(results_dir)
     if status.state == "running" and runner.pid_alive(status.pid):
         return ["This session is already running."], None

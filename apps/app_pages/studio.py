@@ -87,13 +87,17 @@ def _view_of(made: factory.Generated, seed: int) -> dict[str, Any]:
 
 @st.cache_resource(show_spinner=False)
 def _first_sample(kernel: str) -> dict[str, Any]:
-    """One real certified task for the first visit, rendered once per server and kernel."""
+    """One real certified task for the first visit, rendered once per server and kernel.
+
+    Each server process renders into its own directory: a shared fixed path let concurrent
+    servers (or pytest-xdist workers) rewrite PNGs that another process was certifying or
+    reading, which surfaced as "image file is truncated"."""
     plugin, family, seed = SAMPLE
     made = factory.generate_one(
         plugin,
         family,
         seed,
-        OUT / "sample" / kernel / plugin,
+        OUT / "sample" / kernel / f"{plugin}-{uuid.uuid4().hex[:8]}",
         certify_attempts=CERTIFY_ATTEMPTS,
     )
     return _view_of(made, seed)

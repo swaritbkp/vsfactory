@@ -13,6 +13,7 @@ Model Arena, the post-training pack or CI.
 | 5.6 | Mock staircase tolerance | gate `p5.bench_mock` | Resolved for the gate function; full Phase 5 run not repeated |
 | G-1 | Phase 3–5 gate records predate current code | gate `p6.docs` | Open |
 | L-1 | Live staircases sit at the accuracy floor | interpretation of live thresholds | Documented; not a gate |
+| L-2 | One failed API call in the v2 live audit | 1 of 531 v2 live trials | Documented; not retried |
 
 ## 3.6 Shortcut-probe residual (gate `p3.probes`)
 - Status: OPEN. Gate `p3.probes` fails on one row. Probe thresholds are unchanged.
@@ -99,6 +100,15 @@ Model Arena, the post-training pack or CI.
 - Handling: stated as caveats in `README.md`, `VERIFICATION.md` and the figure subtitles.
 - Next step: an easier level ladder, including 0-crossing items, would be needed to place
   thresholds for current models.
+
+## L-2 One failed API call in the v2 live audit (not a gate)
+- Status: DOCUMENTED. No code change.
+- Observation: the 2026-11-27 live run of `docs/examples/full_v2_live_campaign.yaml` issued 531
+  calls; 530 were scored and 1 (Gemini 2.5 Flash, `rack_patch` monochrome) ended as an API error.
+  The runner recorded it, and `Retry failed API calls only` would re-ask just that call.
+- Handling: not retried, so the published numbers use 530 scored trials and Gemini's
+  `rack_patch` monochrome cell reports 10 complete items plus 1 partial item.
+- Impact: none on certification; one fewer trial in one cell.
 
 ---
 

@@ -67,9 +67,19 @@ directly.
 ## Public sandbox mode
 
 `KNOTWORK_PUBLIC_DEMO=1` ([`docs/DEPLOY_CLOUD_RUN.md`](docs/DEPLOY_CLOUD_RUN.md)) confines storage to
-`/tmp/knotwork_demo/`, caps runs and never reads a server API key. Any new page control that takes a
-folder or a count must go through `knotwork.studio.demo_guard` (`path_problem`, `cap`,
-`config_problems`). With the variable unset or `0`, the guard must change nothing.
+`/tmp/knotwork_demo/`, caps runs, never reads a server API key, locks Model Arena to Offline Mock
+(`execution_modes`, `offline_only`; enforced again in `arena.planning.start`), hides the
+`campaign.yaml` uploader (`campaign_import_allowed`) and skips external plugin entry points. Any new
+page control that takes a folder or a count must go through `knotwork.studio.demo_guard`
+(`path_problem`, `cap`, `config_problems`), and any new control that could reach the network or load
+code must be off in the demo. With the variable unset or `0`, the guard must change nothing.
+
+## Evidence and literature
+
+Committed live evidence lives in `docs/evidence/` (compact JSON / CSV / Markdown only; raw Arena
+workspaces, images and video stay in gitignored `artifacts/`). `literature/` holds BibTeX for every
+cited work and PDFs only when the source grants redistribution (CC BY / CC BY-SA) and the file is at
+most 10 MB; see `literature/INDEX.md`.
 
 ## Before you finish
 

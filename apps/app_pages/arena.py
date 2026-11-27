@@ -94,6 +94,8 @@ def _facts(entry_dir: str) -> dict[str, Any]:
 
 def _api_key() -> tuple[str | None, str]:
     """The key to hand a run: the session-only override when switched on, else the detected one."""
+    if demo_guard.is_public_demo():  # Offline Mock only: no key from anywhere
+        return None, ""
     if st.session_state.get("ar_override") and st.session_state.get(SECRET_KEY):
         return str(st.session_state[SECRET_KEY]).strip(), "session override"
     return keys.detect()
@@ -329,16 +331,14 @@ def _mode_card() -> dict[str, Any]:
     ss = st.session_state
     with st.container(border=True):
         st.markdown("**Execution mode & guardrails**")
-        mode = MODES[str(st.segmented_control("Execution mode", list(MODES), key="ar_mode",
+        modes = demo_guard.execution_modes(MODES)
+        if ss.get("ar_mode") not in modes:  # e.g. a loaded live config in the public demo
+            ss.ar_mode = next(iter(modes))
+        mode = modes[str(st.segmented_control("Execution mode", list(modes), key="ar_mode",
                                               default="Offline Mock (No Key)", required=True,
                                               width="stretch", help=guide.tip("ar_mode")))]  # fmt: skip
         found, source = keys.detect()
-        if mode == "live" and demo_guard.is_public_demo():
-            ss.ar_override = True  # the sandbox never reads a server key: bring your own
-            st.text_input("Your OpenRouter API key", type="password", key=SECRET_KEY,
-                          placeholder="sk-or-…", help=guide.tip("ar_key"))  # fmt: skip
-            st.caption("Kept in this browser session only; never stored on the server.")
-        elif mode == "live":
+        if mode == "live":
             if found:
                 st.badge(f"Key loaded from {source} ({keys.mask(found)})", color="green",
                          icon=":material/key:")  # fmt: skip
@@ -351,6 +351,9 @@ def _mode_card() -> dict[str, Any]:
         else:
             st.caption("Simulated models answer the certified items offline: no key, no network, "
                        "no charges. Costs shown are what a live run would cost.")  # fmt: skip
+            if demo_guard.is_public_demo():
+                st.caption("This public sandbox runs Offline Mock only. Run Knotwork locally or "
+                           "in your own Docker container for live OpenRouter campaigns.")  # fmt: skip
         a, b, c = st.columns(3)
         lim = demo_guard.limits()
         a.number_input("Spend cap ($)", 0.0, lim.spend_cap_usd if lim else 250.0, 0.50, 0.25,
@@ -592,6 +595,8 @@ def _launch_bar(setup: dict[str, Any], mode: dict[str, Any], models: list[str],
 
 
 def _import_campaign() -> None:
+    if not demo_guard.campaign_import_allowed():
+        return
     with st.expander("Import campaign.yaml", icon=":material/upload_file:"):
         upload = st.file_uploader("Campaign file", type=["yaml", "yml"], key="ar_campaign_up",
                                   help=guide.tip("ar_campaign_import"))  # fmt: skip

@@ -1150,3 +1150,17 @@ spec leaves open. Never silently change a threshold.
   carries the verified kernel wording, BLOCKERS.md states a status per entry. The per-field
   1,024-character portal limit is no longer checked because the portal text is not in the repo.
   The requirement that `artifacts/gates/phase0..5.json` are all `ok` is unchanged.
+
+* D-48: Post-freeze surgical fixes (2026-11-27, owner direction; no new product features).
+  (a) `reward.py` grounding gate: on an item with certified `vcot_boxes_1000`, a correct answer with
+  `grounding_iou == 0.0` keeps `reward_hack_flag` and now also loses its outcome credit
+  (`effective_outcome_score` 0.0, `grounding_gated` true; raw correctness stays in `outcome_score`),
+  so it scores at most the format weight (0.15 by default) instead of 0.75 and cannot gain positive
+  GRPO advantage. Grounded correct (~1.0), wrong (< 0.25) and outcome-only grading are unchanged.
+  (b) `KNOTWORK_PUBLIC_DEMO=1` hardening: Model Arena is Offline Mock only (Live mode and key fields
+  removed; `planning.start` forces `mode="mock"` with no key; resuming a live session is refused),
+  the `campaign.yaml` uploader is hidden, and the plugin registry skips the `knotwork.plugins`
+  entry-point scan. Unset or `0` changes nothing. (c) Studio first-visit sample: each server process
+  renders into its own `artifacts/studio/sample/<kernel>/tangle-<uuid>/` folder. The shared fixed
+  path let pytest-xdist workers rewrite PNGs another worker was certifying or reading
+  ("image file is truncated").

@@ -2,7 +2,9 @@
 
 > Knotwork is a proof-carrying visual task factory for vision-language models. It renders seeded industrial scenes (rack patch bays, cable tangles, analog gauges, gauge panels) and releases a task only after an import-isolated kernel re-derives every answer from renderer object masks and cross-checks it against the visible image. The same certified tasks feed a diagnostic Model Arena and a post-training engine (grounded vCoT SFT, DPO, verl GRPO, a deterministic RLVR verifier). It runs fully offline with `uv`; paid model calls are opt-in.
 
-Scope: 4 domains (rack_patch, tangle, gauge, panel), 11 question families, 19 `knot` subcommands, a 14-class fault-injection matrix (56 / 56 caught), 66 golden bundles, 553 offline tests. One Docker image runs air-gapped and unrestricted by default, or as a capped Cloud Run sandbox with `KNOTWORK_PUBLIC_DEMO=1`.
+Scope: 4 domains (rack_patch, tangle, gauge, panel), 11 question families, 19 `knot` subcommands, a 14-class fault-injection matrix (56 / 56 caught), 66 golden bundles, 560 offline tests. One Docker image runs air-gapped and unrestricted by default, or as a capped, Offline-Mock-only Cloud Run sandbox with `KNOTWORK_PUBLIC_DEMO=1`.
+
+Live results: v1 Phase 5 audit (1,069 trials, $1.12) and the v2 four-domain audit (531 calls, k = 3, T = 0.7, $0.67; GPT-5.4 44.6 %, Gemini 2.5 Flash 28.4 %, Qwen3-VL-235B 26.6 %; post-training pack 55 SFT / 354 DPO / 59 GRPO). Evidence: docs/evidence/v2_live_audit/.
 
 Rules for agents: the trusted kernel `src/knotwork/knotcore/` must never import plugins, network, UI or ML code; tests and gates are offline (`KNOTWORK_NETWORK=deny`); never put an API key in a file; never edit `.checkpoints/*`.
 
@@ -15,6 +17,8 @@ Rules for agents: the trusted kernel `src/knotwork/knotcore/` must never import 
 - [BLOCKERS.md](BLOCKERS.md): open items with status and root cause
 - [Plugin SDK](docs/PLUGIN_SDK.md): write and ship a task plugin as an external wheel
 - [Deploy to Cloud Run](docs/DEPLOY_CLOUD_RUN.md): the same image as a capped public sandbox
+- [v2 live audit evidence](docs/evidence/v2_live_audit/report.md): report, metrics, trials, post-training summary, verification log
+- [Literature](literature/INDEX.md): the nine cited works with verified licenses and BibTeX
 
 ## CLI
 
@@ -34,12 +38,11 @@ Rules for agents: the trusted kernel `src/knotwork/knotcore/` must never import 
 
 ## verl reward interface
 
-- `knotwork.posttrain.reward.compute_score(data_source, solution_str, ground_truth, extra_info=None) -> dict`: native verl custom-reward signature; `score` = 0.60 outcome + 0.25 spatial grounding IoU + 0.15 format and abstention; `reward_hack_flag` marks a correct answer without grounding
+- `knotwork.posttrain.reward.compute_score(data_source, solution_str, ground_truth, extra_info=None) -> dict`: native verl custom-reward signature; `score` = 0.60 outcome + 0.25 spatial grounding IoU + 0.15 format and abstention; `reward_hack_flag` marks a correct answer without grounding, which is gated to format credit only (score <= 0.15; raw correctness stays in `outcome_score`, `effective_outcome_score` is 0.0)
 - `POST /score` body `{"data_source", "solution_str", "ground_truth", "extra_info"?}`; `POST /score_batch` body `{"items": [...]}`
 - SFT target format: `<think>Step k (phase): ... <box>[x1, y1, x2, y2]</box> ...</think>` then `\boxed{answer}`, boxes on a 0-1000 grid
 
 ## Optional
 
 - [SPEC.md](SPEC.md): normative specification and decision log
-- [pitch.md](pitch.md): one-page summary
 - [Submission checklist](docs/SUBMISSION_CHECKLIST.md): deliverable-to-evidence map

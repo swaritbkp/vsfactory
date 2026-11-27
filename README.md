@@ -25,8 +25,9 @@ a reward verifier. All of it runs offline.
 | Golden self test | 66 / 66 bundles regenerate and re-verify | `knot selftest` |
 | Structural diversity (Vendi) | 2.1×–3.7× a recolour-only baseline | `knot diversity` |
 | Live VLM audit | 1,069 trials, 943 paid calls, $1.12 total, 3 models | `samples/live_run/` |
+| v2 live 4-domain audit | 531 calls (530 scored), *k* = 3, *T* = 0.7, $0.67, 3 models; pack 55 SFT / 354 DPO / 59 GRPO | [`docs/evidence/v2_live_audit/`](docs/evidence/v2_live_audit/) |
 | Certified throughput | 544–831 `rack_patch` items/hour on one vCPU; $48–$74 per 1M at $0.04/vCPU-hour | `knot bench-throughput` |
-| Test suite | 553 offline tests (`tier0` 186, `tier1` 263, `tier2` 104) | `uv run pytest --collect-only` |
+| Test suite | 560 offline tests (`tier0` 186, `tier1` 270, `tier2` 104) | `uv run pytest --collect-only` |
 | Network policy | `KNOTWORK_NETWORK=deny` by default; paid calls are opt-in | `Dockerfile`, `tests/conftest.py` |
 
 ![Studio: a certified rack patch-bay task in the vCoT Steps view](docs/assets/studio_rack_patch_vcot.png)
@@ -231,12 +232,76 @@ without repeating any trial. Controls cover pause, stop, retry-failed-only and a
 - **Outputs.** `report.html`, `report.md`, `report_metrics.json`, `trials.csv` and an audit ZIP.
   Any wrong answer can be sent to Forensics or pinned to a regression suite.
 
-![Model Arena: four-domain offline mock campaign with leaderboard and pass@k / pass^k table](docs/assets/model_arena_reliability.png)
-*Model Arena, a four-domain Offline Mock campaign (279 / 279 trials, k = 3, temperature 0.7). The
-leaderboard shows Wilson intervals and cost per correct answer, and the reliability table shows
-`pass@1`, `pass@k` and `pass^k`. Replies in this session are simulated, not model output.*
+![Model Arena: the live four-domain session with leaderboard and pass@k / pass^k table](docs/assets/model_arena_reliability.png)
+*Model Arena, the live `full_v2_live_eval` session (530 / 531 trials scored, k = 3, temperature
+0.7, $0.67). The leaderboard shows Wilson intervals and cost per correct answer, and the
+reliability table shows `pass@1`, `pass@k` and `pass^k` per block and model.*
 
-### Live audit
+### v2 Full 4-Domain Live Reliability & Post-Training Audit (531 Live Calls, `k = 3`, `T = 0.7`)
+
+Run on 2026-11-27 from the committed campaign file
+[`docs/examples/full_v2_live_campaign.yaml`](docs/examples/full_v2_live_campaign.yaml) (hard spend cap
+$10.00). It has 5 blocks of 12 freshly generated items, 3 models, *k* = 3 repeats per item at
+temperature 0.7. The plan was 5 × 12 × 3 × 3 = 540 calls. The kernel certified 59 of the
+60 items and quarantined 1 (`rack_patch` monochrome), and only certified
+items are asked, so **531 live calls** went out: 530 scored and 1 API error
+(Gemini 2.5 Flash, `rack_patch` monochrome; not retried). **Spend: $0.6727.** Kernel
+`cc915c558ec0`.
+
+| Model | Scored trials | Accuracy (Wilson 95 % CI) | API errors | Cost |
+|---|---|---|---|---|
+| GPT-5.4 | 177 | 44.6 % (37.5–52.0) | 0 | $0.5295 |
+| Gemini 2.5 Flash | 176 | 28.4 % (22.3–35.5) | 1 | $0.0732 |
+| Qwen3-VL-235B-A22B | 177 | 26.6 % (20.6–33.5) | 0 | $0.0700 |
+
+Per block, `pass@1` is single-attempt accuracy over all repeats, `pass@3` the share of items solved at
+least once in 3 tries and `pass^3` the share solved on all 3. Gap = `pass@3 − pass^3`.
+
+| Block | Model | Items | pass@1 (Wilson 95 % CI) | pass@3 | pass^3 | Gap | Cost |
+|---|---|---|---|---|---|---|---|
+| `rack_patch` · standard colour (Clean) | GPT-5.4 | 12 | 61.1 % (22/36; 44.9–75.2) | 75.0 % | 50.0 % | 25.0 pp | $0.1144 |
+| `rack_patch` · standard colour (Clean) | Gemini 2.5 Flash | 12 | 13.9 % (5/36; 6.1–28.7) | 25.0 % | 0.0 % | 25.0 pp | $0.0173 |
+| `rack_patch` · standard colour (Clean) | Qwen3-VL-235B-A22B | 12 | 19.4 % (7/36; 9.8–35.0) | 25.0 % | 16.7 % | 8.3 pp | $0.0189 |
+| `rack_patch` · monochrome (High stress) | GPT-5.4 | 11 | 27.3 % (9/33; 15.1–44.2) | 45.5 % | 9.1 % | 36.4 pp | $0.1044 |
+| `rack_patch` · monochrome (High stress) | Gemini 2.5 Flash | 10 (+1 partial) | 12.5 % (4/32; 5.0–28.1) | 30.0 % | 0.0 % | 30.0 pp | $0.0151 |
+| `rack_patch` · monochrome (High stress) | Qwen3-VL-235B-A22B | 11 | 3.0 % (1/33; 0.5–15.3) | 9.1 % | 0.0 % | 9.1 pp | $0.0212 |
+| `tangle` · monochrome (High stress) | GPT-5.4 | 12 | 47.2 % (17/36; 32.0–63.0) | 83.3 % | 16.7 % | 66.7 pp | $0.1164 |
+| `tangle` · monochrome (High stress) | Gemini 2.5 Flash | 12 | 33.3 % (12/36; 20.2–49.7) | 58.3 % | 8.3 % | 50.0 pp | $0.0192 |
+| `tangle` · monochrome (High stress) | Qwen3-VL-235B-A22B | 12 | 30.6 % (11/36; 18.0–46.9) | 50.0 % | 8.3 % | 41.7 pp | $0.0158 |
+| `gauge` · aged dial (High stress) | GPT-5.4 | 12 | 75.0 % (27/36; 58.9–86.2) | 91.7 % | 58.3 % | 33.3 pp | $0.0887 |
+| `gauge` · aged dial (High stress) | Gemini 2.5 Flash | 12 | 63.9 % (23/36; 47.6–77.5) | 75.0 % | 50.0 % | 25.0 pp | $0.0099 |
+| `gauge` · aged dial (High stress) | Qwen3-VL-235B-A22B | 12 | 63.9 % (23/36; 47.6–77.5) | 75.0 % | 58.3 % | 16.7 pp | $0.0060 |
+| `panel` · sockets-to-gauges (Hard logic) | GPT-5.4 | 12 | 11.1 % (4/36; 4.4–25.3) | 16.7 % | 8.3 % | 8.3 pp | $0.1056 |
+| `panel` · sockets-to-gauges (Hard logic) | Gemini 2.5 Flash | 12 | 16.7 % (6/36; 7.9–31.9) | 33.3 % | 8.3 % | 25.0 pp | $0.0117 |
+| `panel` · sockets-to-gauges (Hard logic) | Qwen3-VL-235B-A22B | 12 | 13.9 % (5/36; 6.1–28.7) | 16.7 % | 8.3 % | 8.3 pp | $0.0082 |
+
+Three findings follow.
+
+1. **Colour still stands in for tracing, now on `rack_patch`.** Unique cable colours versus
+   monochrome cables on the same rack layout: GPT-5.4 61.1 % → 27.3 % (Fisher *p* = 0.007), Qwen3-VL
+   19.4 % → 3.0 % (Fisher *p* = 0.057), Gemini 2.5 Flash
+   13.9 % → 12.5 % (Fisher *p* = 1.000) (already near the floor with colour).
+2. **Single-run accuracy overstates reliability.** 11 of 15 block × model cells have a
+   `pass@3 − pass^3` gap of 10 points or more. The widest: GPT-5.4 on
+   `tangle` monochrome solves 83.3 % of items at least once but only
+   16.7 % on all three tries.
+3. **Multi-hop panels are the floor; aged gauges are the ceiling.** `panel` Hard logic sits at
+   11.1–16.7 % for every model, while the aged `gauge` dial reaches 63.9–75.0 %.
+
+**Post-training pack** (`knot posttrain-pack` on this session, offline): 8 GRPO Frontier cells,
+7 SFT Cold-Start cells, 0 Saturated; **55 SFT** grounded-vCoT records, **354 DPO**
+preference pairs and **59 GRPO** prompts (0 skipped). Training seeds are disjoint from evaluation
+seeds (eval ≤ 2,626, train 10,000–10,599, fresh OOD eval from 20,000).
+
+Audit files: [`report.md`](docs/evidence/v2_live_audit/report.md),
+[`report_metrics.json`](docs/evidence/v2_live_audit/report_metrics.json) (every metric, Wilson
+interval, z / Fisher contrast and finding), [`trials_summary.csv`](docs/evidence/v2_live_audit/trials_summary.csv)
+(all 531 trials without raw replies, checked for secrets),
+[`posttrain_summary.json`](docs/evidence/v2_live_audit/posttrain_summary.json) (frontier table, pack
+counts, provenance attestation) and [`verification_log.txt`](docs/evidence/v2_live_audit/verification_log.txt).
+Raw images and the full workspace stay local in `artifacts/arena_workspaces/full_v2_live_eval/`.
+
+### v1 Phase 5 live audit and P5 control audit (1,069 trials, $1.12)
 
 One live run on the 600-item-per-plugin `split=test` pool: `tangle`, `gauge` and `panel`, monochrome
 cables, seed 0. It combined adaptive staircases with diagnostic blocks (colour ablation, twins,
@@ -278,7 +343,7 @@ Three findings follow.
 
 ![Premise control: answered yes on true vs false premises](docs/figures/fig02_false_premise.png)
 
-`rack_patch` was added after this run and has offline mock sessions only. Raw outputs, per-trial
+`rack_patch` was added after this run; its live results are in the v2 audit above. Raw outputs, per-trial
 records and the control's certification checks are in [`samples/live_run/`](samples/live_run/).
 `uv run knot report` rebuilds every figure offline.
 
@@ -328,12 +393,17 @@ Three rules close the obvious exploits:
 
 - Spraying many boxes, or drawing one box over the whole image, cannot buy IoU.
 - A wrong answer earns only a fraction of the process credit, so it always scores below 0.25.
-- A correct answer with zero grounding raises `reward_hack_flag`.
+- A correct answer with zero grounding, on an item that has certified boxes, raises
+  `reward_hack_flag` and is gated: its outcome credit is withheld (`effective_outcome_score` 0.0,
+  with the raw correctness still reported as `outcome_score`). It earns only the format and
+  abstention term, so it scores at most 0.15 and cannot gain positive GRPO advantage over grounded
+  rollouts. Items without certified boxes are graded on outcome and format only, with the weights
+  renormalised to 0.80 / 0.20, and are not gated.
 
-![Reward verifier sandbox: a correct answer with no boxes scores 0.75 and is flagged](docs/assets/posttrain_reward_sandbox.png)
+![Reward verifier sandbox: a correct answer with no boxes is gated to 0.150 and flagged](docs/assets/posttrain_reward_sandbox.png)
 *Post-Training Pack, reward verifier sandbox. A "lucky guess" rollout gets the right answer with
-no boxes. It scores 0.750 and raises the reward-hack flag. The grounded vCoT rollout for the same
-item scores 1.000.*
+no boxes. The grounding gate withholds its outcome credit, so it scores 0.150 and raises the
+reward-hack flag. The grounded vCoT rollout for the same item scores 1.000.*
 
 `knot serve-verifier` exposes the same function over HTTP. It binds to loopback only, makes no
 outbound calls and keeps no state:
@@ -375,8 +445,9 @@ curriculum_spec.json --split train` renders the training items.
 | `provenance_attestation.json` | Git commit, `kernel_sha256`, dataset and eval-seed hashes, `train_seed_disjoint`, QA filter, and the one external asset: `assets/fonts/DejaVuSans.ttf`, SHA-256 `ae7b7855…837280`, Bitstream Vera / DejaVu license |
 
 ![Post-Training Pack: frontier classification and seed-disjoint ranges](docs/assets/posttrain_frontier.png)
-*Post-Training Pack tab for the four-domain mock session: 10 GRPO Frontier cells, 2 SFT Cold-Start
-cells, training seeds from 20,000 and a fresh OOD range from 30,000.*
+*Post-Training Pack tab for the live `full_v2_live_eval` session: 8 GRPO Frontier cells, 7 SFT
+Cold-Start cells, 0 Saturated; training seeds 10,000–10,599 and a fresh OOD range from 20,000. The
+exported pack holds 55 SFT, 354 DPO and 59 GRPO records.*
 
 ### Throughput and unit economics (`throughput.py`)
 
@@ -498,10 +569,12 @@ With `KNOTWORK_PUBLIC_DEMO=1` the same image becomes a public sandbox
 
 - All storage is confined to `/tmp/knotwork_demo/`. Symlinks and `..` are resolved first, and any
   path outside is refused.
-- The server enforces caps: 10 items per block, 3 blocks, *k* ≤ 3, 10-item Studio batches and a
-  $1.00 spend cap.
-- The server never reads `OPENROUTER_API_KEY` or `.env`. Runs default to Offline Mock, and a
-  visitor's own key stays in their browser session.
+- The server enforces caps: 10 items per block, 3 blocks, *k* ≤ 3 and 10-item Studio batches.
+- Model Arena runs Offline Mock only. The Live mode and every API key field are removed from the
+  page, and the launch handler forces `mode="mock"` with no key. The server never reads
+  `OPENROUTER_API_KEY` or `.env`.
+- The `Import campaign.yaml` uploader is hidden, and external `knotwork.plugins` entry points are
+  not loaded: only the four built-in plugins run.
 - A sandbox banner shows on every page. With the variable unset or `0`, nothing changes.
 
 ```bash
@@ -530,8 +603,8 @@ Full entries are in [`BLOCKERS.md`](BLOCKERS.md), and the gate record is in
   it stays red until Phases 3–5 are re-run and Blocker 3.6 closes.
 - **Live results sit at the floor.** Staircases bound thresholds rather than measure them, and twin
   drops are directional at n = 24 (L-1). Abstention is not measured.
-- **Coverage.** `rack_patch` has no live VLM results and is not in the golden set. `knot generate`
-  does not expose it.
+- **Coverage.** `rack_patch` has live results from one small audit only (12 items per block,
+  v2 live audit) and is not in the golden set. `knot generate` does not expose it.
 - **Renderer scope.** Scenes are orthographic 2-D renders with a photographic finish. There is no
   perspective, lens distortion or occlusion by real objects, and prompts are English only. Results do
   not transfer to claims about natural images or real instruments ([`DATA_CARD.md`](DATA_CARD.md)).
@@ -575,9 +648,10 @@ implemented on `main` today.
 | [`docs/DEPLOY_CLOUD_RUN.md`](docs/DEPLOY_CLOUD_RUN.md) | The sandboxed Cloud Run deployment |
 | [`docs/SUBMISSION_CHECKLIST.md`](docs/SUBMISSION_CHECKLIST.md) | Deliverable-to-evidence map for the hackathon submission |
 | [`docs/schemas/`](docs/schemas/) | JSON schemas exported from `knotcore.contracts` |
-| [`SPEC.md`](SPEC.md) | Normative specification and decision log (D-1 … D-47) |
+| [`SPEC.md`](SPEC.md) | Normative specification and decision log (D-1 … D-48) |
+| [`literature/INDEX.md`](literature/INDEX.md), [`literature/references.bib`](literature/references.bib) | The nine cited works: verified licenses, BibTeX, and the openly licensed PDFs |
+| [`docs/evidence/v2_live_audit/`](docs/evidence/v2_live_audit/) | v2 live 4-domain audit: report, metrics, trial summary, post-training summary, verification log |
 | [`samples/README.md`](samples/README.md) | Committed sample bundles, live failures, live-run outputs, fault proof |
-| [`pitch.md`](pitch.md) | One-page summary for non-specialist readers |
 | [`AGENTS.md`](AGENTS.md), [`CLAUDE.md`](CLAUDE.md) | Operating rules for coding agents |
 | [`llms.txt`](llms.txt) | Machine-readable summary |
 | [`TASKS.md`](TASKS.md), [`PROGRESS.md`](PROGRESS.md) | Phase-gated build plan and historical build log |
@@ -598,15 +672,18 @@ implemented on `main` today.
 In Knotwork, the reference trajectories and rewards for [8] and [9] come from certified masks, not
 from a stronger model.
 
-1. E. B. Wilson. *Probable inference, the law of succession, and statistical inference.* JASA 22(158), 1927.
+1. E. B. Wilson. *Probable inference, the law of succession, and statistical inference.* JASA 22(158), 209–212, 1927. [doi:10.1080/01621459.1927.10502953](https://doi.org/10.1080/01621459.1927.10502953)
 2. D. Friedman, A. B. Dieng. *The Vendi Score: A Diversity Evaluation Metric for Machine Learning.* TMLR 2023. [arXiv:2210.02410](https://arxiv.org/abs/2210.02410)
 3. P. Rahmanzadehgervi, L. Bolton, M. R. Taesiri, A. T. Nguyen. *Vision language models are blind.* ACCV 2024. [arXiv:2407.06581](https://arxiv.org/abs/2407.06581)
 4. K. Lee et al. *VLind-Bench: Measuring Language Priors in Large Vision-Language Models.* Findings of NAACL 2025. [arXiv:2406.08702](https://arxiv.org/abs/2406.08702)
 5. J. Sun et al. *Seeing What Is Actually There: PriVE-Bench and PriVE-Tools for Counterfactual Evaluation of Agentic Visual Evidence in VLMs.* EMNLP 2026. [ACL Anthology 2026.emnlp-main.760](https://aclanthology.org/2026.emnlp-main.760/)
 6. J. Roberts et al. *ZeroBench: An Impossible Visual Benchmark for Contemporary Large Multimodal Models.* ICML 2026. [arXiv:2502.09696](https://arxiv.org/abs/2502.09696)
 7. Y. Feng et al. *VisualSphinx: Large-Scale Synthetic Vision Logic Puzzles for RL.* arXiv 2025. [arXiv:2505.23977](https://arxiv.org/abs/2505.23977)
-8. Q. Wu, X. Yang, Y. Zhou et al. *Grounded Chain-of-Thought for Multimodal Large Language Models.* CVPR 2026. [arXiv:2503.12799](https://arxiv.org/abs/2503.12799)
+8. Q. Wu, X. Yang, Y. Zhou et al. *Grounded Chain-of-Thought for Multimodal Large Language Models.* arXiv 2025. [arXiv:2503.12799](https://arxiv.org/abs/2503.12799)
 9. J. Lu et al. *Beyond Where to Look: Trajectory-Guided Reinforcement Learning for Multimodal RLVR.* arXiv 2026. [arXiv:2603.26126](https://arxiv.org/abs/2603.26126)
+
+Verified licenses, BibTeX and the openly licensed PDF copies (CC BY / CC BY-SA, at most 10 MB each) are in
+[`literature/INDEX.md`](literature/INDEX.md) and [`literature/references.bib`](literature/references.bib).
 
 ### Repository provenance and development history
 

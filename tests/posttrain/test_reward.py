@@ -39,7 +39,25 @@ def test_ungrounded_lucky_guess_is_flagged_and_scored_lower() -> None:
     r = reward.compute_score("knotwork/rack_patch", guess, truth, extra)
     assert r["outcome_score"] == 1.0 and r["grounding_iou"] == 0.0 and r["reward_hack_flag"]
     assert r["score"] < reward.compute_score("knotwork/rack_patch", cot, truth, extra)["score"]
-    assert r["score"] == pytest.approx(0.75)
+    assert r["effective_outcome_score"] == 0.0 and r["grounding_gated"]
+    assert r["score"] == pytest.approx(0.15)  # format weight only: no positive RL advantage
+
+
+def test_gate_caps_any_ungrounded_correct_answer_at_the_format_weight() -> None:
+    _, truth, extra = _case()
+    answer = json.loads(truth)["canonical"]
+    for text in (f"\\boxed{{{answer}}}", f"ANSWER: {answer}", f"<think>sure</think>\n{answer}"):
+        r = reward.compute_score("knotwork/rack_patch", text, truth, extra)
+        assert r["outcome_score"] == 1.0 and r["grounding_iou"] == 0.0, text
+        assert r["reward_hack_flag"] and r["score"] <= 0.15, (text, r["score"])
+
+
+def test_gate_leaves_outcome_only_grading_untouched() -> None:
+    _, truth, _ = _case()
+    answer = json.loads(truth)["canonical"]
+    r = reward.compute_score("x", f"\\boxed{{{answer}}}", truth, {"domain": "rack_patch"})
+    assert not r["grounding_gated"] and r["effective_outcome_score"] == 1.0
+    assert r["score"] == pytest.approx(0.8 + 0.2 * 0.5 * (0.5 + 1.0))
 
 
 def test_wrong_answers_score_below_a_quarter_even_when_perfectly_grounded() -> None:

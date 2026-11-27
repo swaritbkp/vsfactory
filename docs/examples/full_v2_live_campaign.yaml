@@ -1,0 +1,36 @@
+# Knotwork Model Arena campaign: full v2 4-domain live reliability audit.
+# 5 blocks x 12 items x k = 3 repeats x 3 models = 540 live calls, temperature 0.7, hard cap $10.00.
+# Run it headlessly with:
+#   uv run knot arena-run --campaign docs/examples/full_v2_live_campaign.yaml \
+#     --results-dir artifacts/arena_workspaces/full_v2_live_eval --report
+# Live mode reads the key from the OPENROUTER_API_KEY environment variable; never put it here.
+# Presets are the Studio's one-click scenarios (knotwork.studio.present.PRESETS):
+#   Clean       unique cable colours, low reasoning load, no occlusion
+#   High stress monochrome cables (color_regime mono), visual stress 0.8, realism 0.9 (aged surface)
+#   Hard logic  reasoning load 0.9, occlusion 0.6 (distractors), visual stress 0.2
+session_name: Full v2 4-domain live audit
+slug: full-v2-live-eval
+notes: >-
+  v2 live reliability and post-training audit: rack_patch standard colour and monochrome,
+  tangle monochrome, gauge aged dial, panel hard sockets-to-gauges; k = 3 at T = 0.7.
+tags: [v2, live, audit, k3]
+mode: live
+data_mode: generate
+data_dir: artifacts/arena_workspaces/full_v2_live_eval/data
+results_dir: artifacts/arena_workspaces/full_v2_live_eval
+default_models:
+  - openai/gpt-5.4
+  - google/gemini-2.5-flash
+  - qwen/qwen3-vl-235b-a22b-instruct
+blocks:
+  - {block_id: rack-colour, domain: rack_patch, preset: Clean, n: 12, seed: 2611}
+  - {block_id: rack-mono, domain: rack_patch, preset: High stress, n: 12, seed: 2612}
+  - {block_id: tangle-mono, domain: tangle, preset: High stress, n: 12, seed: 2613}
+  - {block_id: gauge-aged, domain: gauge, preset: High stress, n: 12, seed: 2614}
+  - {block_id: panel-hard, domain: panel, preset: Hard logic, n: 12, seed: 2615}
+spend_cap_usd: 10.0
+max_concurrency: 4
+rpm: 60
+max_tokens: 512
+repeats: 3
+temperature: 0.7
