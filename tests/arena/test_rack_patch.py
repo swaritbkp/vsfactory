@@ -1,5 +1,6 @@
 """Rack patch-bay yield gate: 10 items through the unmodified kernel, >= 80 % certified on the first
-attempt with no E_* code on a certified bundle; plus the closed loop to Forensics."""
+attempt with no E_* code on a certified bundle; plus the closed loop to Forensics. Runs in tier2
+(nightly); `test_rack_patch_fast.py` keeps a 3-render first-attempt check in tier1."""
 
 from __future__ import annotations
 
@@ -13,7 +14,6 @@ from knotwork.arena import forensics as arena_forensics
 from knotwork.arena.generation import make_item_job
 from knotwork.arena.schemas import ItemRecord
 from knotwork.pipeline.io import read_json
-from knotwork.plugins.registry import available, get_plugin
 
 PRESETS = ("High stress", "Hard logic", "Clean", "CVD", "High stress")
 
@@ -27,11 +27,6 @@ def rack_items(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, list[Ite
     with ProcessPoolExecutor(workers) as pool:
         items = [ItemRecord.model_validate(r) for r in pool.map(make_item_job, jobs)]
     return data, items
-
-
-def test_rack_is_a_discovered_plugin_with_trace_and_cross() -> None:
-    assert "rack_patch" in available()
-    assert [f.value for f in get_plugin("rack_patch").families] == ["T1_TRACE", "T2_CROSS"]
 
 
 def test_rack_first_attempt_yield_is_at_least_80_percent(rack_items) -> None:  # type: ignore[no-untyped-def]

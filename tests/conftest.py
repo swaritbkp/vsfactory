@@ -42,6 +42,8 @@ TIERS: tuple[tuple[str, str], ...] = (
     ("tests/export/test_harbor_oracle.py", "tier2"),
     ("tests/export/test_hf_rlvr.py", "tier2"),
     ("tests/probes/", "tier2"),
+    # 10-render yield gate + Forensics loop: nightly; `test_rack_patch_fast.py` stays in tier1.
+    ("tests/arena/test_rack_patch.py", "tier2"),
     ("tests/bench/test_stats_budget.py", "tier0"),
     ("tests/bench/", "tier2"),
     ("tests/conformance/test_contracts.py", "tier0"),
