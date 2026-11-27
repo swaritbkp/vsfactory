@@ -18,7 +18,8 @@ program, answer, kernel certificate with every step's evidence, file digests, ca
 | gauge | G1_READ | `15` | `78`: needle moved (0.5 % of pixels) | `15`: restyled (95 %) |
 | panel | P1_READ_TRACE | `7` | `50`: traced gauge's needle moved (0.3 %) | `7`: restyled (75 %) |
 
-All nine bundles are `CERTIFIED`: the kernel re-derived the answer from pixels (D3) and it matched the
+All nine bundles are `CERTIFIED`: the kernel re-derived the answer from the renderer's object masks,
+cross-checked against the visible image (D3), and it matched the
 generator's symbolic answer (D1), with every claim re-checked.
 
 ## `live_failures/`: three items all three models answered wrong
@@ -49,3 +50,9 @@ answer, extracted reply, correctness, cost) and `bench_live_summary.json` (the s
 The true-premise control (SPEC D-37) adds `p5_control_trials.jsonl` (72 trials, with the serving
 provider) and `p5_control.json` (the 24 matched pairs with their certification checks, claimed
 zones and prompts, plus the per-model paired statistics).
+
+## `fault_proof/`: the default Fault Proofs pair
+
+The committed default for the Forensics page's Fault proofs section: fault `M3` at seed 3, the clean
+control `CERTIFIED` and the faulty render `QUARANTINED` with `E_LABEL_MISMATCH` (and
+`E_D1_D3_MISMATCH`). See `proof.json`; rebuilt by `scripts/build_fault_proof_sample.py`.

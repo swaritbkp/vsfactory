@@ -114,6 +114,6 @@ Format per entry:
   level (3) to level 1 on the tangle track and never climbed back (no reversals), so thresholds of 1.1-1.7 crossings bound rather than measure ability.
   The per-crossing error MLE (0.80 to ~1.0) and the composition product law are uninformative at this
   floor. Per-model twin drops are directional (n = 24, exact McNemar p = 0.125 / 0.25 / 0.375).
-- Handling: stated as caveats in README "Live benchmark results", VERIFICATION.md and the figure subtitles.
+- Handling: stated as caveats in README ("Full live results table and caveats"), VERIFICATION.md and the figure subtitles.
   An easier level ladder (0-crossing items) would be needed to place thresholds for current models.
 - Status: documented; no code change.

@@ -8,11 +8,13 @@ not committed, so this page records their results.
 
 | Check | Result | Evidence |
 |---|---|---|
-| GitHub Actions `ci / gates` (Ubuntu, offline, no API keys) | **green** on `f83c8a7`: ruff, mypy (strict kernel), import isolation, full pytest, seed known-answer test, Phase 0 gate, `knot mutate --fault all --n 2` | `.github/workflows/ci.yml` |
-| Full offline test suite (local, Windows) | 346 passed, 1 skipped (POSIX-only socket test) | `pytest -q` |
-| Kernel isolation | 819 / 850 executable LOC; import-linter 3 contracts kept; AST scan clean | gate `core.*` |
+| GitHub Actions `ci` (Ubuntu, offline, no API keys), every push and PR | **green** on `feat/vtf-v2`: `tier0` (ruff, ruff format, import-linter, mypy strict kernel, seed known-answer test, tier0 pytest) and `tier1` (plugins, pipeline, faults, Studio and Model Arena on shared fixtures) run in parallel, under 2 minutes wall time | `.github/workflows/ci.yml` |
+| GitHub Actions `nightly` (scheduled on `main`, or manual) | `tier2` pytest (bulk generation, probes, bench, 10-render `rack_patch` yield gate, background-runner resume) and the phase gates (`verify_phase.py --phase 0`, `knot mutate`, `knot selftest`, Phase 4 gate) | `.github/workflows/nightly.yml` |
+| Kernel isolation (TCB contract, SPEC D-38) | import-linter 3 contracts kept; TCB audit clean (allow-listed imports, no network / process / dynamic-code modules, no `SceneIR.payload` access, deterministic `kernel_sha256`). The 850 / 1350 LOC budgets are informational telemetry since D-38 (currently 1153 executable / 1576 total) | gate `core.ast_isolation`, `tests/conformance/test_kernel_isolation.py` |
 | Phase 2 gate | PASSED: exact base counts, rejection ≤ 10 %, determinism across worker counts, valid twins, exact gaslight counts | `phase2.json` |
-| Fault injection M1–M10 | 40 / 40 injections caught with the exact expected code (4 per fault), 0 / 40 clean controls rejected. That report predates the Phase 3 sampler changes; on current code the matrix is re-run by `tests/pipeline/test_mutate.py` and the CI mutate step | `mutate_report.json` |
+| Fault injection M1–M14 (v2, 2026-11-26) | 56 / 56 injections caught with the exact expected code (4 per fault, M11–M14 are the panel faults of D-39), 0 / 56 clean controls rejected. Re-run on current code by `tests/pipeline/test_mutate.py` (tier2) and the nightly mutate step | `knot mutate --fault all --n 4` → `artifacts/mutate/report.json` |
+| Real render defect caught by the kernel | crowded panel crossings clipped the top cable's halo: 4 / 120 clean panels failed the crossing-colour check; after the renderer fix 0 / 400 | commit `aaf2528` (measurement in its message) |
+| `rack_patch` yield (unmodified kernel) | 10 / 10 certified on the 10-render gate set, 8 / 10 on the first attempt (gate ≥ 80 %); tier1 keeps a 3-render first-attempt check | `tests/arena/test_rack_patch.py` (tier2), `tests/arena/test_rack_patch_fast.py` (tier1) |
 | Golden selftest | 66 bundles regenerated, answers + verdicts + kernel hash match the golden; report byte-identical across runs | gate `p3.selftest` |
 | File-only `knot verify` | 66 / 66 clean; a 1-bit id-buffer change and an edited answer are both caught (`E_DIGEST_MISMATCH`); imports no plugin code | gate `p3.verify` |
 | Diversity (Vendi, 256 items) | 3.73× tangle, 2.95× panel, 2.13× gauge over a recolour-only baseline (gate ≥ 2×) | gate `p3.diversity` |
@@ -51,11 +53,12 @@ control's code was checked locally with ruff, mypy, import-linter and `tests/ben
 
 ## Open items (documented limitations, `BLOCKERS.md`)
 
-- **Phase 3 `p3.probes`**: shortcut-probe residuals in tangle T1/T3 and the premise families (cause
-  analysed; human decision pending).
-- **Phase 5 `p5.bench_mock`**: tangle staircases for two mock models miss the ±1.5-level tolerance.
-  The fixed staircase rule is too coarse for shallow psychometric curves; all other Phase 5 checks
-  pass.
+- **Phase 3 `p3.probes`** (open): the v1 residuals in tangle T1/T3 and the premise families pass in
+  v2; one new row fails: panel P1_READ_TRACE image statistics 0.173 vs limit 0.164 (chance 0.113 +
+  0.051). Thresholds unchanged.
+- **Phase 5 `p5.bench_mock`** (resolved for the gate function): passes with a distinct item on every
+  staircase trial (D-46); mock_a panel sits exactly at the 1.5-level limit because the split has few
+  panel items with 6 or more crossings. The full `--phase 5` run was not repeated.
 - **Phase 4 gate record**: `phase4.json` still shows a scaffold bug (underscore in an object name) that
   was fixed afterwards. The fix is covered by `tests/scaffold` and the full suite; the Phase 4 gate
   itself was not re-run.
