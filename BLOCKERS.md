@@ -1,119 +1,117 @@
-# BLOCKERS and documented limitations
+# Open items and engineering defects
 
-**Summary.** No blocker stops the factory. Generation, certification, verification, export, CI and the
-live benchmark all work. The entries below are documented engineering limitations: each names
-the check affected, what was tried, the root cause, and the decision it needs. No gate threshold was
-relaxed to hide any of them (CLAUDE.md law 8).
+This register lists every known defect, failing gate and interpretive limit on `main`. Each entry
+gives its status, the check it affects, the root cause as far as it is known, what was tried, and
+the decision it still needs. No gate threshold has been relaxed to clear any entry (CLAUDE.md law 8).
 
-| # | Limitation | Affects | Status |
+None of these items stops generation, certification, file-only verification, export, the Studio,
+Model Arena, the post-training pack or CI.
+
+| ID | Item | Affects | Status |
 |---|---|---|---|
-| 3.6 | Shortcut-probe residuals | gate `p3.probes` only | v1 residuals pass in v2; open on one new row (panel P1 image stats) |
-| 5.6 | Mock staircase and error recovery | gate `p5.bench_mock` | passes in v2; one panel staircase sits at the 1.5-level limit |
-| L-1 | Live staircases at the floor | interpretation of live thresholds | documented in README, not a gate |
+| 3.6 | Shortcut-probe residual on `panel` P1 | gate `p3.probes` | Open |
+| 5.6 | Mock staircase tolerance | gate `p5.bench_mock` | Resolved for the gate function; full Phase 5 run not repeated |
+| G-1 | Phase 3–5 gate records predate current code | gate `p6.docs` | Open |
+| L-1 | Live staircases sit at the accuracy floor | interpretation of live thresholds | Documented; not a gate |
 
-Claude Code appends here when a task fails verification 3 times (see CLAUDE.md section 4).
-Format per entry:
+## 3.6 Shortcut-probe residual (gate `p3.probes`)
+- Status: OPEN. Gate `p3.probes` fails on one row. Probe thresholds are unchanged.
+- Verification command: `uv run python scripts/verify_phase.py --phase 3 --keep-going`
+- Current failure: `panel/P1_READ_TRACE gbdt_image_stats` accuracy 0.173 (26 of 150) against a limit
+  of 0.164 (chance 0.113 + 0.051). Measured 2026-11-26 with gate function `gate_probes` on a fresh
+  600-per-plugin `test` split, seed 101. This family was not part of the v1 failure.
+- Everything else in the probe gate passes on that split:
+  - tangle T1 `text_only` 0.176 against chance 0.180 (limit 0.232);
+  - tangle T3 `gbdt_image_stats` 0.495 against 0.500 (limit 0.570);
+  - premise yes/no `text_only` 0.444 and `gbdt_image_stats` 0.494 against 0.500 (limit 0.573);
+  - pooled Wilson upper bounds: tangle `text_only` 0.293 ≤ 0.323, panel `text_only` 0.316 ≤ 0.370;
+  - all 9 balance tests (premise bins p = 0.9999 / 0.9945);
+  - trivial baselines;
+  - near-duplicate rates: tangle 0.0017, gauge 0.0033, panel 0.0100 (limit 0.01).
+- Root cause: not diagnosed. A GBDT on global image statistics predicts the P1 reading slightly
+  above chance. The likely channel is a correlation between the traced gauge's needle position and
+  coarse image statistics, but this has not been confirmed.
+- History:
+  - v1 failed on eight rows: tangle T1/T3 and pooled `text_only`, panel `text_only`, the premise
+    families, and two balance tests.
+  - Three v1 attempts fixed the dedup and decile-balance checks: layout variety (D-27), decile-balanced
+    READ values (D-28) and exact answer balancing from a per-family slot ordinal (D-34).
+  - The premise leak came from a SPEC conflict. Fixed zone geometry (SPEC 8.2) plus the zone named in
+    the question (SPEC 8.3) let the text reveal the value decile.
+  - v2 (D-39) fixed that leak: zone colour order is randomised, value deciles are balanced, premise
+    families are scored as one yes/no task, trivial baselines were added, and T1/T3 slot order is
+    shuffled by a run-seeded permutation.
+- Impact: the panel P1 family can be answered slightly above chance from image statistics alone. P1
+  accuracies in reports should be read against that baseline, not against uniform chance.
+- Decision needed: run one diagnostic split regeneration (about 35 minutes) to find out which image
+  statistic carries the signal, then decide between a renderer fix and a family-specific baseline.
+
+## 5.6 Mock staircase tolerance (gate `p5.bench_mock`)
+- Status: RESOLVED for gate `p5.bench_mock`. The full `--phase 5` run was not repeated.
+  `STAIRCASE_LEVEL_TOL` is unchanged.
+- Verification command: `uv run python scripts/verify_phase.py --phase 5 --keep-going`
+- Original failure (v1): `mock_a/tangle: staircase 6.33 vs 12.00; mock_b/tangle: staircase 7.00 vs
+  4.99`. The SPEC 12.2 rule was too short and too coarse for shallow psychometric curves. It was
+  start at 3, 1-up-2-down, stop at 10 reversals or 50 trials. In 400 seeded simulations it landed
+  within 1.5 levels in only 26 % of runs at p = 0.04.
+- Fixes:
+  - D-39: coarse-then-fine steps, up to 75 trials, a logistic maximum-likelihood `k*`.
+  - D-46: every staircase trial asks an item not asked before, and the per-crossing estimate counts
+    each distinct request once. Before D-46, `mock_a` spent 75 trials on 18 distinct items and
+    counted repeats of a deterministic model as independent.
+- Current measurement (gate function `gate_bench_mock`, PASS):
+  - Per-crossing error estimates with 95 % CI: `mock_a` 0.034 (0.022–0.047, true 0.04), `mock_b`
+    0.071 (0.050–0.098, true 0.08), `mock_c` 0.155 (0.123–0.192, true 0.15).
+  - Staircase estimate against expected level:
+    - `mock_a`: tangle 12.00 / 11.58, panel 5.50 / 7.00
+    - `mock_b`: tangle 4.92 / 4.92, panel 5.50 / 6.94
+    - `mock_c`: tangle 3.11 / 2.56, panel 2.45 / 3.41
+- Residual: `mock_a` panel passes exactly at the 1.5-level limit, and `mock_b` panel at 1.44. The
+  split holds only 3 panel items with 6 crossings and 1 with 7, so shallow panel curves are
+  data-limited.
+- Impact: none on certified data. The staircase is a measurement instrument, and its panel track
+  has little headroom at high crossing counts.
+
+## G-1 Phase 3–5 gate records predate current code (gate `p6.docs`)
+- Status: OPEN.
+- Verification command: `uv run python scripts/verify_phase.py --phase 6 --keep-going`
+- Observation:
+  - `artifacts/gates/phase3.json` is `ok: false` on `core.ruff` and `p3.probes`. `core.ruff` is
+    clean on current code; `p3.probes` is entry 3.6.
+  - `phase4.json` is `ok: false` on `core.pytest` and `p4.scaffold`. The scaffold bug, an underscore
+    in a generated object name, was fixed afterwards and is covered by `tests/scaffold`.
+  - `phase5.json` is `ok: false` on `p5.bench_mock`, which is resolved in entry 5.6.
+- Root cause: the records were written by v1 runs. The full Phase 3, 4 and 5 gates have not been
+  re-run since the fixes.
+- Impact: gate `p6.docs` requires every phase record to be `ok` (D-47), so it fails even though
+  its documentation checks (`docs_problems`) pass. That requirement is deliberate and stays.
+- Decision needed: schedule a full Phase 3–5 re-run (the Phase 3 gate regenerates 600 items per
+  plugin). Phase 3 will still fail until 3.6 is closed.
+
+## L-1 Live staircases sit at the floor (not a gate)
+- Status: DOCUMENTED. No code change.
+- Observation: in the live run every model fails at 1–2 crossings. Gemini 2.5 Flash and
+  Qwen3-VL-235B dropped from the start level (3) to level 1 on the tangle track and never climbed
+  back. With no reversals, the thresholds of 1.1–1.7 crossings bound ability rather than measure it.
+  At this floor the per-crossing error estimate (0.80 to about 1.0) and the composition product law
+  carry no information. Per-model twin drops are directional only (n = 24, exact McNemar p = 0.125 /
+  0.25 / 0.375).
+- Handling: stated as caveats in `README.md`, `VERIFICATION.md` and the figure subtitles.
+- Next step: an easier level ladder, including 0-crossing items, would be needed to place
+  thresholds for current models.
+
+---
+
+**Entry template.**
+
+Agents append entries in this form when a task fails verification three times (CLAUDE.md section 4).
 
 ```
 ## <task id> <task title>
+- Status: OPEN
 - Verification command: `<exact command>`
 - Last failure (tail): <10 lines max>
 - Attempts: 1) <hypothesis + change> 2) <...> 3) <...>
 - Suspected root cause: <one sentence>
 - Proposed human decision: <one concrete question>
-- Status: OPEN
 ```
-
-
-## 3.6 Shortcut-probe residuals (gate `p3.probes`)
-- Verification command: `uv run python scripts/verify_phase.py --phase 3 --keep-going`
-- Last failure (tail):
-  `tangle/gbdt_image_stats: wilson_upper 0.328 > chance 0.273+0.05; tangle/text_only: wilson_upper 0.329 > chance 0.273+0.05;
-  tangle/T1_TRACE/text_only: acc 0.240 > chance 0.180+0.053; tangle/T3_ONTOP/gbdt_image_stats: acc 0.596 > chance 0.500+0.070;
-  panel/text_only: wilson_upper 0.276 > chance 0.206+0.05; panel/P5_PREMISE_CONTROL/text_only: acc 0.411 > chance 0.128+0.069;
-  balance panel/P5_PREMISE_CONTROL/bins: p=2e-06 < 0.00125; balance panel/T_GASLIGHT/bins: p=0.000309 < 0.00125`
-  Every other Phase 3 gate passes (pytest 299 passed, selftest, verify + tamper, freshness, Vendi 3.7x / 2.1x / 2.9x,
-  dedup tangle 0.002 / gauge 0.010 / panel 0.000).
-- Attempts: 1) pHash near-duplicates (gauge 1.36, panel 0.22 pairs/item) -> layout variety in gauge/panel/tangle
-  render code (D-27); dedup now passes. 2) G1 decile imbalance (p = 4.5e-5) -> decile-balanced READ values (D-28);
-  G1/P1 balance now passes. 3) Sampling-noise imbalance exploited by text_only / constant predictors -> exact
-  answer balancing from a per-family slot ordinal (D-34); gauge and all zone/T2/T3 balance tests now pass.
-  Stopped here per the owner's instruction not to loop on re-runs (each split regeneration is ~35 min).
-- Suspected root cause: two separate things.
-  (a) Premise families (P5_PREMISE_CONTROL, T_GASLIGHT): a SPEC conflict, not a sampler bug. SPEC 8.2 fixes the
-      zone geometry (red always in the top 1.5-3 deciles) and SPEC 8.3 states the zone in the question text, so a
-      true premise reveals the value's decile from text alone (P5 text_only 0.411). Making value deciles uniform
-      (needed for the SPEC 11.2 numeric chi-square) forces non-uniform zones, and then the claimed zone leaks
-      premise truth instead; both cannot hold under the fixed zone ranges.
-  (b) Tangle: T1 text_only (0.240 vs 0.180) and T3 gbdt_image_stats (0.596 vs 0.500) still clear chance after
-      exact balancing; not yet diagnosed (possible residual correlation between the ordinal-driven choices and
-      n / image density, or probe over-fit within small per-n groups).
-- Proposed human decision: for (a), choose one of: (i) exclude the premise families' value decile from the
-  numeric balance test and score premise probes on the yes/no token only; (ii) define premise chance as
-  1/2 x 1/(deciles spanned by the claimed zone) (D-29 amendment); (iii) relax SPEC 8.2 zone ranges to equal
-  thirds (still leaves a text hint for true premises). For (b), may I spend one more ~35-min split regeneration
-  investigating the tangle residual after Checkpoint 2?
-- v2 change (D-39, 2026-11-26): (a) premise scenes now randomise zone colour order and balance value
-  deciles; premise families are scored as one yes/no task; trivial baselines added. (b) T1 / T3 slot
-  order is now shuffled by a run-seeded permutation.
-- v2 measurement (2026-11-26, gate function `gate_probes` on a fresh 600-per-plugin `test` split,
-  seed 101, artifacts under `artifacts/v2_gates/`): the residuals listed above now pass.
-  tangle/T1 text_only 0.176 vs chance 0.180 (limit 0.232); tangle/T3 gbdt_image_stats 0.495 vs 0.500
-  (limit 0.570); premise yes/no text_only 0.444 and gbdt_image_stats 0.494 vs 0.500 (limit 0.573;
-  the premise target and chance changed in D-39, so these do not compare with the v1 numbers);
-  pooled Wilson upper bounds: tangle text_only 0.293 <= 0.323, panel text_only 0.316 <= 0.370;
-  all 9 balance tests pass (premise bins p = 0.9999 / 0.9945); trivial baselines: no violation;
-  dedup rates tangle 0.0017, gauge 0.0033, panel 0.0100 (the limit is 0.01).
-- v2 remaining failure: panel/P1_READ_TRACE gbdt_image_stats 0.173 (26 of 150) > chance 0.113 + 0.051.
-  This family was not part of the v1 blocker. Not diagnosed.
-- Status: OPEN. Gate `p3.probes` FAILS on that single row. Probe thresholds are unchanged.
-
-## 5.6 Mock staircase tolerance (gate `p5.bench_mock`)
-- Verification command: `uv run python scripts/verify_phase.py --phase 5 --keep-going`
-- Last failure (tail): `mock_a/tangle: staircase 6.33 vs 12.00; mock_b/tangle: staircase 7.00 vs 4.99`
-  Everything else in the Phase 5 gate passes: pytest 344 passed / 1 skipped; per-crossing MLE recovers p for all
-  three mocks (0.047 / 0.076 / 0.173 vs 0.04 / 0.08 / 0.15, true p inside the CI); composition gap CI contains 0
-  for all mocks; panel staircases within 1.5 levels; replay offline (0 network calls); preflight $5.06 <= $8.
-- Attempts: none on the gate itself (by the owner's instruction: log borderline spec tolerances and pause).
-  Pre-implementation simulation of the exact SPEC 12.2 rule (start 3, 1-up-2-down, stop at 10 reversals or 50
-  trials, mean of last 6 reversals) over 400 seeded runs: within 1.5 levels of k* in 26 % (p = 0.04, m = 6),
-  ~65 % (p = 0.08, m = 6) and ~92 % (p = 0.15) of runs -- the rule is too short / too coarse for shallow
-  psychometric curves, and it stops early while still climbing from level 3, biasing thresholds low.
-- Suspected root cause: SPEC 12.2 staircase parameters vs. the mock_a / mock_b `p_cross` values in
-  `configs/models.yaml` and the 1.5-level tolerance of gate `p5.bench_mock`; not an implementation bug (task 5.1's
-  calibration test with a steeper observer passes in >= 90 % of 200 runs).
-- Proposed human decision: pick one: (i) more staircase trials for mocks (e.g. `max_trials` 150 / 20 reversals);
-  (ii) widen `STAIRCASE_LEVEL_TOL` for the tangle track; (iii) steeper mock `p_cross` (e.g. 0.10 / 0.15 / 0.25);
-  (iv) accept the staircase as a reported (not gated) diagnostic for mocks.
-- v2 change (D-39, 2026-11-26): coarse-then-fine steps, up to 75 trials, logistic maximum-likelihood
-  `k*`. Replay fixtures rebuilt.
-- v2 measurement (2026-11-26, gate function `gate_bench_mock` on the same split, seed 5): all 6 mock
-  staircases are within 1.5 levels (estimate vs expected): mock_a tangle 12.00 / 11.58, panel
-  5.68 / 7.00; mock_b tangle 4.92 / 4.92, panel 5.65 / 6.94; mock_c tangle 3.09 / 2.56, panel
-  2.45 / 3.41 (v1 failed 2 of 6).
-- v2 remaining failure: mock_a per-crossing error estimate 0.013, 95 % CI 0.007-0.020, true 0.04.
-  Cause: items are re-asked when a level has few of them. mock_a's tangle staircase spent 75 trials
-  on 18 distinct items (one 16 times, at level 12), and repeats of a deterministic model are counted
-  as independent trials. The mock_a tangle staircase pass is therefore weak evidence (it sat at the
-  top level).
-- v2 fix (D-46, 2026-11-26): every staircase trial asks an item not asked before (nearest level with
-  an unused item; the level shown is what the fit uses) and the per-crossing estimate counts each
-  distinct request once.
-- v2 re-measurement (same split, gate function `gate_bench_mock`): PASS. All staircase trials are
-  distinct. Per-crossing estimates: mock_a 0.034 (CI 0.022-0.047, true 0.04), mock_b 0.071
-  (0.050-0.098, true 0.08), mock_c 0.155 (0.123-0.192, true 0.15). Staircase estimate / expected:
-  mock_a tangle 12.00 / 11.58, panel 5.50 / 7.00; mock_b tangle 4.92 / 4.92, panel 5.50 / 6.94;
-  mock_c tangle 3.11 / 2.56, panel 2.45 / 3.41.
-- Caveat: mock_a panel passes exactly at the 1.5-level limit (mock_b panel at 1.44). The split holds
-  only 3 panel items with 6 crossings and 1 with 7, so shallow panel curves are data-limited.
-- Status: RESOLVED for gate `p5.bench_mock` (the full `--phase 5` run was not repeated).
-  `STAIRCASE_LEVEL_TOL` is unchanged.
-
-## L-1 Live staircases sit at the floor (not a gate)
-- Observation: on the live run every model fails at 1-2 crossings; Gemini and Qwen dropped from the start
-  level (3) to level 1 on the tangle track and never climbed back (no reversals), so thresholds of 1.1-1.7 crossings bound rather than measure ability.
-  The per-crossing error MLE (0.80 to ~1.0) and the composition product law are uninformative at this
-  floor. Per-model twin drops are directional (n = 24, exact McNemar p = 0.125 / 0.25 / 0.375).
-- Handling: stated as caveats in README ("Full live results table and caveats"), VERIFICATION.md and the figure subtitles.
-  An easier level ladder (0-crossing items) would be needed to place thresholds for current models.
-- Status: documented; no code change.

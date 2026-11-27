@@ -36,3 +36,6 @@ Thumbs.db
 # live-run data kept local by owner decision (D-36): replay cache and burn ledger
 /bench_replay/
 /freshness/burn_ledger.jsonl
+
+# local editor / preview configuration
+/.claude/launch.json

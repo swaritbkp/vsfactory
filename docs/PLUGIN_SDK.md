@@ -1,9 +1,12 @@
-# Knotwork Plugin SDK — ship a task domain as an external wheel
+# Plugin SDK: shipping a task domain as an external wheel
 
-A plugin samples a scene, renders it, and declares claims and an answer. It is **untrusted**: the
-Knotwork kernel re-derives every answer from renderer object masks, cross-checked against the
-visible image, and quarantines the item when the plugin is wrong. So a plugin can be written and
-installed separately without being reviewed as part of the trusted kernel.
+A plugin samples a scene from a seed, renders it, and declares its claims and its answer. It is
+**untrusted**. The Knotwork kernel re-derives every answer from renderer object masks, cross-checks
+it against the visible image, and quarantines the item when the plugin is wrong. A plugin can
+therefore be written, versioned and installed separately, without review as part of the trusted
+kernel. A plugin that renders or labels wrongly lowers its own yield rather than corrupting labels.
+Plugin code still runs as ordinary Python in the generation process. Certification protects label
+validity; it does not sandbox the host. Install only plugins you trust to execute.
 
 ## 1. Declare the entry point
 
@@ -18,7 +21,7 @@ dependencies = ["knotwork"]
 dials = "knotwork_dials.plugin:PLUGIN"   # or "knotwork_dials" if the module exports PLUGIN
 ```
 
-The entry point name must equal `PLUGIN.name` and must not collide with a built-in plugin
+The entry-point name must equal `PLUGIN.name`. It must not collide with a built-in plugin
 (`rack_patch`, `tangle`, `gauge`, `panel`) or with another registration.
 
 ## 2. Implement the protocol
@@ -27,33 +30,34 @@ The entry point name must equal `PLUGIN.name` and must not collide with a built-
 
 | Member | Purpose |
 |---|---|
-| `name`, `version`, `families` | identity and the question families it can ask |
-| `sample_scene(seeds, profile, difficulty=None)` | a seeded `SceneIR` (all randomness from `seeds`) |
-| `render(scene, out_dir, fault=None)` | beauty (2× supersampled), amodal masks and modal id buffer at 1×, no anti-aliasing |
-| `claims(scene)` | declarative claims the kernel cross-checks |
-| `questions(scene, seeds, family)` | a `QuestionProgram` |
-| `symbolic_answer(scene, program)` / `geometric_answer(scene, program)` | the plugin's D1 / D2 answers |
-| `causal_twin(...)` / `nuisance_twin(...)` | counterfactual twins (answer changes / stays) |
+| `name`, `version`, `families` | Identity and the question families the plugin can ask |
+| `sample_scene(seeds, profile, difficulty=None)` | A seeded `SceneIR`; all randomness comes from `seeds` |
+| `render(scene, out_dir, fault=None)` | Beauty image 2× supersampled and downsampled to 1024 px; amodal masks and the modal 16-bit id buffer at 1× with no anti-aliasing |
+| `claims(scene)` | Declarative claims the kernel cross-checks against the pixels |
+| `questions(scene, seeds, family)` | A `QuestionProgram` the kernel executes |
+| `symbolic_answer(scene, program)` / `geometric_answer(scene, program)` | The plugin's own answers (D1 / D2) |
+| `causal_twin(...)` / `nuisance_twin(...)` | Counterfactual twins: the answer changes / the answer stays |
 
 Import only `knotwork.knotcore` (contracts, seeds) and `knotwork.render`. The fastest start is
-`uv run knot new-plugin dials --dest src/`, which writes a working skeleton and its tests.
+`uv run knot new-plugin dials --dest src/`. It writes a working skeleton with its conformance tests
+and adds no lines to `knotcore`.
 
-## 3. Verify
+## 3. Install and check
 
 ```bash
-pip install -e ./knotwork-dials        # or: uv pip install dist/knotwork_dials-0.1.0-py3-none-any.whl
+uv pip install -e ./knotwork-dials     # or: uv pip install dist/knotwork_dials-0.1.0-py3-none-any.whl
 uv run knot plugins                    # status must be "ok"; a rejection prints the reason
 uv run knot plugins --json             # name, source, version, status, origin, detail
 ```
 
 Checklist:
 
-- [ ] `knot plugins` lists it with `source = external` and `status = ok`.
-- [ ] Your conformance test (from `knot new-plugin`) passes: clean scenes certify.
-- [ ] `knot mutate --fault all` injected faults are caught (quarantined) on your renders.
-- [ ] No `random`, `hash()` or wall-clock time: rendering twice from one seed gives identical files.
-- [ ] No network access at import or render time (`KNOTWORK_NETWORK=deny` is the default).
+- [ ] `knot plugins` lists the plugin with `source = external` and `status = ok`.
+- [ ] The conformance test from `knot new-plugin` passes: clean scenes certify.
+- [ ] Injected faults from `knot mutate --fault all` are quarantined on your renders.
+- [ ] Rendering twice from one seed gives identical files: no `random`, `hash()` or wall-clock time.
+- [ ] Nothing touches the network at import or render time (`KNOTWORK_NETWORK=deny` is the default).
 
-A registration is **rejected** (never crashing the registry) when it fails to import, misses a
-protocol method or attribute, collides with a registered name, or its entry point name differs from
-`PLUGIN.name`.
+The registry rejects a registration, and stays usable, when the plugin fails to import, lacks a
+protocol method or attribute, collides with a registered name, or has an entry-point name that
+differs from `PLUGIN.name`.
