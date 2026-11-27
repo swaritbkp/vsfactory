@@ -1164,3 +1164,12 @@ spec leaves open. Never silently change a threshold.
   renders into its own `artifacts/studio/sample/<kernel>/tangle-<uuid>/` folder. The shared fixed
   path let pytest-xdist workers rewrite PNGs another worker was certifying or reading
   ("image file is truncated").
+* D-49: Lock-in pass (2026-11-27, peer review). (a) `reward.py` full-image bypass closed: a predicted
+  box covering >= 85 % of the 1000 x 1000 canvas is never matched (it still counts in the IoU
+  denominator), and the outcome gate now requires `matched_boxes >= 1` at IoU >= 0.5 rather than
+  `grounding_iou == 0.0`. A gated rollout also earns no grounding credit, so it scores at most the
+  format weight (0.15). Before, `<box>[0,0,1000,1000]</box>` with a correct answer earned a tiny
+  non-zero IoU, skipped the gate and scored ~0.72 unflagged. (b) Docs: the `rack_patch` monochrome
+  drop is framed as the combined monochrome + high-stress preset with the per-item Fisher p ~ 0.21
+  (the repeat-pooled p = 0.007 treats repeats of one image as independent), and Gemini 2.5 Flash vs
+  Qwen3-VL-235B is reported as a statistical tie (overlapping Wilson 95 % CIs).

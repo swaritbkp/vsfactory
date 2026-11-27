@@ -2,9 +2,9 @@
 
 > Knotwork is a proof-carrying visual task factory for vision-language models. It renders seeded industrial scenes (rack patch bays, cable tangles, analog gauges, gauge panels) and releases a task only after an import-isolated kernel re-derives every answer from renderer object masks and cross-checks it against the visible image. The same certified tasks feed a diagnostic Model Arena and a post-training engine (grounded vCoT SFT, DPO, verl GRPO, a deterministic RLVR verifier). It runs fully offline with `uv`; paid model calls are opt-in.
 
-Scope: 4 domains (rack_patch, tangle, gauge, panel), 11 question families, 19 `knot` subcommands, a 14-class fault-injection matrix (56 / 56 caught), 66 golden bundles, 560 offline tests. One Docker image runs air-gapped and unrestricted by default, or as a capped, Offline-Mock-only Cloud Run sandbox with `KNOTWORK_PUBLIC_DEMO=1`.
+Scope: 4 domains (rack_patch, tangle, gauge, panel), 11 question families, 19 `knot` subcommands, a 14-class fault-injection matrix (56 / 56 caught), 66 golden bundles, 563 offline tests. One Docker image runs air-gapped and unrestricted by default, or as a capped, Offline-Mock-only Cloud Run sandbox with `KNOTWORK_PUBLIC_DEMO=1` (live: https://knotwork-demo-y5i4boaq7q-el.a.run.app/).
 
-Live results: v1 Phase 5 audit (1,069 trials, $1.12) and the v2 four-domain audit (531 calls, k = 3, T = 0.7, $0.67; GPT-5.4 44.6 %, Gemini 2.5 Flash 28.4 %, Qwen3-VL-235B 26.6 %; post-training pack 55 SFT / 354 DPO / 59 GRPO). Evidence: docs/evidence/v2_live_audit/.
+Live results: v1 Phase 5 audit (1,069 trials, $1.12) and the v2 four-domain audit (531 calls, k = 3, T = 0.7, $0.67; GPT-5.4 44.6 %, Gemini 2.5 Flash 28.4 % and Qwen3-VL-235B 26.6 % (Gemini and Qwen a statistical tie, overlapping Wilson 95 % CIs); rack_patch GPT-5.4 61.1 % -> 27.3 % under the combined monochrome + high-stress preset (7/12 vs 3/11 per-item majority, Fisher p ~ 0.21; not a colour-only ablation; the clean colour ablation is v1 tangle 59.4 % -> 3.1 %); post-training pack 55 SFT / 354 DPO / 59 GRPO). Evidence: docs/evidence/v2_live_audit/.
 
 Rules for agents: the trusted kernel `src/knotwork/knotcore/` must never import plugins, network, UI or ML code; tests and gates are offline (`KNOTWORK_NETWORK=deny`); never put an API key in a file; never edit `.checkpoints/*`.
 

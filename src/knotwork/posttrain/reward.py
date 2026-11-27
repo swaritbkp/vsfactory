@@ -9,14 +9,16 @@ w_o = 0.60, w_g = 0.25, w_f = 0.15. Rules that keep the reward honest:
 * outcome is graded strictly by `knotcore.grading.grade_prediction` on the `\\boxed{}` content (else
   the whole reply, whose last `ANSWER:` line wins); two different committed answers score 0;
 * grounding is the mean IoU of a one-to-one greedy matching between predicted `<box>` regions and
-  the certified vCoT boxes, divided by max(#predicted, #certified): spraying boxes, or one box
-  over the whole image, cannot buy IoU;
+  the certified vCoT boxes, divided by max(#predicted, #certified): spraying boxes cannot buy IoU,
+  and a full-image box (area >= `FULL_IMAGE_AREA` of the 1000 x 1000 canvas) is never matched,
+  though it still counts in the denominator;
 * when the outcome is wrong, grounding and format earn only `WRONG_PROCESS_SCALE` of their weight,
   so a wrong answer always scores below 0.25 with the default weights;
-* a correct answer with zero grounding when grounding was asked for raises `reward_hack_flag`
-  (a lucky or memorised guess, not a grounded read) and is gated: its outcome credit is withheld
-  (`effective_outcome_score` 0.0, raw correctness kept in `outcome_score`), so it scores at most
-  the format weight (0.15 by default) and cannot harvest positive RL advantage over grounded reads;
+* a correct answer with no matched box (`matched_boxes == 0` at IoU >= `MATCH_IOU`) when grounding
+  was asked for raises `reward_hack_flag` (a lucky or memorised guess, not a grounded read) and is
+  gated: its outcome credit is withheld (`effective_outcome_score` 0.0, raw correctness kept in
+  `outcome_score`) and its weak grounding earns nothing, so it scores at most the format weight
+  (0.15 by default) and cannot harvest positive RL advantage over grounded reads;
 * on a false-premise task, accepting the premise is a confident hallucination (abstention 0).
 
 Without reference boxes the grounding weight is dropped and the other two weights renormalised.
@@ -33,6 +35,10 @@ from knotwork.knotcore.grading import ANSWER_RE, committed_answers, grade_predic
 DEFAULT_WEIGHTS: dict[str, float] = {"outcome": 0.60, "grounding": 0.25, "format": 0.15}
 #: share of the grounding + format weight a wrong answer can still earn
 WRONG_PROCESS_SCALE = 0.5
+#: a predicted box covering at least this share of the 1000 x 1000 canvas is never matched
+FULL_IMAGE_AREA = 0.85
+#: IoU at which a predicted box counts as matching a certified box (the outcome gate needs >= 1)
+MATCH_IOU = 0.5
 BOX_RE = re.compile(
     r"<box>\s*\[?\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*"
     r"(-?\d+(?:\.\d+)?)\s*\]?\s*</box>",
@@ -102,12 +108,22 @@ def iou(a: Box, b: Box) -> float:
     return inter / union if union > 0 else 0.0
 
 
-def grounding(pred: list[Box], ref: list[Box], hit: float = 0.5) -> tuple[float, int]:
-    """(greedy one-to-one mean IoU over max(#pred, #ref), pairs with IoU >= hit)."""
+def is_full_image(box: Box) -> bool:
+    """True when the box covers at least `FULL_IMAGE_AREA` of the 1000 x 1000 canvas."""
+    return (box[2] - box[0]) * (box[3] - box[1]) >= FULL_IMAGE_AREA * 1000.0 * 1000.0
+
+
+def grounding(pred: list[Box], ref: list[Box], hit: float = MATCH_IOU) -> tuple[float, int]:
+    """(greedy one-to-one mean IoU over max(#pred, #ref), pairs with IoU >= hit). Full-image
+    predicted boxes are never matched but still count in the denominator."""
     if not pred or not ref:
         return 0.0, 0
     pairs = sorted(
-        ((iou(p, r), i, j) for i, p in enumerate(pred) for j, r in enumerate(ref)),
+        (
+            (0.0 if is_full_image(p) else iou(p, r), i, j)
+            for i, p in enumerate(pred)
+            for j, r in enumerate(ref)
+        ),
         key=lambda t: (-t[0], t[1], t[2]),
     )
     used_p: set[int] = set()
@@ -194,11 +210,11 @@ def score_rollout(
     if not asked:
         total_w = w["outcome"] + w["format"]
         w = {"outcome": w["outcome"] / total_w, "grounding": 0.0, "format": w["format"] / total_w}
-    process = w["grounding"] * g_iou + w["format"] * 0.5 * (fmt + abst)
+    hack = bool(outcome == 1.0 and asked and matched == 0)
+    effective = 0.0 if hack else outcome  # ungrounded guess: no outcome credit, format only
+    process = (0.0 if hack else w["grounding"] * g_iou) + w["format"] * 0.5 * (fmt + abst)
     if outcome < 1.0:
         process *= WRONG_PROCESS_SCALE
-    hack = bool(outcome == 1.0 and asked and g_iou == 0.0)
-    effective = 0.0 if hack else outcome  # ungrounded guess: no outcome credit, format only
     score = w["outcome"] * effective + process
     return {
         "score": round(min(1.0, max(0.0, score)), 6),
@@ -245,10 +261,13 @@ def trl_reward(completions: list[Any], **kwargs: Any) -> list[float]:
 
 __all__ = [
     "DEFAULT_WEIGHTS",
+    "FULL_IMAGE_AREA",
+    "MATCH_IOU",
     "boxed_answers",
     "compute_score",
     "grounding",
     "iou",
+    "is_full_image",
     "parse_boxes",
     "score_rollout",
     "trl_reward",

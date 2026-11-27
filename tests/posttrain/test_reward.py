@@ -80,6 +80,42 @@ def test_box_spraying_and_whole_image_boxes_do_not_buy_grounding() -> None:
     assert reward.compute_score("x", spray, truth, extra)["grounding_iou"] < 0.25 * honest
 
 
+def test_full_image_box_cannot_bypass_the_grounding_gate() -> None:
+    _, truth, extra = _case()
+    answer = json.loads(truth)["canonical"]
+    text = f"<think>it is here <box>[0,0,1000,1000]</box></think>\n\\boxed{{{answer}}}"
+    r = reward.compute_score("knotwork/rack_patch", text, truth, extra)
+    assert r["outcome_score"] == 1.0 and r["matched_boxes"] == 0 and r["pred_boxes"] == 1
+    assert r["grounding_gated"] and r["reward_hack_flag"] and r["effective_outcome_score"] == 0.0
+    assert r["score"] <= 0.15
+    near = text.replace("[0,0,1000,1000]", "[20, 30, 990, 985]")  # ~94 % of the canvas
+    r = reward.compute_score("knotwork/rack_patch", near, truth, extra)
+    assert r["matched_boxes"] == 0 and r["reward_hack_flag"] and r["score"] <= 0.15
+
+
+def test_one_weak_box_below_half_iou_also_triggers_the_gate() -> None:
+    _, truth, extra = _case()
+    answer = json.loads(truth)["canonical"]
+    x0, y0, x1, y1 = (float(v) for v in extra["vcot_boxes_1000"][0])
+    w = x1 - x0
+    weak = (x0 + 0.6 * w, y0, x1 + 0.6 * w, y1)  # shifted right: IoU = 0.4 / 1.6 = 0.25
+    assert 0.0 < reward.iou(weak, (x0, y0, x1, y1)) < 0.5
+    box = "<box>[{:.1f}, {:.1f}, {:.1f}, {:.1f}]</box>".format(*weak)
+    text = f"<think>here {box}</think>\n\\boxed{{{answer}}}"
+    r = reward.compute_score("knotwork/rack_patch", text, truth, extra)
+    assert r["outcome_score"] == 1.0 and r["grounding_iou"] > 0.0 and r["matched_boxes"] == 0
+    assert r["grounding_gated"] and r["reward_hack_flag"] and r["score"] <= 0.15
+
+
+def test_one_box_at_half_iou_or_better_is_not_gated() -> None:
+    _, truth, extra = _case()
+    answer = json.loads(truth)["canonical"]
+    box = "<box>[{}, {}, {}, {}]</box>".format(*extra["vcot_boxes_1000"][0])
+    r = reward.compute_score("x", f"<think>{box}</think>\n\\boxed{{{answer}}}", truth, extra)
+    assert r["matched_boxes"] >= 1 and not r["grounding_gated"] and not r["reward_hack_flag"]
+    assert r["effective_outcome_score"] == 1.0 and r["score"] > 0.75
+
+
 def test_hedging_two_boxed_answers_gets_no_outcome() -> None:
     _, truth, extra = _case()
     answer = json.loads(truth)["canonical"]

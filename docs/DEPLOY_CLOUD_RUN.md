@@ -2,6 +2,8 @@
 
 One container image serves two deployments. The switch is `KNOTWORK_PUBLIC_DEMO`.
 
+**Live deployment:** [https://knotwork-demo-y5i4boaq7q-el.a.run.app/](https://knotwork-demo-y5i4boaq7q-el.a.run.app/) runs in locked Offline-Mock demo mode (`KNOTWORK_PUBLIC_DEMO=1`, `KNOTWORK_NETWORK=deny`, `max-instances=2`, GCP budget alert configured).
+
 | | Self-hosted Docker (default) | Cloud Run sandbox |
 |---|---|---|
 | Switch | `KNOTWORK_PUBLIC_DEMO` unset or `0` | `KNOTWORK_PUBLIC_DEMO=1` |

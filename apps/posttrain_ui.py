@@ -130,7 +130,7 @@ def _sandbox(cfg: SessionConfig) -> None:
         c.metric("Grounding IoU", f"{r['grounding_iou']:.2f}", help=guide.tip("pt_iou"))
         d.metric("Format", f"{r['format_score']:.1f}", help=guide.tip("pt_format"))
         if r["reward_hack_flag"]:
-            st.badge("Reward-hack flag: right answer, zero grounding · gated to "
+            st.badge("Reward-hack flag: right answer, no box matched (IoU ≥ 0.5) · gated to "
                      f"≤ {r['weights']['format']:.2f}", color="red",
                      icon=":material/report:")  # fmt: skip
         else:

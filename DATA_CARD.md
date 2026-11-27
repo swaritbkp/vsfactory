@@ -145,8 +145,12 @@ A second live run covered all four domains with fresh items: `rack_patch` standa
 monochrome, `tangle` monochrome, `gauge` aged dial and `panel` Hard logic, 12 items per block, the same
 three models, *k* = 3 repeats at temperature 0.7. 59 of 60 items were certified; 531 calls were
 issued, 530 scored, 1 API error, $0.6727 spent. Overall accuracy: GPT-5.4 44.6 %, Gemini 2.5 Flash
-28.4 %, Qwen3-VL-235B-A22B 26.6 %. On `rack_patch`, GPT-5.4 fell from 61.1 % with unique cable
-colours to 27.3 % with monochrome cables (Fisher p = 0.007). 11 of 15 block × model cells show a
+28.4 %, Qwen3-VL-235B-A22B 26.6 % (Gemini and Qwen are a statistical tie: their Wilson 95 % intervals
+overlap). Under the combined monochrome + high-stress preset (monochrome cables, visual stress 0.8,
+realism 0.9), GPT-5.4 dropped sharply from 61.1 % to 27.3 % across 3-repeat trials (7/12 vs. 3/11
+by per-item majority, Fisher p ≈ 0.21; repeat-pooled p = 0.007 treats 3 repeats per image as
+dependent observations, so this reflects the combined stress preset rather than an isolated
+colour-only ablation). The clean colour-only ablation is the v1 `tangle` result (59.4 % → 3.1 %). 11 of 15 block × model cells show a
 `pass@3 − pass^3` gap of 10 points or more.
 
 The post-training pack exported from this session contains **55 SFT** grounded-vCoT records,

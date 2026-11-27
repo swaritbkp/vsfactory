@@ -9,6 +9,9 @@ generator's answer and the kernel's answer agree. The same certified tasks drive
 arena and a post-training pipeline: grounded chain-of-thought traces, preference pairs, GRPO data and
 a reward verifier. All of it runs offline.
 
+**Live sandbox:** [https://knotwork-demo-y5i4boaq7q-el.a.run.app/](https://knotwork-demo-y5i4boaq7q-el.a.run.app/) runs the Studio in locked Offline-Mock demo mode (`KNOTWORK_PUBLIC_DEMO=1`, `KNOTWORK_NETWORK=deny`, `max-instances=2`, GCP budget alert configured). See
+[`docs/DEPLOY_CLOUD_RUN.md`](docs/DEPLOY_CLOUD_RUN.md).
+
 [![ci](https://github.com/swaritbkp/vsfactory/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/swaritbkp/vsfactory/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-3776AB)
 ![env](https://img.shields.io/badge/env-uv%20--locked-6E40C9)
@@ -27,7 +30,7 @@ a reward verifier. All of it runs offline.
 | Live VLM audit | 1,069 trials, 943 paid calls, $1.12 total, 3 models | `samples/live_run/` |
 | v2 live 4-domain audit | 531 calls (530 scored), *k* = 3, *T* = 0.7, $0.67, 3 models; pack 55 SFT / 354 DPO / 59 GRPO | [`docs/evidence/v2_live_audit/`](docs/evidence/v2_live_audit/) |
 | Certified throughput | 544–831 `rack_patch` items/hour on one vCPU; $48–$74 per 1M at $0.04/vCPU-hour | `knot bench-throughput` |
-| Test suite | 560 offline tests (`tier0` 186, `tier1` 270, `tier2` 104) | `uv run pytest --collect-only` |
+| Test suite | 563 offline tests (`tier0` 186, `tier1` 273, `tier2` 104) | `uv run pytest --collect-only` |
 | Network policy | `KNOTWORK_NETWORK=deny` by default; paid calls are opt-in | `Dockerfile`, `tests/conftest.py` |
 
 ![Studio: a certified rack patch-bay task in the vCoT Steps view](docs/assets/studio_rack_patch_vcot.png)
@@ -254,6 +257,9 @@ items are asked, so **531 live calls** went out: 530 scored and 1 API error
 | Gemini 2.5 Flash | 176 | 28.4 % (22.3–35.5) | 1 | $0.0732 |
 | Qwen3-VL-235B-A22B | 177 | 26.6 % (20.6–33.5) | 0 | $0.0700 |
 
+GPT-5.4 leads clearly. Gemini 2.5 Flash and Qwen3-VL-235B-A22B are a **statistical tie**: their
+Wilson 95 % intervals overlap almost entirely.
+
 Per block, `pass@1` is single-attempt accuracy over all repeats, `pass@3` the share of items solved at
 least once in 3 tries and `pass^3` the share solved on all 3. Gap = `pass@3 − pass^3`.
 
@@ -277,10 +283,14 @@ least once in 3 tries and `pass^3` the share solved on all 3. Gap = `pass@3 − 
 
 Three findings follow.
 
-1. **Colour still stands in for tracing, now on `rack_patch`.** Unique cable colours versus
-   monochrome cables on the same rack layout: GPT-5.4 61.1 % → 27.3 % (Fisher *p* = 0.007), Qwen3-VL
-   19.4 % → 3.0 % (Fisher *p* = 0.057), Gemini 2.5 Flash
-   13.9 % → 12.5 % (Fisher *p* = 1.000) (already near the floor with colour).
+1. **The combined monochrome + high-stress preset breaks `rack_patch` tracing for GPT-5.4.** Under
+   the High stress preset (monochrome cables, visual stress 0.8, realism 0.9), GPT-5.4 dropped
+   sharply from 61.1 % to 27.3 % across 3-repeat trials (7/12 vs. 3/11 by per-item majority, Fisher
+   *p* ≈ 0.21; the repeat-pooled *p* = 0.007 treats 3 repeats per image as independent observations,
+   though they are dependent). This reflects the combined stress preset, not an isolated colour-only
+   ablation; the clean colour-only ablation is the v1 `tangle` result below (59.4 % → 3.1 %).
+   Qwen3-VL went 19.4 % → 3.0 % (repeat-pooled Fisher *p* = 0.057) and Gemini 2.5 Flash
+   13.9 % → 12.5 % (*p* = 1.000), already near the floor on the Clean block.
 2. **Single-run accuracy overstates reliability.** 11 of 15 block × model cells have a
    `pass@3 − pass^3` gap of 10 points or more. The widest: GPT-5.4 on
    `tangle` monochrome solves 83.3 % of items at least once but only
@@ -391,13 +401,14 @@ no Knotwork install. The score is a weighted sum of three terms.
 
 Three rules close the obvious exploits:
 
-- Spraying many boxes, or drawing one box over the whole image, cannot buy IoU.
+- Spraying many boxes cannot buy IoU, and a full-image box (≥ 85 % of the 1000 × 1000 canvas) is
+  never matched.
 - A wrong answer earns only a fraction of the process credit, so it always scores below 0.25.
-- A correct answer with zero grounding, on an item that has certified boxes, raises
-  `reward_hack_flag` and is gated: its outcome credit is withheld (`effective_outcome_score` 0.0,
-  with the raw correctness still reported as `outcome_score`). It earns only the format and
-  abstention term, so it scores at most 0.15 and cannot gain positive GRPO advantage over grounded
-  rollouts. Items without certified boxes are graded on outcome and format only, with the weights
+- A correct answer with no matched box (outcome credit needs `matched_boxes >= 1` at IoU ≥ 0.5),
+  on an item that has certified boxes, raises `reward_hack_flag` and is gated: its outcome credit
+  is withheld (`effective_outcome_score` 0.0, with the raw correctness still reported as
+  `outcome_score`). Weak grounding earns nothing either: it gets only the format and abstention
+  term, so it scores at most 0.15 and cannot gain positive GRPO advantage over grounded rollouts. Items without certified boxes are graded on outcome and format only, with the weights
   renormalised to 0.80 / 0.20, and are not gated.
 
 ![Reward verifier sandbox: a correct answer with no boxes is gated to 0.150 and flagged](docs/assets/posttrain_reward_sandbox.png)

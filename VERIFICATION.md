@@ -60,10 +60,16 @@ Throughput depends on the machine. The two runs bracket the figure quoted in `RE
 
 | Workflow | Scope | Latest result on `main` |
 |---|---|---|
-| `ci.yml` (every push and PR; Ubuntu, offline, no keys, `PYTHONHASHSEED=0`) | `tier0`: ruff, ruff format, import-linter, mypy, seed known-answer test, 186 tier0 tests. `tier1`: 270 tests (plugins, pipeline, faults, Studio and Model Arena on shared fixtures). The two jobs run in parallel. | Green on `44e9619` (first attempt, run 45972784164): `tier0` 42 s, `tier1` 89 s, 1 min 33 s wall time |
+| `ci.yml` (every push and PR; Ubuntu, offline, no keys, `PYTHONHASHSEED=0`) | `tier0`: ruff, ruff format, import-linter, mypy, seed known-answer test, 186 tier0 tests. `tier1`: 273 tests (plugins, pipeline, faults, Studio and Model Arena on shared fixtures). The two jobs run in parallel. | Green on `44e9619` (first attempt, run 45972784164, Linux): `tier0` 42 s, `tier1` 89 s, 1 min 33 s wall time |
 | `nightly.yml` (scheduled on `main`, or manual) | `tier2`: 104 tests (bulk generation, probes, bench, 10-render `rack_patch` yield gate, background-runner resume), plus the Phase 0 gate, `knot mutate`, `knot selftest` and the Phase 4 gate | Green on `b92915e` (14 min 4 s) |
 
-The full suite is 560 tests. The suite blocks every non-loopback socket and DNS lookup.
+The full suite is 563 tests. The suite blocks every non-loopback socket and DNS lookup.
+
+2026-11-27 update (SPEC D-49): `reward.py` now gates outcome credit on `matched_boxes >= 1` at
+IoU >= 0.5 whenever `vcot_boxes_1000` are present, and never matches a full-image box (>= 85 % of
+the 1000 x 1000 canvas). A correct answer with `<box>[0,0,1000,1000]</box>` or one weak box (IoU < 0.5)
+now scores <= 0.15 with `grounding_gated` and `reward_hack_flag` set (it scored ~0.72 unflagged
+before). Covered by 3 new tests in `tests/posttrain/test_reward.py`, so the suite grew 560 -> 563.
 
 ## 7. Phase gate records
 
@@ -138,6 +144,7 @@ scanned for secret-shaped values), `posttrain_summary.json` and `verification_lo
 |---|---|
 | Studio xdist race: the first-visit sample was rendered into one shared folder that parallel workers rewrote while others read it ("image file is truncated"); each server process now renders into its own folder | `uv run pytest -n auto tests/apps/test_studio.py` passed 3 / 3 consecutive runs |
 | `reward.py` grounding gate: a correct answer with zero grounding on an item with certified boxes scores 0.15 (format only) instead of 0.75, keeps `reward_hack_flag`, and reports raw `outcome_score` beside `effective_outcome_score` 0.0 | `tests/posttrain/test_reward.py` (grounded ≈ 1.0, wrong < 0.25, outcome-only unchanged, kit copy identical) |
+| `reward.py` full-image bypass (SPEC D-49): the gate is now `matched_boxes >= 1` at IoU >= 0.5, and full-image boxes are never matched | `tests/posttrain/test_reward.py` (full-image and near-full box gated, weak IoU < 0.5 box gated, one IoU >= 0.5 box not gated) |
 | `KNOTWORK_PUBLIC_DEMO=1` hardening: Offline Mock only, campaign import hidden, external plugins not loaded | `tests/apps/test_demo_guard.py` (11 tests) |
 
 The full command log is [`docs/evidence/v2_live_audit/verification_log.txt`](docs/evidence/v2_live_audit/verification_log.txt).

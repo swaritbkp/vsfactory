@@ -368,7 +368,8 @@ TOOLTIPS: Final[dict[str, str]] = {
     "pt_rollout": "Paste any reply: <think> with <box>[x1, y1, x2, y2]</box> steps, then "
     "\\boxed{answer}. Scored live as you edit.",
     "pt_score": "0.60 outcome + 0.25 grounding + 0.15 format. A wrong answer stays below 0.25; a "
-    "right answer with zero grounding gets no outcome credit (at most 0.15).",
+    "right answer with no matched box (matched_boxes >= 1 at IoU >= 0.5 is required) gets no "
+    "outcome credit (at most 0.15).",
     "pt_outcome": "1 when the boxed answer matches the certified one under the kernel's grader "
     "(raw correctness, shown even when the grounding gate withholds its credit).",
     "pt_iou": "Spatial Grounding IoU: one-to-one matched IoU of your boxes to the certified steps, "
