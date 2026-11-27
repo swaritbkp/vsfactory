@@ -53,7 +53,7 @@ tracing, **GPT-5.4 fell from 59.4 % to 3.1 %** (32 matched pairs, exact McNemar 
 geometry was identical in both conditions; only the colour shortcut was removed. (`rack_patch` was added
 after this run, and its offline mock sessions are shown below.)
 
-![Model Arena: completed offline mock Rack patch-bay + Panel comparison with report export](docs/assets/studio_model_arena.png)
+![Model Arena: a completed offline mock Rack patch-bay + Panel comparison with its leaderboard and Report tab](docs/assets/studio_model_arena.png)
 
 <details>
 <summary>Full live results table and caveats</summary>
@@ -129,7 +129,9 @@ network, process and dynamic-code modules, bans `SceneIR.payload` access, and pi
 ![Forensics: 14/14 fault coverage and the Vision-vs-Reasoning twin comparison](docs/assets/studio_forensics.png)
 
 `uv run streamlit run apps/inspector.py`. It runs offline: the Studio sets `KNOTWORK_NETWORK=deny` at
-start-up.
+start-up. Every page has a **Guided mode** strip (step *n* of 5 with a Next step button), a **Page guide**
+popover with steps and glossary terms, a **Quick tour** dialog, and a hover tooltip on each control,
+KPI and leaderboard column.
 
 | Page | What it does |
 |---|---|
