@@ -203,6 +203,9 @@ def test_rack_answers_are_graded_on_the_port_number() -> None:
     assert runner.grade("ANSWER: 07\nANSWER: 08", item)[2] == "format_violation"
 
 
+# Real detached subprocess, ~25 s on CI: nightly. The in-process pause/resume path stays in tier1
+# (`test_cooperative_pause_then_resume`).
+@pytest.mark.tier2
 def test_background_runner_pauses_with_no_orphan_and_resumes(
     arena_root: Path, tmp_path: Path
 ) -> None:
