@@ -1,7 +1,8 @@
 name: ci
 
-# Fast feedback: tier0 (pure kernel and contract checks) fails fast, tier1 (plugins, pipeline,
-# faults on shared fixtures) runs on every push and pull request. tier2 and the phase gates run in
+# Fast feedback on every push and pull request, under 2 minutes wall time: tier0 (lint, types,
+# import isolation, seed KAT, pure kernel and contract checks) reports in about 40 s, while tier1
+# (plugins, pipeline, faults on shared fixtures) runs in parallel. tier2 and the phase gates run in
 # nightly.yml (scheduled or manual).
 
 on:
@@ -54,7 +55,6 @@ jobs:
         run: uv run pytest -n auto -m tier0 -q
 
   tier1:
-    needs: tier0
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
