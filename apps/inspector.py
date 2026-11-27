@@ -13,7 +13,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from knotwork.studio import present
+from knotwork.studio import guide, present
 
 APP = Path(__file__).resolve().parent
 PAGES = (
@@ -30,7 +30,9 @@ def _status() -> present.RepoStatus:
     return present.repo_status()
 
 
-def header() -> None:
+def header(page: str | None) -> None:
+    from studio_ui import guide_controls, guide_strip  # importable once APP is on sys.path
+
     status = _status()
     with st.container(
         horizontal=True, vertical_alignment="center", horizontal_alignment="distribute"
@@ -59,6 +61,8 @@ def header() -> None:
                 )
             else:
                 st.badge("TCB audit failed", icon=":material/gpp_bad:", color="red")
+            guide_controls(page)
+    guide_strip(page)
 
 
 def main() -> None:
@@ -73,7 +77,7 @@ def main() -> None:
     from studio_ui import footer  # importable once APP is on sys.path
 
     current = st.navigation(pages, position="top")
-    header()
+    header(guide.page_key(current.title))
     current.run()
     footer()
 

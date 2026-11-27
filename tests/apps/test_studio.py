@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
 from streamlit.testing.v1 import AppTest
 
 from knotwork.pipeline.io import append_jsonl, write_json
-from knotwork.studio import calibration, factory, present
+from knotwork.studio import calibration, factory, guide, present
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -131,3 +132,18 @@ def test_committed_sample_opens_with_two_concrete_diagnoses() -> None:
         assert suite["sample"] and "not a model output" in " ".join(suite["replies"])
         images = [suite["image"], *(t.get("image") for t in suite["twins"].values())]
         assert all((REPO / i).is_file() for i in images if i)
+
+
+@pytest.mark.parametrize("guided", [True, False])
+@pytest.mark.parametrize("page", ["studio", "arena", "forensics", "human_eval", "export"])
+def test_pages_render_with_guided_mode_on_and_off(app: AppTest, page: str, guided: bool) -> None:
+    app.switch_page(f"app_pages/{page}.py")
+    app.session_state["guided_mode"] = guided
+    app.run()
+    assert not app.exception, app.exception
+    assert os.environ["KNOTWORK_NETWORK"] == "deny"
+    step = guide.tour_index(page) + 1
+    strip = [m.value for m in app.markdown if f"Step {step} of 5" in m.value]
+    assert bool(strip) is guided
+    assert app.toggle(key="guided_mode").value is guided
+    assert any(b.label == "Quick tour" for b in app.button) and _footer_shown(app)

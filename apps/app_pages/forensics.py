@@ -14,7 +14,7 @@ from knotwork.knotcore.contracts import FAULT_EXPECTED, FAULT_PLUGIN, FaultCode
 from knotwork.pipeline.counterfactual import run_counterfactual
 from knotwork.pipeline.io import read_json
 from knotwork.render.canvas import REPO_ROOT
-from knotwork.studio import factory, fault_proofs, forensics, present
+from knotwork.studio import factory, fault_proofs, forensics, guide, present
 from studio_ui import OUT, dataset_select, relative, resolve, run_with_status, verdict_badge
 
 SECTIONS = ("Counterfactual twins", "Quarantine", "Fault proofs")
@@ -44,13 +44,13 @@ def _kpis(dataset: Path | None) -> None:
     cover = present.fault_coverage()
     a, b, c = st.columns(3)
     a.metric("Yield", _percent(kpi["yield_rate"]), border=True,
-             help="Share of rendered candidates the kernel certified in the selected run.")  # fmt: skip
+             help=guide.tip("kpi_yield"))  # fmt: skip
     b.metric("Quarantine rate", _percent(kpi["quarantine_rate"]), border=True,
-             help="Share of clean candidates the kernel rejected.")  # fmt: skip
+             help=guide.tip("kpi_quarantine"))  # fmt: skip
     caught = "n/a" if cover["caught"] is None else f"{cover['caught']} / {cover['total']}"
     source = f"From {relative(cover['report'])}." if cover["report"] else "Run `knot mutate`."
     c.metric("Fault matrix coverage", caught, border=True,
-             help=f"Injected faults caught with their exact code. {source}")  # fmt: skip
+             help=f"{guide.tip('kpi_faults')} {source}")  # fmt: skip
 
 
 # ------------------------------------------------------------------ twins
@@ -63,17 +63,21 @@ def _request(action: str) -> None:
 def _source_controls() -> Path:
     st.session_state.setdefault("cf_out", SAMPLE_REPORT)
     with st.container(horizontal=True, vertical_alignment="bottom"):
-        st.text_input("Report folder", key="cf_out")
-        with st.popover("Build from failures", icon=":material/construction:"):
-            data = st.text_input("Data folder", "samples/live_failures", key="cf_data")
+        st.text_input("Report folder", key="cf_out", help=guide.tip("cf_out"))
+        with st.popover("Build from failures", icon=":material/construction:",
+                        help=guide.tip("cf_build")):  # fmt: skip
+            data = st.text_input("Data folder", "samples/live_failures", key="cf_data",
+                                 help=guide.tip("cf_data"))  # fmt: skip
             failures = st.text_input(
-                "Failures file or folder", "samples/live_failures", key="cf_fail"
+                "Failures file or folder",
+                "samples/live_failures",
+                key="cf_fail",
+                help=guide.tip("cf_fail"),
             )
             st.button("Build twin suites", type="primary", width="stretch", key="cf_go",
-                      on_click=_request, args=("build",))  # fmt: skip
+                      on_click=_request, args=("build",), help=guide.tip("cf_build"))  # fmt: skip
         st.button("Demo suite", icon=":material/auto_awesome:", key="cf_demo", on_click=_request,
-                  args=("demo",), help="Generate a fresh item and build all its twins. No model "
-                  "failed it.")  # fmt: skip
+                  args=("demo",), help=guide.tip("cf_demo"))  # fmt: skip
     out = resolve(str(st.session_state.cf_out))
     action = st.session_state.pop("cf_action", None)
     if action == "build":
@@ -185,9 +189,10 @@ def _twins() -> None:
     labels = list(by_label)
     if len(labels) <= MAX_SEGMENTS:
         chosen = st.segmented_control("Item", labels, default=labels[0], required=True,
-                                      key="cf_item", label_visibility="collapsed")  # fmt: skip
+                                      key="cf_item", label_visibility="collapsed",
+                                      help=guide.tip("cf_item"))  # fmt: skip
     else:
-        chosen = st.selectbox("Item", labels, key="cf_item")
+        chosen = st.selectbox("Item", labels, key="cf_item", help=guide.tip("cf_item"))
     suite = by_label[str(chosen)]
     bid = suite["bundle_id"]
     recorded = recorded_all.get(bid, {})
@@ -218,6 +223,7 @@ def _twins() -> None:
             column.text_input(
                 TWIN_TITLES[kind], recorded.get(kind, ""), key=f"reply_{bid}_{kind}",
                 placeholder="model reply", disabled=twin.get("status") not in ("certified", "text"),
+                help=guide.tip("cf_reply"),
             )  # fmt: skip
 
 
@@ -242,9 +248,11 @@ def _quarantine(dataset: Path | None) -> None:
         labels = {
             f"{i + 1}. {r['primary_code']} · {r['seed_path']}": r for i, r in enumerate(records)
         }
-        record = labels[st.selectbox("Quarantined candidate", list(labels), key="q_record")]
+        record = labels[st.selectbox("Quarantined candidate", list(labels), key="q_record",
+                                     help=guide.tip("q_record"))]  # fmt: skip
         st.caption(record.get("detail", ""))
-        if st.button("Re-render and re-certify", icon=":material/replay:", key="q_replay"):
+        if st.button("Re-render and re-certify", icon=":material/replay:", key="q_replay",
+                     help=guide.tip("q_replay")):  # fmt: skip
             target = OUT / "quarantine" / uuid.uuid4().hex[:8]
             got = run_with_status(
                 "Reproduce the candidate", lambda: forensics.reproduce(dataset, record, target)
@@ -296,9 +304,10 @@ def _faults() -> None:
     st.session_state.setdefault("fp_fault", default_fault.value)
     st.session_state.setdefault("fp_seed", default_seed)
     with st.container(horizontal=True, vertical_alignment="bottom"):
-        fault = FaultCode(st.selectbox("Fault", values, key="fp_fault", format_func=_fault_label))
-        seed = int(st.number_input("Seed", 0, 2**31 - 1, key="fp_seed"))
-        go = st.button("Build proof strip", type="primary", key="fp_go")
+        fault = FaultCode(st.selectbox("Fault", values, key="fp_fault", format_func=_fault_label,
+                                       help=guide.tip("fp_fault")))  # fmt: skip
+        seed = int(st.number_input("Seed", 0, 2**31 - 1, key="fp_seed", help=guide.tip("fp_seed")))
+        go = st.button("Build proof strip", type="primary", key="fp_go", help=guide.tip("fp_go"))
     st.caption("One scene rendered twice, with and without the fault; both go through the kernel.")
     if go:
         st.session_state.fp_built = (fault.value, seed)
@@ -320,12 +329,12 @@ def _faults() -> None:
 prefer = relative(REPO_ROOT / "artifacts" / "selftest" / "data" / "panel")
 picker, _ = st.columns([2, 3])
 with picker:
-    run = dataset_select("Run", "fx_dataset", prefer)
+    run = dataset_select("Run", "fx_dataset", prefer, help=guide.tip("fx_run"))
 _kpis(run)
 st.session_state.setdefault("fx_section", SECTIONS[0])  # Model Arena may preselect a section
 section = st.segmented_control(
     "Section", SECTIONS, required=True, key="fx_section",
-    label_visibility="collapsed",
+    label_visibility="collapsed", help=guide.tip("fx_section"),
 )  # fmt: skip
 if section == "Quarantine":
     _quarantine(run)

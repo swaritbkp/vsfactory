@@ -10,7 +10,7 @@ from typing import Any
 import streamlit as st
 from PIL import Image
 
-from knotwork.studio import factory, forensics, present
+from knotwork.studio import factory, forensics, guide, present
 from knotwork.studio.present import AUTO
 from studio_ui import OUT, relative, resolve, run_with_status, verdict_badge
 
@@ -160,22 +160,35 @@ def _batch_panel(plugin: str) -> None:
     if not factory.batch_ready(plugin):
         st.caption("This plugin has no profile section, so it supports single items only.")
         return
-    n = int(st.number_input("Certified base items", 1, 1_000_000, 20, key="bt_n"))
+    n = int(st.number_input("Certified base items", 1, 1_000_000, 20, key="bt_n",
+                            help=guide.tip("bt_n")))  # fmt: skip
     split = st.segmented_control(
-        "Split", ["dev", "test", "sealed", "ood"], default="dev", required=True, key="bt_split"
+        "Split",
+        ["dev", "test", "sealed", "ood"],
+        default="dev",
+        required=True,
+        key="bt_split",
+        help=guide.tip("bt_split"),
     )
-    held = st.multiselect("Held-out families", factory.families_of(plugin), key=f"bt_hold_{plugin}")
+    held = st.multiselect("Held-out families", factory.families_of(plugin), key=f"bt_hold_{plugin}",
+                          help=guide.tip("bt_held_families"))  # fmt: skip
     params = st.text_input(
         "Held-out parameters", placeholder=HOLDOUT_EXAMPLES.get(plugin, "name=lo:hi"),
-        key="bt_params",
+        key="bt_params", help=guide.tip("bt_held_params"),
     )  # fmt: skip
-    twins = st.toggle("Causal and nuisance twins", True, key="bt_twins")
+    twins = st.toggle("Causal and nuisance twins", True, key="bt_twins", help=guide.tip("bt_twins"))
     with st.popover("Run options", icon=":material/tune:", width="stretch"):
-        seed = int(st.number_input("Batch seed", 0, 2**31 - 1, 0, key="bt_seed"))
-        workers = int(st.number_input("Workers (0 = auto)", 0, 64, 0, key="bt_workers"))
-        shard = int(st.number_input("Slots per shard (0 = flat)", 0, 100_000, 0, key="bt_shard"))
+        seed = int(st.number_input("Batch seed", 0, 2**31 - 1, 0, key="bt_seed",
+                                   help=guide.tip("bt_seed")))  # fmt: skip
+        workers = int(st.number_input("Workers (0 = auto)", 0, 64, 0, key="bt_workers",
+                                      help=guide.tip("bt_workers")))  # fmt: skip
+        shard = int(st.number_input("Slots per shard (0 = flat)", 0, 100_000, 0, key="bt_shard",
+                                    help=guide.tip("bt_shard")))  # fmt: skip
     folder = st.text_input(
-        "Output folder", f"artifacts/studio/batch/{plugin}-{split}", key=f"bt_out_{plugin}_{split}"
+        "Output folder",
+        f"artifacts/studio/batch/{plugin}-{split}",
+        key=f"bt_out_{plugin}_{split}",
+        help=guide.tip("bt_out"),
     )
     spec = factory.difficulty_from(
         _dials(("reasoning_load", "visual_stress", "occlusion_level", "color_regime"))
@@ -205,17 +218,18 @@ def _batch_panel(plugin: str) -> None:
     if missing:
         st.warning("An ood split needs a held-out family or parameter.", icon=":material/rule:")
     if st.button("Launch batch build", icon=":material/rocket_launch:", width="stretch",
-                 disabled=running or missing, key="bt_go"):  # fmt: skip
+                 disabled=running or missing, key="bt_go", help=guide.tip("bt_launch")):  # fmt: skip
         log = out.parent / f"{out.name}.log"
         st.session_state.batch = {
             "process": factory.start_batch(args, log), "out": str(out), "n": n, "log": str(log),
         }  # fmt: skip
         st.rerun(scope="fragment")
-    if job is not None:
-        if running:
-            _batch_live()
-        else:
-            _batch_result(job)
+    if job is None:
+        st.caption("No batch built yet. Set a count and press Launch batch build.")
+    elif running:
+        _batch_live()
+    else:
+        _batch_result(job)
 
 
 # ------------------------------------------------------------------ stage
@@ -241,10 +255,11 @@ def _summary(item: dict[str, Any]) -> None:
         with status:
             verdict_badge(cert["verdict"])
             st.caption(f"seed {item['seed']} · attempt {item['attempts']}")
-        answer.metric("Certified answer", item["answer"] if certified else "none")
+        answer.metric("Certified answer", item["answer"] if certified else "none",
+                      help=guide.tip("certified_answer"))  # fmt: skip
         task.metric(
             "Plugin / family", plugin_label(item["plugin"]), item["family"],
-            delta_color="off", delta_arrow="off",
+            delta_color="off", delta_arrow="off", help=guide.tip("plugin_family"),
         )  # fmt: skip
         load.metric("Reasoning", f"{scores['reasoning'][0]}/100", help=scores["reasoning"][1])
         stress.metric("Visual stress", f"{scores['visual'][0]}/100", help=scores["visual"][1])
@@ -279,13 +294,19 @@ def _stage() -> None:
     item = st.session_state.item
     _summary(item)
     view = st.segmented_control(
-        "View", VIEWS, key="view", required=True, label_visibility="collapsed"
+        "View",
+        VIEWS,
+        key="view",
+        required=True,
+        label_visibility="collapsed",
+        help=guide.tip("view"),
     )
     deficiency = "deuteranopia"
     if view == "CVD Simulation":
         chosen = st.segmented_control(
             "Deficiency", ["Deuteranopia", "Protanopia"], default="Deuteranopia",
             required=True, key="deficiency", label_visibility="collapsed",
+            help=guide.tip("deficiency"),
         )  # fmt: skip
         deficiency = str(chosen).lower()
     with st.container(horizontal_alignment="center", gap="small"):
@@ -329,40 +350,57 @@ with rail:
     names = factory.plugin_names()
     plugin = str(
         st.segmented_control(
-            "Plugin", names, format_func=plugin_label, key="plugin", required=True, width="stretch"
+            "Plugin",
+            names,
+            format_func=plugin_label,
+            key="plugin",
+            required=True,
+            width="stretch",
+            help=guide.tip("plugin"),
         )
     )
     st.pills(
         "Scenario preset", list(present.PRESETS), key="preset", on_change=_apply_preset,
-        help="Clean: easy and legible. Hard logic: long reasoning chains. High stress: noise, "
-        "occlusion and realism. CVD: colour-vision check.",
+        help=guide.tip("preset"),
     )  # fmt: skip
     clicked = st.button(
         "Generate & Certify Task", type="primary", width="stretch", icon=":material/play_arrow:",
-        key="generate",
+        key="generate", help=guide.tip("generate"),
     )  # fmt: skip
     with st.expander("Advanced Controls", icon=":material/tune:"):
         family = str(
-            st.selectbox("Question family", factory.families_of(plugin), key=f"family_{plugin}")
+            st.selectbox(
+                "Question family",
+                factory.families_of(plugin),
+                key=f"family_{plugin}",
+                help=guide.tip("family"),
+            )  # fmt: skip
         )
-        st.number_input("Seed", 0, 2**31 - 1, key="seed", help="Advances after each generation.")
-        for knob, label in (
-            ("reasoning_load", "Reasoning load"),
-            ("visual_stress", "Visual stress"),
-            ("occlusion_level", "Occlusion"),
-            ("realism", "Surface realism"),
+        st.number_input("Seed", 0, 2**31 - 1, key="seed",
+                        help=guide.tip("seed") + " Advances after each generation.")  # fmt: skip
+        for knob, label, hint in (
+            ("reasoning_load", "Reasoning load", "reasoning_load"),
+            ("visual_stress", "Visual stress", "visual_stress"),
+            ("occlusion_level", "Occlusion", "occlusion"),
+            ("realism", "Surface realism", "realism"),
         ):
-            st.select_slider(label, LEVELS, key=f"knob_{knob}")
+            st.select_slider(label, LEVELS, key=f"knob_{knob}", help=guide.tip(hint))
         st.segmented_control(
             "Color regime", [AUTO, "unique", "partial", "mono"], key="knob_color_regime",
-            required=True, width="stretch",
+            required=True, width="stretch", help=guide.tip("color_regime"),
         )  # fmt: skip
-        if st.toggle("Show fine render knobs", value=False, key="fine_knobs"):
-            st.select_slider("Stroke width (px)", [AUTO, *range(5, 15)], key="knob_stroke_px")
-            st.select_slider("Jitter (px)", [AUTO, *range(0, 25, 4)], key="knob_jitter_px")
-            st.select_slider("Sensor noise", LEVELS, key="knob_noise")
+        if st.toggle("Show fine render knobs", value=False, key="fine_knobs",
+                     help=guide.tip("fine_knobs")):  # fmt: skip
+            st.select_slider("Stroke width (px)", [AUTO, *range(5, 15)], key="knob_stroke_px",
+                             help=guide.tip("stroke_px"))  # fmt: skip
+            st.select_slider("Jitter (px)", [AUTO, *range(0, 25, 4)], key="knob_jitter_px",
+                             help=guide.tip("jitter_px"))  # fmt: skip
+            st.select_slider("Sensor noise", LEVELS, key="knob_noise", help=guide.tip("noise"))
             st.select_slider(
-                "Capture resolution", [AUTO, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], key="knob_dpi_scale"
+                "Capture resolution",
+                [AUTO, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                key="knob_dpi_scale",
+                help=guide.tip("dpi_scale"),
             )
     with st.expander("Batch & OOD Build", icon=":material/library_add:"):
         _batch_panel(plugin)

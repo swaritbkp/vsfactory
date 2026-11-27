@@ -9,7 +9,7 @@ from typing import Any
 import streamlit as st
 
 from knotwork.render.canvas import REPO_ROOT
-from knotwork.studio import forensics
+from knotwork.studio import forensics, guide
 
 OUT = REPO_ROOT / "artifacts" / "studio"
 FOOTER = (
@@ -62,7 +62,9 @@ def dataset_label(folder: str) -> str:
     return f"{name[:1].upper()}{name[1:]} · {source} · {items}"
 
 
-def dataset_select(label: str, key: str, prefer: str | None = None) -> Path | None:
+def dataset_select(
+    label: str, key: str, prefer: str | None = None, help: str | None = None
+) -> Path | None:
     """One searchable box over discovered datasets that also accepts a typed folder."""
     options = [relative(p) for p in forensics.find_datasets()]
     index = options.index(prefer) if prefer in options else (0 if options else None)
@@ -74,6 +76,7 @@ def dataset_select(label: str, key: str, prefer: str | None = None) -> Path | No
         format_func=dataset_label,
         accept_new_options=True,
         placeholder="Pick a dataset or type a folder path",
+        help=help,
     )
     if not chosen:
         st.caption("No dataset yet. Build one in Studio under Batch & OOD Build.")
@@ -107,3 +110,74 @@ def verdict_badge(verdict: str) -> None:
         st.badge("Certified", icon=":material/verified:", color="green")
     else:
         st.badge("Quarantined", icon=":material/block:", color="red")
+
+
+# ------------------------------------------------------------------ guided mode
+GUIDED_KEY = "guided_mode"
+TOUR_TITLE = "Knotwork Studio — 60-Second Guided Tour"
+
+
+def guided() -> bool:
+    """Whether the guide strip and tips are shown (on until the user turns it off)."""
+    return bool(st.session_state.get(GUIDED_KEY, True))
+
+
+def _hide_guide() -> None:
+    st.session_state[GUIDED_KEY] = False
+
+
+def _go(page: str) -> None:
+    st.switch_page(guide.PAGES[page][1])
+
+
+@st.dialog(TOUR_TITLE, width="large")
+def tour_dialog() -> None:
+    """All five tour steps, each with a button that opens its page."""
+    st.caption("Five pages, in the order a reviewer usually wants them. Each takes about a minute.")
+    for i, step in enumerate(guide.TOUR_STEPS, start=1):
+        title = guide.PAGES[step["page"]][0]
+        with st.container(border=True):
+            text, go = st.columns([5, 1.4], vertical_alignment="center")
+            text.markdown(f"**{i}. {title}: {step['goal']}**  \n{step['tip']}")
+            if go.button(f"Open {title}", key=f"tour_go_{step['page']}", width="stretch"):
+                _go(step["page"])
+
+
+def guide_controls(page: str | None) -> None:
+    """Guided mode toggle, Page guide popover and Quick tour button, for the header row."""
+    st.session_state.setdefault(GUIDED_KEY, True)
+    with st.container(horizontal=True, width="content", gap="small", vertical_alignment="center"):
+        st.toggle("Guided mode", key=GUIDED_KEY, help=guide.tip("guided_mode"))
+        if page is not None:
+            info = guide.PAGE_GUIDES[page]
+            with st.popover("Page guide", icon=":material/help:", help=guide.tip("page_guide")):
+                st.markdown(f"**{info['title']}**: {info['summary']}")
+                st.markdown("\n".join(f"{i}. {s}" for i, s in enumerate(info["steps"], 1)))
+                st.caption(f"Try first: {info['try_first']}")
+                st.markdown("**Terms**")
+                terms = "\n".join(f"- **{t}**: {guide.GLOSSARY[t]}" for t in info["terms"])
+                st.markdown(terms)
+        if st.button("Quick tour", icon=":material/route:", type="tertiary", key="tour_open",
+                     help=guide.tip("quick_tour")):  # fmt: skip
+            tour_dialog()
+
+
+def guide_strip(page: str | None) -> None:
+    """One slim bordered strip: the tour step, a tip, Next step and Hide guide. Guided mode only."""
+    if page is None or not guided():
+        return
+    i = guide.tour_index(page)
+    step = guide.TOUR_STEPS[i]
+    following = guide.next_page(page)
+    with st.container(border=True, key="guide_strip"):
+        text, actions = st.columns([3, 1.3], vertical_alignment="center")
+        text.markdown(
+            f"**Step {i + 1} of {len(guide.TOUR_STEPS)} · {step['goal']}**  \n:gray[{step['tip']}]"
+        )
+        with actions, st.container(horizontal=True, horizontal_alignment="right", gap="small"):
+            st.button("Hide guide", type="tertiary", key="guide_hide", on_click=_hide_guide,
+                      help=guide.tip("hide_guide"))  # fmt: skip
+            target = following or guide.TOUR_STEPS[0]["page"]
+            label = f"Next step: {guide.PAGES[target][0]} →" if following else "Back to Studio"
+            if st.button(label, key="guide_next", help=guide.tip("next_step")):
+                _go(target)

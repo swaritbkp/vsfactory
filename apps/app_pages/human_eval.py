@@ -11,7 +11,7 @@ import pandas as pd
 import streamlit as st
 
 from knotwork.pipeline.io import read_json, read_jsonl
-from knotwork.studio import calibration, factory, forensics, present
+from knotwork.studio import calibration, factory, forensics, guide, present
 from studio_ui import dataset_select, relative
 
 IMAGE_PX = 520
@@ -45,10 +45,16 @@ def _answer_input(item: dict[str, Any]) -> str:
     key = f"he_reply_{item['bundle_id']}"
     options = item["options"]
     if options and len(options) <= MAX_BUTTON_OPTIONS:
-        return str(st.segmented_control("Your answer", options, key=key) or "")
+        return str(
+            st.segmented_control("Your answer", options, key=key, help=guide.tip("he_answer")) or ""
+        )
     if options:
-        return str(st.selectbox("Your answer", options, index=None, key=key) or "")
-    return st.text_input("Your answer", placeholder="e.g. 42, or: yes; 42", key=key)
+        return str(
+            st.selectbox("Your answer", options, index=None, key=key, help=guide.tip("he_answer"))
+            or ""
+        )
+    return st.text_input("Your answer", placeholder="e.g. 42, or: yes; 42", key=key,
+                         help=guide.tip("he_answer"))  # fmt: skip
 
 
 def _picture(item: dict[str, Any], witness: bool) -> None:
@@ -86,9 +92,9 @@ def _show_result(result: dict[str, Any]) -> None:
     with st.container(border=True, key="he_verdict"):
         _verdict(row, item)
     with st.container(horizontal=True, vertical_alignment="center"):
-        st.toggle("Show witness overlay", key="he_witness")
+        st.toggle("Show witness overlay", key="he_witness", help=guide.tip("he_witness"))
         next_item = st.button("Next item", type="primary", icon=":material/skip_next:",
-                              key="he_next")  # fmt: skip
+                              key="he_next", help=guide.tip("he_next"))  # fmt: skip
     if next_item:
         del st.session_state.last_result
         st.session_state.pop("he_witness", None)
@@ -121,7 +127,12 @@ def _trial(dataset: Path, who: str) -> None:
     reply = _answer_input(item)
     # a plain primary button, styled exactly like Next item (a form submit button flashes darker)
     sent = st.button(
-        "Submit", type="primary", width="stretch", icon=":material/send:", key="he_submit"
+        "Submit",
+        type="primary",
+        width="stretch",
+        icon=":material/send:",
+        key="he_submit",
+        help=guide.tip("he_submit"),
     )
     if sent:
         if not reply.strip():
@@ -139,18 +150,27 @@ def _scoreboard(who: str) -> None:
     right = sum(bool(r["correct"]) for r in mine)
     if mine:
         st.metric("Your session", f"{right / len(mine):.0%}", f"{right} of {len(mine)} correct",
-                  delta_color="off", delta_arrow="off")  # fmt: skip
+                  delta_color="off", delta_arrow="off", help=guide.tip("he_session"))  # fmt: skip
     else:
-        st.metric("Your session", "0 answered", "Submit an item to get a score",
-                  delta_color="off", delta_arrow="off")  # fmt: skip
+        st.metric("Your session", "0 answered", "Answer the item on the left and press Submit",
+                  delta_color="off", delta_arrow="off", help=guide.tip("he_session"))  # fmt: skip
     frame = baseline_frame()
     if frame.empty:
         st.caption("No model baseline yet: the committed live run is missing.")
         return
-    percent = st.column_config.ProgressColumn(format="%.1f%%", min_value=0.0, max_value=100.0)
+
+    def percent(key: str) -> Any:
+        return st.column_config.ProgressColumn(
+            format="%.1f%%", min_value=0.0, max_value=100.0, help=guide.tip(key)
+        )
+
     st.dataframe(
         frame, hide_index=True, width="stretch", alt="Model accuracy on the live benchmark",
-        column_config={"Accuracy": percent, "Shared": percent},
+        column_config={
+            "Model": st.column_config.TextColumn(help=guide.tip("col_model")),
+            "Accuracy": percent("col_he_accuracy"), "Shared": percent("col_shared"),
+            "Items": st.column_config.NumberColumn(help=guide.tip("col_items")),
+        },
         height=36 * (len(frame) + 1) + 2,  # every row visible: no inner scroll, no blank space
     )  # fmt: skip
     st.caption(
@@ -184,15 +204,18 @@ with side:
         st.markdown("**Scoreboard**")
         _scoreboard(str(st.session_state.participant))  # drawn first: above the fold on load
     with st.expander("Session", icon=":material/badge:"):
-        participant = st.text_input("Participant id", key="participant")
-        chosen = dataset_select("Item set", "he_dataset", _preferred_dataset())
+        participant = st.text_input("Participant id", key="participant",
+                                    help=guide.tip("he_participant"))  # fmt: skip
+        chosen = dataset_select("Item set", "he_dataset", _preferred_dataset(),
+                                help=guide.tip("he_item_set"))  # fmt: skip
         if calibration.LOG.is_file():
             st.download_button(
                 "Download responses", calibration.LOG.read_bytes(), "human_calibration.jsonl",
-                icon=":material/download:", width="stretch",
+                icon=":material/download:", width="stretch", help=guide.tip("he_download"),
             )  # fmt: skip
 with card, st.container(border=True):
     if chosen is None:
-        st.info("Pick an item set under Session to start.", icon=":material/playlist_add:")
+        st.info("Open Session on the right and pick an item set to start answering.",
+                icon=":material/playlist_add:")  # fmt: skip
     else:
         _trial(chosen, participant)

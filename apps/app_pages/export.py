@@ -14,7 +14,7 @@ from knotwork.export.run import run_export
 from knotwork.freshness import lineage
 from knotwork.pipeline.io import read_json
 from knotwork.render.canvas import REPO_ROOT
-from knotwork.studio import factory, forensics, present
+from knotwork.studio import factory, forensics, guide, present
 from studio_ui import OUT, dataset_label, dataset_select, relative, resolve
 
 FALLBACKS = ("artifacts/selftest/data/tangle", "artifacts/phase3/bench_split/tangle")
@@ -67,8 +67,8 @@ def _preview(dataset: Path) -> None:
             st.image(factory.beauty(first, PREVIEW_PX), width=PREVIEW_PX, alt="First item")
     with facts:
         a, b = st.columns(2)
-        a.metric("Bundles", len(rows))
-        b.metric("Base items", len(bases))
+        a.metric("Bundles", len(rows), help=guide.tip("ex_bundles"))
+        b.metric("Base items", len(bases), help=guide.tip("ex_bases"))
         frame = pd.DataFrame([{"Family": k, "Bundles": v} for k, v in sorted(families.items())])
         st.dataframe(frame, hide_index=True, width="stretch", alt="Bundles per question family")
 
@@ -93,6 +93,7 @@ def _result(out: Path) -> None:
     st.download_button(
         "Download dataset_manifest.json", manifest.read_bytes(), "dataset_manifest.json",
         icon=":material/download:", key="ex_manifest", width="stretch",
+        help=guide.tip("ex_manifest"),
     )  # fmt: skip
 
 
@@ -103,8 +104,10 @@ def _lineage(dataset: Path) -> None:
     nodes = forensics.lineage_nodes(dataset)
     st.caption(f"{len(nodes)} nodes: scene → render → certificate → twin → eval")
     with st.container(horizontal=True, vertical_alignment="bottom"):
-        bundle = st.selectbox("Bundle", [r["bundle_id"] for r in rows], key="ln_bundle")
-        check = st.button("Verify against files", icon=":material/fact_check:", key="ln_check")
+        bundle = st.selectbox("Bundle", [r["bundle_id"] for r in rows], key="ln_bundle",
+                              help=guide.tip("ln_bundle"))  # fmt: skip
+        check = st.button("Verify against files", icon=":material/fact_check:", key="ln_check",
+                          help=guide.tip("ln_check"))  # fmt: skip
     if check:
         stored = (dataset / lineage.FILENAME).is_file()
         found = lineage.check_dataset(dataset) if stored else lineage.verify(nodes)
@@ -122,29 +125,34 @@ controls, output = st.columns([45, 55], gap="large")
 with controls:
     with st.container(border=True):
         st.markdown("**1. Choose a dataset**")
-        dataset = dataset_select("Dataset", "ex_dataset", _preferred())
+        dataset = dataset_select(
+            "Dataset", "ex_dataset", _preferred(), help=guide.tip("ex_dataset")
+        )
     with st.container(border=True):
         st.markdown("**2. Choose formats**")
         formats = list(
             st.pills(
                 "Formats", list(present.FORMAT_LABELS), selection_mode="multi",
                 default=list(present.FORMAT_LABELS), format_func=present.FORMAT_LABELS.__getitem__,
-                key="ex_formats", label_visibility="collapsed",
+                key="ex_formats", label_visibility="collapsed", help=guide.tip("ex_formats"),
             )
         )  # fmt: skip
         st.caption("Every export also writes a manifest with the SHA-256 of each file.")
         with st.expander("Options", icon=":material/tune:"):
-            shard = float(st.number_input("Max parquet shard (MB, 0 = one file)", 0.0, 4096.0, 0.0))
-            limit = int(st.number_input("Limit bundles (0 = all)", 0, 10_000_000, 0))
+            shard = float(st.number_input("Max parquet shard (MB, 0 = one file)", 0.0, 4096.0, 0.0,
+                                          help=guide.tip("ex_shard")))  # fmt: skip
+            limit = int(st.number_input("Limit bundles (0 = all)", 0, 10_000_000, 0,
+                                        help=guide.tip("ex_limit")))  # fmt: skip
             default = relative(OUT / "export" / (dataset.name if dataset else "dataset"))
-            folder = st.text_input("Output folder", default, key=f"ex_out_{default}")
+            folder = st.text_input("Output folder", default, key=f"ex_out_{default}",
+                                   help=guide.tip("ex_out"))  # fmt: skip
     with st.container(border=True):
         st.markdown("**3. Export**")
         out = resolve(folder)
         st.caption(f"Writes to `{relative(out)}`.")
         go = st.button(
             "Export dataset", type="primary", width="stretch", icon=":material/package_2:",
-            disabled=dataset is None or not formats, key="ex_go",
+            disabled=dataset is None or not formats, key="ex_go", help=guide.tip("ex_go"),
         )  # fmt: skip
         if not formats:
             st.caption("Choose at least one format to export.")

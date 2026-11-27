@@ -27,7 +27,7 @@ from knotwork.arena.schemas import (
     TrialRecord,
 )
 from knotwork.pipeline.io import read_json
-from knotwork.studio import factory, forensics
+from knotwork.studio import factory, forensics, guide
 from studio_ui import relative, run_with_status
 
 WS = storage.Workspace()
@@ -166,10 +166,12 @@ def _sidebar() -> None:
     ss = st.session_state
     with st.sidebar:
         st.button("New session", type="primary", icon=":material/add:", width="stretch",
-                  on_click=_new_session, key="ar_new")  # fmt: skip
+                  on_click=_new_session, key="ar_new", help=guide.tip("ar_new"))  # fmt: skip
         query = st.text_input("Search sessions", key="ar_q", placeholder="Name, client or model",
-                              label_visibility="collapsed", icon=":material/search:")  # fmt: skip
-        chosen = st.selectbox("Status", FILTERS, key="ar_filter", label_visibility="collapsed")
+                              label_visibility="collapsed", icon=":material/search:",
+                              help=guide.tip("ar_search"))  # fmt: skip
+        chosen = st.selectbox("Status", FILTERS, key="ar_filter", label_visibility="collapsed",
+                              help=guide.tip("ar_filter"))  # fmt: skip
         entries = WS.entries()
         shown = []
         for entry in entries:
@@ -181,7 +183,8 @@ def _sidebar() -> None:
                 continue
             shown.append((entry, facts))
         if not entries:
-            st.caption("No saved sessions yet. Set one up and press Launch campaign.")
+            st.caption("No saved sessions yet. Fill in the setup on the right and press Launch "
+                       "campaign.")  # fmt: skip
         elif not shown:
             st.caption("No session matches this search.")
         for entry, facts in shown:
@@ -201,7 +204,8 @@ def _sidebar() -> None:
             _quick_actions(ss.ar_selected)
         with st.expander("Register existing folder", icon=":material/create_new_folder:"):
             folder = st.text_input("Results folder", key="ar_mount",
-                                   placeholder="D:/evals/rack-audit/results")  # fmt: skip
+                                   placeholder="D:/evals/rack-audit/results",
+                                   help=guide.tip("ar_mount"))  # fmt: skip
             if st.button("Add to sidebar", key="ar_mount_go", width="stretch"):
                 entry = WS.register_existing(Path(folder)) if folder.strip() else None
                 if entry is None:
@@ -219,11 +223,10 @@ def _quick_actions(slug: str) -> None:
     st.caption(f"Actions for **{entry.name}**")
     with st.container(horizontal=True, gap="small"):
         if cfg is not None and st.button("Clone config", icon=":material/content_copy:",
-                                         key="ar_clone", help="Same blocks, models and presets; "
-                                         "fresh seeds and folders."):  # fmt: skip
+                                         key="ar_clone", help=guide.tip("ar_clone")):  # fmt: skip
             _load_form(storage.clone_config(cfg, f"{cfg.session_name} copy", WS))
             st.rerun()
-        with st.popover("Rename / tag", icon=":material/edit:"):
+        with st.popover("Rename / tag", icon=":material/edit:", help=guide.tip("ar_rename")):
             name = st.text_input("Session name", entry.name, key=f"ar_rn_{slug}")
             client = st.text_input("Client / project", entry.client, key=f"ar_rc_{slug}")
             tags = st.text_input(
@@ -236,8 +239,10 @@ def _quick_actions(slug: str) -> None:
     others = {e.slug: e.name for e in WS.entries() if e.slug != slug}
     if others:
         st.selectbox("Compare against…", list(others), index=None, key="ar_compare",
-                     format_func=others.__getitem__, placeholder="Pick a session to diff")  # fmt: skip
-    with st.popover("Archive / remove from sidebar", icon=":material/archive:", width="stretch"):
+                     format_func=others.__getitem__, placeholder="Pick a session to diff",
+                     help=guide.tip("ar_compare"))  # fmt: skip
+    with st.popover("Archive / remove from sidebar", icon=":material/archive:", width="stretch",
+                    help=guide.tip("ar_archive")):  # fmt: skip
         st.caption("Removes the session from this list. Its folders on disk are kept, and "
                    "Register existing folder brings it back.")  # fmt: skip
         if st.button("Remove from sidebar", key=f"ar_arch_{slug}", width="stretch"):
@@ -251,23 +256,27 @@ def _setup_card() -> dict[str, Any]:
     ss = st.session_state
     with st.container(border=True):
         st.markdown("**Session setup & storage**")
-        st.text_input("Session name", key="ar_name", on_change=_on_name, max_chars=120)
+        st.text_input("Session name", key="ar_name", on_change=_on_name, max_chars=120,
+                      help=guide.tip("ar_name"))  # fmt: skip
         slug = WS.unique_slug(storage.slugify(str(ss.ar_name)))
         st.caption(f"Session id `{slug}`")
         a, b = st.columns(2)
-        a.text_input("Organization / client", key="ar_client", placeholder="Optional; on reports")
-        b.text_input("Evaluator", key="ar_eval", placeholder="Optional")
-        st.text_area("Notes", key="ar_notes", height=68, placeholder="What this run is for")
+        a.text_input("Organization / client", key="ar_client", placeholder="Optional; on reports",
+                     help=guide.tip("ar_client"))  # fmt: skip
+        b.text_input("Evaluator", key="ar_eval", placeholder="Optional", help=guide.tip("ar_eval"))
+        st.text_area("Notes", key="ar_notes", height=68, placeholder="What this run is for",
+                     help=guide.tip("ar_notes"))  # fmt: skip
         mode = st.segmented_control("Dataset folder", list(DATA_MODES), key="ar_data_mode",
                                     default="Generate new dataset", required=True,
-                                    width="stretch")  # fmt: skip
+                                    width="stretch", help=guide.tip("ar_data_mode"))  # fmt: skip
         reuse = DATA_MODES[str(mode)] == "reuse"
         items: list[ItemRecord] = []
         if reuse:
             options = _dataset_options()
             picked = st.selectbox("Certified dataset", options, index=0 if options else None,
                                   key="ar_reuse_dir", accept_new_options=True,
-                                  placeholder="Pick a dataset or paste a folder path")  # fmt: skip
+                                  placeholder="Pick a dataset or paste a folder path",
+                                  help=guide.tip("ar_reuse_dir"))  # fmt: skip
             data_dir = str(picked or "")
             items = storage.dataset_items(storage.resolve(data_dir)) if data_dir else []
             if data_dir and not items:
@@ -281,10 +290,9 @@ def _setup_card() -> dict[str, Any]:
                            "Frozen: the same images and answers for every model.")  # fmt: skip
         else:
             data_dir = st.text_input("Dataset folder (data_dir)", key="ar_data_dir",
-                                     help="Images, task.json, certificate.json and "
-                                     "dataset_manifest.json are written here.")  # fmt: skip
+                                     help=guide.tip("ar_data_dir"))  # fmt: skip
         results_dir = st.text_input("Results & reports folder (results_dir)", key="ar_results_dir",
-                                    help="config.json, results.jsonl and reports/ go here.")  # fmt: skip
+                                    help=guide.tip("ar_results_dir"))  # fmt: skip
         if results_dir and (storage.resolve(results_dir) / storage.RESULTS).is_file():
             st.warning("This results folder already holds a session. Open it from the sidebar to "
                        "resume, or choose an empty folder.", icon=":material/warning:")  # fmt: skip
@@ -307,7 +315,7 @@ def _mode_card() -> dict[str, Any]:
         st.markdown("**Execution mode & guardrails**")
         mode = MODES[str(st.segmented_control("Execution mode", list(MODES), key="ar_mode",
                                               default="Offline Mock (No Key)", required=True,
-                                              width="stretch"))]  # fmt: skip
+                                              width="stretch", help=guide.tip("ar_mode")))]  # fmt: skip
         found, source = keys.detect()
         if mode == "live":
             if found:
@@ -315,22 +323,22 @@ def _mode_card() -> dict[str, Any]:
                          icon=":material/key:")  # fmt: skip
             else:
                 st.badge("No .env key detected", color="orange", icon=":material/key_off:")
-            if st.toggle("Override with custom OpenRouter API key", key="ar_override"):
+            if st.toggle("Override with custom OpenRouter API key", key="ar_override",
+                         help=guide.tip("ar_override")):  # fmt: skip
                 st.text_input("OpenRouter API key", type="password", key=SECRET_KEY,
-                              placeholder="sk-or-…", help="Kept in this browser session only and "
-                              "passed to the runner through its environment. Never saved.")  # fmt: skip
+                              placeholder="sk-or-…", help=guide.tip("ar_key"))  # fmt: skip
         else:
             st.caption("Simulated models answer the certified items offline: no key, no network, "
                        "no charges. Costs shown are what a live run would cost.")  # fmt: skip
         a, b, c = st.columns(3)
         a.number_input("Spend cap ($)", 0.0, 250.0, 0.50, 0.25, key="ar_cap", format="%.2f",
-                       help="Checked before every live call.")  # fmt: skip
-        b.number_input("Max concurrency", 1, 8, 2, key="ar_conc")
-        c.number_input("Rate limit (RPM)", 1, 1000, 60, key="ar_rpm")
+                       help=guide.tip("ar_cap"))  # fmt: skip
+        b.number_input("Max concurrency", 1, 8, 2, key="ar_conc", help=guide.tip("ar_conc"))
+        c.number_input("Rate limit (RPM)", 1, 1000, 60, key="ar_rpm", help=guide.tip("ar_rpm"))
         delay = 0.0
         if mode == "mock":
             delay = float(st.number_input("Simulated latency per call (s)", 0.0, 5.0, 0.2, 0.1,
-                                          key="ar_delay"))  # fmt: skip
+                                          key="ar_delay", help=guide.tip("ar_delay")))  # fmt: skip
     return {"mode": mode, "cap": float(ss.ar_cap), "conc": int(ss.ar_conc),
             "rpm": int(ss.ar_rpm), "delay": delay}  # fmt: skip
 
@@ -345,22 +353,26 @@ def _models_card(live_mode: bool) -> tuple[list[str], catalog.Catalog]:
                      color="green" if cat.source == "live" else "gray",
                      icon=":material/cloud_done:" if cat.source == "live" else ":material/inventory_2:")  # fmt: skip
             if live_mode and st.button("Refresh live catalog", icon=":material/refresh:",
-                                       key="ar_refresh", type="tertiary"):  # fmt: skip
+                                       key="ar_refresh", type="tertiary",
+                                       help=guide.tip("ar_refresh")):  # fmt: skip
                 ss.ar_live_catalog = True
                 _catalog.clear()
                 st.rerun()
         if cat.note:
             st.caption(cat.note)
-        free_only = st.toggle("Free models only (:free)", key="ar_free_only")
+        free_only = st.toggle("Free models only (:free)", key="ar_free_only",
+                              help=guide.tip("ar_free_only"))  # fmt: skip
         options = list(dict.fromkeys([*cat.ids(free_only), *ss.ar_custom_models, *ss.ar_models]))
         labels = {m.id: m.label for m in cat.models}
         st.multiselect("Default models", options, key="ar_models",
                        format_func=lambda m: labels.get(m, f"{m} · custom"),
-                       placeholder="Search vision models")  # fmt: skip
+                       placeholder="Search vision models", help=guide.tip("ar_models"))  # fmt: skip
         with st.container(horizontal=True, vertical_alignment="bottom"):
             st.text_input("Custom model ID", key="ar_custom_input",
-                          placeholder="vendor/model, or with :nitro / :floor / :exacto")  # fmt: skip
-            st.button("Add model", icon=":material/add:", key="ar_custom_go", on_click=_add_custom)
+                          placeholder="vendor/model, or with :nitro / :floor / :exacto",
+                          help=guide.tip("ar_custom_model"))  # fmt: skip
+            st.button("Add model", icon=":material/add:", key="ar_custom_go", on_click=_add_custom,
+                      help=guide.tip("ar_add_model"))  # fmt: skip
     return list(ss.ar_models), cat
 
 
@@ -410,28 +422,33 @@ def _block_editor(spec: dict[str, Any], models: list[str], frozen: bool) -> dict
         domain = cols[0].selectbox(
             "Domain", domains, index=domains.index(spec["domain"]) if spec["domain"] in domains
             else 0, key=f"blk_{bid}_domain", format_func=DOMAIN_LABELS.__getitem__, disabled=frozen,
+            help=guide.tip("blk_domain"),
         )  # fmt: skip
         presets = list(PRESETS) if spec["preset"] in PRESETS else [spec["preset"]]
         preset = cols[1].selectbox("Preset", presets, index=presets.index(spec["preset"]),
-                                   key=f"blk_{bid}_preset", disabled=frozen)  # fmt: skip
+                                   key=f"blk_{bid}_preset", disabled=frozen,
+                                   help=guide.tip("blk_preset"))  # fmt: skip
         ss.setdefault(f"blk_{bid}_n", int(spec["n"]))
-        n = cols[2].number_input("Sample count", 1, 100_000, key=f"blk_{bid}_n", disabled=frozen)
+        n = cols[2].number_input("Sample count", 1, 100_000, key=f"blk_{bid}_n", disabled=frozen,
+                                 help=guide.tip("blk_n"))  # fmt: skip
         ss.setdefault(f"blk_{bid}_seed", int(spec["seed"]))
         seed = cols[3].number_input("Start seed", 0, 2**31 - 1, key=f"blk_{bid}_seed",
-                                    disabled=frozen)  # fmt: skip
+                                    disabled=frozen, help=guide.tip("blk_seed"))  # fmt: skip
         if not frozen:
             st.pills("Quick pick", list(planning.QUICK_N), key=f"blk_{bid}_pick",
                      on_change=_quick_n, args=(bid,), label_visibility="collapsed",
-                     format_func=lambda v: f"{v:,}")  # fmt: skip
+                     format_func=lambda v: f"{v:,}", help=guide.tip("blk_quick"))  # fmt: skip
         ss.setdefault(f"blk_{bid}_default", spec.get("models") is None)
-        use_default = st.toggle("Use default models", key=f"blk_{bid}_default")
+        use_default = st.toggle("Use default models", key=f"blk_{bid}_default",
+                                help=guide.tip("blk_default"))  # fmt: skip
         own: list[str] | None = None
         if not use_default:
             choices = list(
                 dict.fromkeys([*models, *ss.ar_custom_models, *(spec.get("models") or [])])
             )
             ss.setdefault(f"blk_{bid}_models", list(spec.get("models") or models))
-            own = list(st.multiselect("Models for this block", choices, key=f"blk_{bid}_models"))
+            own = list(st.multiselect("Models for this block", choices, key=f"blk_{bid}_models",
+                                      help=guide.tip("blk_models")))  # fmt: skip
     return {"block_id": bid, "domain": domain, "preset": preset, "n": int(n), "seed": int(seed),
             "models": own}  # fmt: skip
 
@@ -450,7 +467,8 @@ def _campaign(models: list[str], setup: dict[str, Any]) -> list[dict[str, Any]]:
     out = [_block_editor(spec, models, frozen) for spec in specs]
     if not frozen:
         ss.ar_blocks = out
-        st.button("Add block", icon=":material/add:", key="ar_add_block", on_click=_add_block)
+        st.button("Add block", icon=":material/add:", key="ar_add_block", on_click=_add_block,
+                  help=guide.tip("ar_add_block"))  # fmt: skip
     return out
 
 
@@ -485,20 +503,22 @@ def _launch_bar(setup: dict[str, Any], mode: dict[str, Any], models: list[str],
         a, b, c, d = st.columns(4)
         if setup["reuse"]:
             a.metric("Certified images", f"{pf.images_reused:,}", "reused, frozen",
-                     delta_color="off", delta_arrow="off", border=True)  # fmt: skip
+                     delta_color="off", delta_arrow="off", border=True,
+                     help=guide.tip("pf_images"))  # fmt: skip
         else:
             a.metric("Images to generate", f"{pf.images_to_generate:,}",
                      f"~{planning.human_duration(pf.gen_seconds)}", delta_color="off",
-                     delta_arrow="off", border=True)  # fmt: skip
+                     delta_arrow="off", border=True, help=guide.tip("pf_images"))  # fmt: skip
         b.metric("Model trials", f"{pf.trials:,}", "Σ N × models per block", delta_color="off",
-                 delta_arrow="off", border=True)  # fmt: skip
+                 delta_arrow="off", border=True, help=guide.tip("pf_trials"))  # fmt: skip
         c.metric("Est. evaluation time", planning.human_duration(pf.eval_seconds),
                  f"{cfg.max_concurrency} concurrent · {cfg.rpm} RPM", delta_color="off",
-                 delta_arrow="off", border=True)  # fmt: skip
+                 delta_arrow="off", border=True, help=guide.tip("pf_time"))  # fmt: skip
         live = cfg.mode == "live"
         d.metric("Est. max cost" if live else "Cost if run live", f"${pf.max_cost_usd:,.2f}",
                  f"cap ${cfg.spend_cap_usd:.2f}" if live else "$0.00 charged (mock)",
-                 delta_color="off", delta_arrow="off", border=True)  # fmt: skip
+                 delta_color="off", delta_arrow="off", border=True,
+                 help=guide.tip("pf_cost"))  # fmt: skip
         problems = []
         if not models:
             problems.append("Pick at least one default model.")
@@ -517,7 +537,8 @@ def _launch_bar(setup: dict[str, Any], mode: dict[str, Any], models: list[str],
                     "cleanly when the cap is reached and can be resumed with a higher cap.",
                     icon=":material/savings:")  # fmt: skip
         if st.button("Launch campaign", type="primary", icon=":material/rocket_launch:",
-                     width="stretch", disabled=bool(problems), key="ar_launch"):  # fmt: skip
+                     width="stretch", disabled=bool(problems), key="ar_launch",
+                     help=guide.tip("ar_launch")):  # fmt: skip
             found, process = planning.start(cfg, WS, cat, key if live else None)
             if found:
                 for p in found:
@@ -546,20 +567,23 @@ def _new_session_view() -> None:
 def _controls(entry_dir: Path, cfg: SessionConfig, state: str, running: bool) -> None:
     key, _ = _api_key()
     with st.container(horizontal=True, gap="small"):
-        if st.button("Pause", icon=":material/pause:", disabled=not running, key="ar_pause"):
+        if st.button("Pause", icon=":material/pause:", disabled=not running, key="ar_pause",
+                     help=guide.tip("ar_pause")):  # fmt: skip
             storage.send_control(entry_dir, "pause")
             st.toast("Pausing after the calls in flight.", icon=":material/pause:")
-        if st.button("Stop", icon=":material/stop:", disabled=not running, key="ar_stop"):
+        if st.button("Stop", icon=":material/stop:", disabled=not running, key="ar_stop",
+                     help=guide.tip("ar_stop")):  # fmt: skip
             storage.send_control(entry_dir, "stop")
             st.toast("Stopping after the calls in flight.", icon=":material/stop:")
         can_resume = not running and state != "done"
         label = "Resume" if state not in ("idle",) else "Start"
         if st.button(label, type="primary", icon=":material/play_arrow:", disabled=not can_resume,
-                     key="ar_resume"):  # fmt: skip
+                     key="ar_resume", help=guide.tip("ar_resume")):  # fmt: skip
             _relaunch(entry_dir, key, retry=False)
         failed = storage.read_status(entry_dir).failed_trials
         if st.button(f"Retry failed API calls only ({failed})", icon=":material/replay:",
-                     disabled=running or failed == 0, key="ar_retry"):  # fmt: skip
+                     disabled=running or failed == 0, key="ar_retry",
+                     help=guide.tip("ar_retry")):  # fmt: skip
             _relaunch(entry_dir, key, retry=True)
     with st.expander("Copy headless CLI command", icon=":material/terminal:"):
         st.code(storage.cli_command(entry_dir), language="powershell", wrap_lines=True)
@@ -589,26 +613,26 @@ def _kpis(cfg: SessionConfig, items: list[ItemRecord], trials: dict[str, TrialRe
     a, b, c, d, e = st.columns(5)
     a.metric("Completed trials", f"{status.completed_trials:,} / {status.total_trials:,}",
              f"{status.failed_trials} failed" if status.failed_trials else None,
-             delta_color="off", delta_arrow="off", border=True)  # fmt: skip
+             delta_color="off", delta_arrow="off", border=True,
+             help=guide.tip("kpi_trials"))  # fmt: skip
     b.metric("Certification yield", report.pct(f["yield"]),
              f"{f['certified']:,} of {f['items']:,} items", delta_color="off", delta_arrow="off",
-             border=True)  # fmt: skip
+             border=True, help=guide.tip("kpi_yield_arena"))  # fmt: skip
     if best:
         c.metric("Best model accuracy", report.pct(best["accuracy"]),
                  f"{report.short(best['model'])} · CI {report.pct(best['ci_lo'], 0)}–"
                  f"{report.pct(best['ci_hi'], 0)}", delta_color="off", delta_arrow="off",
-                 border=True)  # fmt: skip
+                 border=True, help=guide.tip("kpi_best"))  # fmt: skip
     else:
         c.metric("Best model accuracy", "—", "no scored trial yet", delta_color="off",
-                 delta_arrow="off", border=True)  # fmt: skip
+                 delta_arrow="off", border=True, help=guide.tip("kpi_best"))  # fmt: skip
     spend_note = f"cap ${cfg.spend_cap_usd:.2f}" if cfg.mode == "live" else "simulated estimate"
     d.metric("Total spend", report.usd(status.spend_usd), spend_note, delta_color="off",
-             delta_arrow="off", border=True)  # fmt: skip
+             delta_arrow="off", border=True, help=guide.tip("kpi_spend"))  # fmt: skip
     gen, verify = f["gen_ms"]["mean"], f["verify_ms"]["mean"]
     pair = "—" if gen is None else f"{gen / 1000:.1f} / {(verify or 0) / 1000:.1f} s"
     e.metric("Mean gen / verify", pair, f"API {report.ms(latency)}", delta_color="off",
-             delta_arrow="off", border=True, help="Per item: render, then kernel certification; "
-             "API is the mean model latency.")  # fmt: skip
+             delta_arrow="off", border=True, help=guide.tip("kpi_genverify"))  # fmt: skip
 
 
 def _progress(status: Any, items: list[ItemRecord]) -> None:
@@ -642,11 +666,20 @@ def _leaderboard(cfg: SessionConfig, trials: dict[str, TrialRecord]) -> None:
         pd.DataFrame(rows), hide_index=True, width="stretch", key="ar_matrix",
         alt="Block by model leaderboard with accuracy, confidence interval, latency and cost",
         column_config={
+            "Block": st.column_config.TextColumn(help=guide.tip("col_block")),
+            "Model": st.column_config.TextColumn(help=guide.tip("col_model")),
             "Accuracy": st.column_config.ProgressColumn(format="%.1f%%", min_value=0.0,
-                                                        max_value=100.0),
-            "Cost": st.column_config.NumberColumn(format="$%.4f"),
-            "$ / correct": st.column_config.NumberColumn(format="$%.4f"),
-            "Tokens": st.column_config.NumberColumn(format="%d"),
+                                                        max_value=100.0,
+                                                        help=guide.tip("col_accuracy")),
+            "95% CI": st.column_config.TextColumn(help=guide.tip("col_ci")),
+            "Correct / N": st.column_config.TextColumn(help=guide.tip("col_correct")),
+            "p50 / p95 latency": st.column_config.TextColumn(help=guide.tip("col_latency")),
+            "Cost": st.column_config.NumberColumn(format="$%.4f", help=guide.tip("col_cost")),
+            "$ / correct": st.column_config.NumberColumn(
+                format="$%.4f", help=guide.tip("col_cost_per_correct")
+            ),
+            "Tokens": st.column_config.NumberColumn(format="%d", help=guide.tip("col_tokens")),
+            "API errors": st.column_config.NumberColumn(help=guide.tip("col_api_errors")),
         },
     )  # fmt: skip
 
@@ -692,7 +725,8 @@ def _model_card(
         with st.expander("Raw reply", icon=":material/notes:"):
             st.text(trial.reply or "(empty)")
         if not trial.correct and st.button("Send failure to Forensics", icon=":material/troubleshoot:",
-                                           key=f"ar_fx_{trial.trial_id}", width="stretch"):  # fmt: skip
+                                           key=f"ar_fx_{trial.trial_id}", width="stretch",
+                                           help=guide.tip("ar_send_forensics")):  # fmt: skip
             _to_forensics(item, trial, cfg)
 
 
@@ -713,13 +747,15 @@ def _inspector(cfg: SessionConfig) -> None:
     data = storage.resolve(cfg.data_dir)
     items = [i for i in storage.dataset_items(data) if i.certified]
     if not items:
-        st.info("No certified item yet. They appear here as the factory certifies them.",
+        st.info("No certified item yet. Press Start or Resume above; items appear here as the "
+                "factory certifies them.",
                 icon=":material/image:")  # fmt: skip
         return
     trials = storage.load_trials(storage.resolve(cfg.results_dir))
     blocks = {b.block_id: b.label for b in cfg.blocks}
     a, b, c = st.columns([1.2, 2, 1], vertical_alignment="bottom")
-    block = a.selectbox("Block", list(blocks), format_func=blocks.__getitem__, key="ar_ins_block")
+    block = a.selectbox("Block", list(blocks), format_func=blocks.__getitem__, key="ar_ins_block",
+                        help=guide.tip("ar_ins_block"))  # fmt: skip
     mine = sorted((i for i in items if i.block_id == block), key=lambda i: i.item_index)
     if not mine:
         st.caption("This block has no certified item yet.")
@@ -734,8 +770,9 @@ def _inspector(cfg: SessionConfig) -> None:
         right = sum(bool(t.correct) for t in done)
         return f"#{i.item_index:03d} · {i.family} · truth {i.truth} · {right}/{len(done)} correct"
 
-    item = b.selectbox("Item", mine, format_func=label, key=f"ar_ins_item_{block}")
-    witness = c.toggle("Witness overlay", key="ar_ins_witness")
+    item = b.selectbox("Item", mine, format_func=label, key=f"ar_ins_item_{block}",
+                       help=guide.tip("ar_ins_item"))  # fmt: skip
+    witness = c.toggle("Witness overlay", key="ar_ins_witness", help=guide.tip("ar_ins_witness"))
     left, right = st.columns([1, 1.25], gap="medium")
     with left:
         bundle = data / item.dir
@@ -776,12 +813,11 @@ def _report_tab(cfg: SessionConfig, entry_dir: Path) -> None:
                "intervals, cross-block z and Fisher tests, error taxonomy and timing.")  # fmt: skip
     with st.container(horizontal=True, vertical_alignment="bottom"):
         brief = st.checkbox("Include AI Executive Brief", key="ar_brief", disabled=not key,
-                            help="Needs a live OpenRouter key. Feeds only the computed metrics "
-                            "to the model you pick.")  # fmt: skip
+                            help=guide.tip("ar_brief"))  # fmt: skip
         model = st.selectbox("Synthesis model", SYNTH_MODELS, key="ar_brief_model",
-                             disabled=not (brief and key))  # fmt: skip
+                             disabled=not (brief and key), help=guide.tip("ar_brief_model"))  # fmt: skip
         go = st.button("Generate report", type="primary", icon=":material/description:",
-                       key="ar_report_go")  # fmt: skip
+                       key="ar_report_go", help=guide.tip("ar_report_go"))  # fmt: skip
     if compare:
         st.caption(f"Includes a regression diff against **{compare[0].session_name}**.")
     if go:
@@ -803,6 +839,7 @@ def _report_tab(cfg: SessionConfig, entry_dir: Path) -> None:
     if not written and (reports / "report.html").is_file():
         written = {p.name: str(p) for p in reports.iterdir() if p.is_file()}
     if not written:
+        st.caption("No report yet. Press Generate report to write it.")
         return
     files = [Path(p) for p in written.values() if Path(p).is_file()]
     st.success(f"Report written to `{relative(reports)}`.", icon=":material/check_circle:")
