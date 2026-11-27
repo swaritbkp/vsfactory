@@ -11,8 +11,8 @@ import pandas as pd
 import streamlit as st
 
 from knotwork.pipeline.io import read_json, read_jsonl
-from knotwork.studio import calibration, factory, forensics, guide, present
-from studio_ui import dataset_select, relative
+from knotwork.studio import calibration, factory, forensics, guide, present, review
+from studio_ui import dataset_select, relative, review_controls
 
 IMAGE_PX = 520
 MAX_BUTTON_OPTIONS = 8
@@ -91,6 +91,8 @@ def _show_result(result: dict[str, Any]) -> None:
     st.markdown(_question_text(item))
     with st.container(border=True, key="he_verdict"):
         _verdict(row, item)
+        review_controls(review.STUDIO_LOG, item["bundle_id"], item["plugin"], None,
+                        f"he_{item['bundle_id']}")  # fmt: skip
     with st.container(horizontal=True, vertical_alignment="center"):
         st.toggle("Show witness overlay", key="he_witness", help=guide.tip("he_witness"))
         next_item = st.button("Next item", type="primary", icon=":material/skip_next:",

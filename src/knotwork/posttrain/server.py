@@ -4,6 +4,8 @@ Endpoints (JSON in, JSON out):
 * `GET  /health`      -> {"status": "ok", "kernel_sha256", "weights", "version"}
 * `POST /score`       -> one rollout {data_source, solution_str, ground_truth, extra_info?}
 * `POST /score_batch` -> {"items": [rollout, ...]} -> {"results": [...], "mean_score"}
+* `GET  /llms.txt`    -> the repository's `llms.txt` (text/plain), a machine-readable summary for
+  agents; an embedded copy is served when the server runs outside the repository
 
 The server keeps no state between requests and makes no outbound connection, so it runs unchanged
 under `KNOTWORK_NETWORK=deny`. It binds 127.0.0.1 by default; GPU rollout workers on other hosts
@@ -24,6 +26,29 @@ from knotwork.posttrain.reward import DEFAULT_WEIGHTS, compute_score
 MAX_BODY_BYTES = 16 * 1024 * 1024
 MAX_BATCH = 4096
 LOOPBACK = ("127.0.0.1", "localhost", "::1")
+TEXT_ROUTES = ("/llms.txt",)
+#: served when no repository `llms.txt` is next to the package (an installed wheel)
+LLMS_FALLBACK = """# Knotwork
+
+> Proof-carrying synthetic visual task factory: seeded 2-D scenes whose answers an isolated kernel
+> re-derives from renderer object masks before an item is emitted. Offline by default.
+
+## Verifier endpoints
+
+- `GET /health`: status, kernel digest, reward weights
+- `POST /score`: {data_source, solution_str, ground_truth, extra_info?} -> {score, ...}
+- `POST /score_batch`: {"items": [...]} -> {results, n, mean_score}
+- `GET /llms.txt`: this summary
+
+## verl reward interface
+
+- `knotwork.posttrain.reward.compute_score(data_source, solution_str, ground_truth, extra_info)`
+
+## CLI
+
+- `knot selftest`, `knot arena-run`, `knot gate`, `knot plugins`, `knot serve-verifier`,
+  `knot posttrain-pack`, `knot bench-throughput`
+"""
 
 
 def kernel_digest() -> str:
@@ -48,12 +73,31 @@ def _score_one(item: Any) -> dict[str, Any]:
     )
 
 
+def llms_text() -> str:
+    """The repository's `llms.txt`, or the embedded summary when it is not available."""
+    from knotwork.render.canvas import REPO_ROOT
+
+    path = REPO_ROOT / "llms.txt"
+    try:
+        return path.read_text(encoding="utf-8") if path.is_file() else LLMS_FALLBACK
+    except OSError:
+        return LLMS_FALLBACK
+
+
+def handle_text(method: str, path: str) -> tuple[int, str] | None:
+    """Plain-text routes (GET /llms.txt); None when `path` is a JSON route."""
+    route = path.split("?", 1)[0].rstrip("/") or "/"
+    if method == "GET" and route in TEXT_ROUTES:
+        return 200, llms_text()
+    return None
+
+
 def handle(method: str, path: str, body: bytes, kernel_sha: str) -> tuple[int, dict[str, Any]]:
     """Pure request router (unit-testable without sockets)."""
     route = path.split("?", 1)[0].rstrip("/") or "/"
     if method == "GET" and route == "/health":
         return 200, {"status": "ok", "kernel_sha256": kernel_sha, "version": __version__,
-                     "weights": DEFAULT_WEIGHTS, "endpoints": ["/health", "/score", "/score_batch"]}  # fmt: skip
+                     "weights": DEFAULT_WEIGHTS, "endpoints": ["/health", "/score", "/score_batch", "/llms.txt"]}  # fmt: skip
     if method != "POST" or route not in ("/score", "/score_batch"):
         return 404, {"error": f"no route {method} {route}"}
     try:
@@ -87,7 +131,19 @@ def make_server(host: str = "127.0.0.1", port: int = 8090) -> ThreadingHTTPServe
             self.end_headers()
             self.wfile.write(raw)
 
+        def _reply_text(self, code: int, text: str) -> None:
+            raw = text.encode("utf-8")
+            self.send_response(code)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+
         def _dispatch(self, method: str) -> None:
+            text = handle_text(method, self.path)
+            if text is not None:
+                self._reply_text(*text)
+                return
             length = int(self.headers.get("Content-Length") or 0)
             if length > MAX_BODY_BYTES:
                 self._reply(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "body too large"})
@@ -134,4 +190,4 @@ def run(host: str, port: int) -> int:
     return 0
 
 
-__all__ = ["handle", "make_server", "run", "serve_in_thread"]
+__all__ = ["handle", "handle_text", "llms_text", "make_server", "run", "serve_in_thread"]

@@ -105,11 +105,18 @@ def build_manifest(
     }
 
 
-def write_manifest(items: Sequence[ExportItem], out: Path, profile: dict[str, Any]) -> Path:
+def write_manifest(
+    items: Sequence[ExportItem],
+    out: Path,
+    profile: dict[str, Any],
+    extra: dict[str, Any] | None = None,
+) -> Path:
+    """Write the manifest; `extra` (e.g. the Human QA filter) is merged in at the top level."""
     out.mkdir(parents=True, exist_ok=True)
     path = out / FILENAME
+    manifest = {**build_manifest(items, out, profile), **(extra or {})}
     path.write_text(
-        json.dumps(build_manifest(items, out, profile), indent=1, sort_keys=True) + "\n",
+        json.dumps(manifest, indent=1, sort_keys=True) + "\n",
         encoding="utf-8",
         newline="\n",
     )

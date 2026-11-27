@@ -37,6 +37,9 @@ DIRECT = {
     "bench-throughput",
     "posttrain-pack",
     "posttrain-generate",
+    "gate",
+    "arena-run",
+    "plugins",
 }
 
 

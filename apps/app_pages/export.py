@@ -14,7 +14,7 @@ from knotwork.export.run import run_export
 from knotwork.freshness import lineage
 from knotwork.pipeline.io import read_json
 from knotwork.render.canvas import REPO_ROOT
-from knotwork.studio import factory, forensics, guide, present
+from knotwork.studio import factory, forensics, guide, present, review
 from studio_ui import OUT, dataset_label, dataset_select, relative, resolve
 
 FALLBACKS = ("artifacts/selftest/data/tangle", "artifacts/phase3/bench_split/tangle")
@@ -30,13 +30,19 @@ def _preferred() -> str | None:
     return next((f for f in FALLBACKS if (REPO_ROOT / f / "index.jsonl").is_file()), None)
 
 
-def _export(dataset: Path, formats: list[str], out: Path, shard: float, limit: int) -> None:
+def _export(dataset: Path, formats: list[str], out: Path, shard: float, limit: int,
+            only_ids: set[str] | None = None) -> None:  # fmt: skip
     chosen = [f for f in formats if f != "manifest"]
     with st.status("Exporting dataset…", expanded=True) as status:
         try:
             st.write(f"Reading {len(forensics.bundles(dataset))} bundles")
             code = run_export(
-                dataset, ",".join(chosen) or "manifest", out, limit or None, shard or None
+                dataset,
+                ",".join(chosen) or "manifest",
+                out,
+                limit or None,
+                shard or None,
+                only_ids,
             )
             st.write("Checking every file against the manifest hashes")
             problems = check_manifest(out) if code == 0 else ["the exporter wrote nothing"]
@@ -149,10 +155,23 @@ with controls:
     with st.container(border=True):
         st.markdown("**3. Export**")
         out = resolve(folder)
+        only = st.toggle("Approved items only", key="ex_approved",
+                         help=guide.tip("qa_approved_only"))  # fmt: skip
+        only_ids: set[str] | None = None
+        if only and dataset is not None:
+            states = review.load_review_states(review.STUDIO_LOG)
+            ids = [r["bundle_id"] for r in forensics.bundles(dataset)]
+            only_ids = {i for i in ids if review.status_of(states, i) == "approved"}
+            if only_ids:
+                st.caption(review.filter_note(len(only_ids), len(ids)) + " (Human Eval reviews).")
+            else:
+                st.warning(f"{review.filter_note(0, len(ids))}. Approve items in Human Eval, or "
+                           "turn this off to export every item.", icon=":material/rule:")  # fmt: skip
         st.caption(f"Writes to `{relative(out)}`.")
         go = st.button(
             "Export dataset", type="primary", width="stretch", icon=":material/package_2:",
-            disabled=dataset is None or not formats, key="ex_go", help=guide.tip("ex_go"),
+            disabled=dataset is None or not formats or only_ids == set(), key="ex_go",
+            help=guide.tip("ex_go"),
         )  # fmt: skip
         if not formats:
             st.caption("Choose at least one format to export.")
@@ -166,7 +185,7 @@ with output:
     with st.container(border=True):
         st.markdown("**Export output**")
         if go and dataset is not None:
-            _export(dataset, formats, out, shard, limit)
+            _export(dataset, formats, out, shard, limit, only_ids)
         if st.session_state.get("exported") == str(out):
             _result(out)
         else:

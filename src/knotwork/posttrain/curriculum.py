@@ -472,11 +472,27 @@ def zip_dir(src: Path, dest: Path) -> Path:
 
 def export_pack(
     results_dir: Path, out: Path | None = None, prov: dict[str, str] | None = None,
-    train_budget: int | None = None,
+    train_budget: int | None = None, approved_only: bool = False,
 ) -> dict[str, Any]:  # fmt: skip
-    """Write `<results>/posttrain_pack/` and `<results>/posttrain_pack.zip`; returns a summary."""
+    """Write `<results>/posttrain_pack/` and `<results>/posttrain_pack.zip`; returns a summary.
+
+    `approved_only` (the Human QA filter) keeps only items whose latest decision in
+    `<results>/review_log.jsonl` is `approved`, and records `qa_filter` / `approved_count` in the
+    curriculum spec and the provenance attestation. Raises ValueError when none is approved."""
     cfg, items, trials = load_session(results_dir)
     results = storage.resolve(results_dir)
+    qa: dict[str, Any] = {}
+    if approved_only:
+        from knotwork.studio import review
+
+        ok = review.approved_ids(results / review.LOG_NAME)
+        certified = [i for i in items if i.certified]
+        items = [i for i in certified if i.bundle_id in ok]
+        if not items:
+            raise ValueError(f"0 of {len(certified)} items are approved; approve items in the "
+                             "item inspector or turn off 'Approved items only'")  # fmt: skip
+        qa = {"qa_filter": review.QA_FILTER, "approved_count": len(items),
+              "candidate_count": len(certified)}  # fmt: skip
     out = out or results / PACK_DIR
     if out.exists():
         shutil.rmtree(out)
@@ -492,17 +508,18 @@ def export_pack(
     _jsonl(out / "grpo_rlvr_verl.jsonl", recs["grpo"])
     _parquet(out / "grpo_rlvr_verl.parquet", recs["grpo"])
     spec["skipped_items"] = recs["skipped"]
+    spec.update(qa)
     (out / "curriculum_spec.json").write_text(json.dumps(spec, indent=1, sort_keys=True) + "\n",
                                               encoding="utf-8")  # fmt: skip
     export_kit(out / "rlvr_kit")
-    att = attestation(cfg, items, spec, out, prov)
+    att = {**attestation(cfg, items, spec, out, prov), **qa}
     (out / "provenance_attestation.json").write_text(
         json.dumps(att, indent=1, sort_keys=True) + "\n", encoding="utf-8"
     )
     archive = zip_dir(out, out.parent / f"{out.name}.zip")
     return {"dir": out, "zip": archive, "sft": len(recs["sft"]), "dpo": len(recs["dpo"]),
             "grpo": len(recs["grpo"]), "skipped": len(recs["skipped"]),
-            "train_seed_disjoint": att["train_seed_disjoint"]}  # fmt: skip
+            "train_seed_disjoint": att["train_seed_disjoint"], **qa}  # fmt: skip
 
 
 # ------------------------------------------------------------------ seed-disjoint generation

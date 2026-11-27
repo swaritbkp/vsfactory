@@ -380,6 +380,20 @@ TOOLTIPS: Final[dict[str, str]] = {
     "failed reply.",
     "pt_grpo": "Prompts with rule-based ground truth and vCoT boxes, ready for verl GRPO.",
     "pt_download": "Download the whole pack as one deterministic ZIP.",
+    # ---- MLOps: regression gate, campaign files, Human QA
+    "ar_pin": "Pin to Regression: add this item to regression_suite.yaml so `knot gate` re-checks "
+    "it in CI. Pinning it again updates the case.",
+    "ar_suite_download": "Download the pinned cases as regression_suite.yaml for your CI repository.",
+    "ar_campaign_export": "Export campaign.yaml: this session's blocks, models and run settings as "
+    "a file for `knot arena-run`. Never contains an API key.",
+    "ar_campaign_import": "Import campaign.yaml: validate a campaign file and load its blocks, "
+    "models and settings into this builder.",
+    "qa_approve": "Approve: mark this item as checked by a person. Approved items can be exported "
+    "on their own.",
+    "qa_flag": "Flag: mark this item as suspect so it is left out of approved-only exports.",
+    "qa_note": "Optional one-line reason, saved with the decision in review_log.jsonl.",
+    "qa_approved_only": "Approved items only: export just the items whose latest Human QA review "
+    "is Approved. Off keeps every item.",
     "pt_provenance": "Clean-IP Provenance: git and kernel hashes, dataset and eval-seed hashes, "
     "seed disjointness, and the only external asset (the bundled font).",
 }

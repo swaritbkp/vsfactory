@@ -240,6 +240,40 @@ Credits: grounding every reasoning step in a box, and scoring answer–grounding
 answer, in multimodal RLVR follows **TGRL** (Lu et al., 2026 [9]). Knotwork's version is
 deterministic: the reference trajectory comes from certified masks, not a stronger model.
 
+## MLOps, CI Release Gating & Plugin SDK
+
+* **Regression pinning and `knot gate`.** In Model Arena's Item inspector, **Pin to Regression** (next
+  to *Send failure to Forensics*) adds a failed item to `<results>/regression_suite.yaml`: its seed,
+  preset, question family and certified answer. Pinning it again updates the case. The session view
+  offers the file for download, with a ready CI line:
+
+  ```bash
+  uv run knot gate --suite regression_suite.yaml --model openai/gpt-5.4 --mode mock --json-out gate.json
+  ```
+
+  Exit codes: `0` when accuracy ≥ `min_accuracy` (default 0.85), `1` below it (merge-blocking), `2` for a
+  missing, invalid or empty suite. `--mode live` re-renders each case from its seed, checks it still
+  certifies to the pinned answer, and asks the model through OpenRouter (key from the environment).
+* **Declarative campaigns.** **Export campaign.yaml** (on a session or in the builder) writes the blocks,
+  models and run settings; **Import campaign.yaml** loads one back into the builder. API keys are never
+  written: the schema has no key field and refuses secret-shaped values. Run one headlessly:
+
+  ```bash
+  uv run knot arena-run --campaign campaign.yaml --report   # resumable; writes report.html / .md / _metrics.json
+  ```
+* **Human QA triage.** Human Eval (after each answer) and the Arena Item inspector show an
+  Unreviewed / Approved / Flagged badge with **Approve** and **Flag** buttons and an optional note,
+  appended to `review_log.jsonl` (the latest decision per item wins). **Approved items only** in Export
+  and in the Post-Training Pack (`knot posttrain-pack --approved-only`) keeps just the approved items and
+  records `qa_filter: approved_only` and `approved_count` in the manifest or provenance attestation. The
+  toggle is off by default, so existing exports are unchanged.
+* **Agent-native docs and plugin wheels.** [`llms.txt`](llms.txt) is a machine-readable summary (also
+  served as `GET /llms.txt` by `knot serve-verifier`), and [`AGENTS.md`](AGENTS.md) is the guide for
+  coding agents. External task plugins install as wheels through the `knotwork.plugins` entry point
+  group ([`docs/PLUGIN_SDK.md`](docs/PLUGIN_SDK.md)). `uv run knot plugins --json` lists built-in and
+  external plugins with their source, version and status, and rejects name collisions and incomplete
+  protocols with a reason.
+
 ## Related work and research positioning
 
 | Work | What it established | What Knotwork adds |

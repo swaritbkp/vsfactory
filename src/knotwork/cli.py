@@ -410,7 +410,7 @@ def counterfactual(data: Path, failures: Path, out: Path, profile: Path, limit: 
 @click.option("--host", default="127.0.0.1", show_default=True, help="Bind address (loopback).")
 @click.option("--port", type=click.IntRange(0, 65535), default=8090, show_default=True)
 def serve_verifier(host: str, port: int) -> None:
-    """Stateless RLVR verifier: GET /health, POST /score, POST /score_batch (offline)."""
+    """Stateless RLVR verifier: GET /health, GET /llms.txt, POST /score, POST /score_batch (offline)."""
     _set_network("deny")
     from knotwork.posttrain.server import run
 
@@ -442,13 +442,15 @@ def bench_throughput(
 @click.option("--results-dir", type=click.Path(path_type=Path, exists=True, file_okay=False),
               required=True, help="A Model Arena session's results folder.")  # fmt: skip
 @click.option("--train-budget", type=click.IntRange(min=1), default=None)
-def posttrain_pack(results_dir: Path, train_budget: int | None) -> None:
+@click.option("--approved-only", is_flag=True,
+              help="Only items whose latest Human QA review is 'approved'.")  # fmt: skip
+def posttrain_pack(results_dir: Path, train_budget: int | None, approved_only: bool) -> None:
     """Export SFT / DPO / GRPO records, curriculum spec, RLVR kit and provenance for a session."""
     _set_network("deny")
     from knotwork.posttrain.curriculum import export_pack
 
     try:
-        done = export_pack(results_dir, train_budget=train_budget)
+        done = export_pack(results_dir, train_budget=train_budget, approved_only=approved_only)
     except ValueError as exc:
         raise click.UsageError(str(exc)) from None
     click.echo(json.dumps({k: str(v) for k, v in done.items()}, indent=1, sort_keys=True))
@@ -467,6 +469,84 @@ def posttrain_generate(spec: Path, split: str, out: Path, workers: int, limit: i
     from knotwork.posttrain.curriculum import generate_from_spec
 
     sys.exit(generate_from_spec(spec, out, split, workers, limit))
+
+
+@cli.command(name="gate")
+@click.option("--suite", type=click.Path(path_type=Path), required=True,
+              help="regression_suite.yaml (pinned from Model Arena).")  # fmt: skip
+@click.option("--model", "model", required=True, help="Model id to gate, e.g. openai/gpt-5.4.")
+@click.option("--mode", type=click.Choice(["mock", "live"]), default="mock", show_default=True,
+              help="mock is offline; live calls OpenRouter with OPENROUTER_API_KEY.")  # fmt: skip
+@click.option("--min-accuracy", type=click.FloatRange(0.0, 1.0), default=None,
+              help="Override the suite's min_accuracy.")  # fmt: skip
+@click.option("--json-out", type=click.Path(path_type=Path), default=None)
+def gate(
+    suite: Path, model: str, mode: str, min_accuracy: float | None, json_out: Path | None
+) -> None:
+    """CI quality gate over pinned regression cases: exit 0 pass, 1 below threshold, 2 invalid."""
+    if mode == "live":
+        if not os.environ.get("OPENROUTER_API_KEY"):
+            raise SafetyRefusal("E_API_KEY_MISSING: --mode live needs OPENROUTER_API_KEY.")
+        _set_network("openrouter")
+    else:
+        _set_network("deny")
+    from knotwork.arena.regression import main_gate
+
+    rc, text = main_gate(suite, model, mode, min_accuracy, json_out)  # type: ignore[arg-type]
+    click.echo(text, err=rc == EXIT_USAGE)
+    sys.exit(rc)
+
+
+@cli.command(name="arena-run")
+@click.option("--campaign", type=click.Path(path_type=Path, exists=True, dir_okay=False),
+              required=True, help="A campaign.yaml exported from Model Arena.")  # fmt: skip
+@click.option("--results-dir", type=click.Path(path_type=Path, file_okay=False), default=None,
+              help="Override the campaign's results folder.")  # fmt: skip
+@click.option("--data-dir", type=click.Path(path_type=Path, file_okay=False), default=None,
+              help="Override the campaign's dataset folder.")  # fmt: skip
+@click.option("--report", "make_report", is_flag=True,
+              help="Also write report.html, report.md and report_metrics.json.")  # fmt: skip
+@click.option("--gen-workers", type=click.IntRange(min=1), default=1, show_default=True)
+def arena_run(
+    campaign: Path, results_dir: Path | None, data_dir: Path | None, make_report: bool,
+    gen_workers: int,
+) -> None:  # fmt: skip
+    """Run (or resume) a declarative Model Arena campaign headlessly."""
+    from knotwork.arena.campaign_yaml import load_campaign_yaml, run_campaign
+
+    try:
+        cfg = load_campaign_yaml(campaign)
+    except ValueError as exc:
+        raise click.UsageError(f"invalid campaign: {exc}") from None
+    if cfg.mode == "live":
+        if not os.environ.get("OPENROUTER_API_KEY"):
+            raise SafetyRefusal("E_API_KEY_MISSING: a live campaign needs OPENROUTER_API_KEY.")
+        _set_network("openrouter")
+    else:
+        _set_network("deny")
+    rc, text = run_campaign(cfg, results_dir, data_dir, make_report, gen_workers)
+    click.echo(text)
+    sys.exit(rc)
+
+
+@cli.command(name="plugins")
+@click.option("--json", "as_json", is_flag=True, help="Machine-readable output.")
+def plugins_cmd(as_json: bool) -> None:
+    """List built-in and external (entry point) task plugins with source, version and status."""
+    _set_network("deny")
+    from knotwork.arena.regression import ascii_table
+    from knotwork.plugins.registry import list_plugins
+
+    rows = list_plugins()
+    if as_json:
+        click.echo(json.dumps([r.as_dict() for r in rows], indent=1))
+    else:
+        click.echo(ascii_table(["name", "source", "version", "status", "origin", "detail"],
+                               [[r.name, r.source, r.version, r.status, r.origin, r.detail[:60]]
+                                for r in rows]))  # fmt: skip
+    sys.exit(
+        EXIT_OK if all(r.status == "ok" for r in rows if r.source != "external") else EXIT_FAIL
+    )
 
 
 @cli.command(name="new-plugin")

@@ -91,6 +91,7 @@ def test_export_pack_writes_every_file_and_a_zip(results: Path) -> None:
     assert spec["seeds"]["disjoint"] is True
     att = json.loads((pack / "provenance_attestation.json").read_text())
     assert att["train_seed_disjoint"] is True and att["git_sha"] == PROV["git_sha"]
+    assert "qa_filter" not in att and "qa_filter" not in done  # Human QA filter is opt-in
     assert att["clean_ip_procedural"] and att["zero_web_scrape"] and att["zero_pii"]
     assert [a["path"] for a in att["external_assets"]] == ["assets/fonts/DejaVuSans.ttf"]
     assert "curriculum_spec.json" in att["files_sha256"]

@@ -16,8 +16,9 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pydantic import ValidationError
 
-from knotwork.arena import catalog, keys, planning, report, runner, storage
+from knotwork.arena import catalog, keys, planning, regression, report, runner, storage
 from knotwork.arena import forensics as arena_forensics
+from knotwork.arena.campaign_yaml import export_campaign_yaml, load_campaign_yaml
 from knotwork.arena.schemas import (
     DOMAIN_LABELS,
     MAX_REPEATS,
@@ -28,9 +29,9 @@ from knotwork.arena.schemas import (
     TrialRecord,
 )
 from knotwork.pipeline.io import read_json
-from knotwork.studio import factory, forensics, guide
+from knotwork.studio import factory, forensics, guide, review
 from posttrain_ui import posttrain_tab
-from studio_ui import relative, run_with_status
+from studio_ui import relative, review_controls, run_with_status
 
 WS = storage.Workspace()
 MODES = {"Offline Mock (No Key)": "mock", "Live (OpenRouter)": "live"}
@@ -548,9 +549,14 @@ def _launch_bar(setup: dict[str, Any], mode: dict[str, Any], models: list[str],
             st.info(f"The estimate exceeds the ${cfg.spend_cap_usd:.2f} cap: the run stops "
                     "cleanly when the cap is reached and can be resumed with a higher cap.",
                     icon=":material/savings:")  # fmt: skip
-        if st.button("Launch campaign", type="primary", icon=":material/rocket_launch:",
-                     width="stretch", disabled=bool(problems), key="ar_launch",
-                     help=guide.tip("ar_launch")):  # fmt: skip
+        launch, export = st.columns([4, 1], vertical_alignment="bottom")
+        export.download_button("Export campaign.yaml", export_campaign_yaml(cfg),
+                               f"{cfg.slug}_campaign.yaml", mime="application/yaml",
+                               icon=":material/download:", key="ar_builder_yaml",
+                               width="stretch", help=guide.tip("ar_campaign_export"))  # fmt: skip
+        if launch.button("Launch campaign", type="primary", icon=":material/rocket_launch:",
+                         width="stretch", disabled=bool(problems), key="ar_launch",
+                         help=guide.tip("ar_launch")):  # fmt: skip
             found, process = planning.start(cfg, WS, cat, key if live else None)
             if found:
                 for p in found:
@@ -561,10 +567,33 @@ def _launch_bar(setup: dict[str, Any], mode: dict[str, Any], models: list[str],
             st.rerun()
 
 
+def _import_campaign() -> None:
+    with st.expander("Import campaign.yaml", icon=":material/upload_file:"):
+        upload = st.file_uploader("Campaign file", type=["yaml", "yml"], key="ar_campaign_up",
+                                  help=guide.tip("ar_campaign_import"))  # fmt: skip
+        if upload is None:
+            st.caption("Load the blocks, models and settings of a campaign exported from a "
+                       "session or written by hand.")  # fmt: skip
+            return
+        stamp = f"{upload.name}:{upload.size}"
+        if st.session_state.get("ar_campaign_loaded") == stamp:
+            st.success(f"Loaded `{upload.name}` into the builder.", icon=":material/check_circle:")
+            return
+        try:
+            cfg = load_campaign_yaml(upload.getvalue().decode("utf-8"))
+        except (ValueError, UnicodeDecodeError) as exc:
+            st.error(f"This campaign file is not valid: {exc}", icon=":material/error:")
+            return
+        _load_form(cfg)
+        st.session_state.ar_campaign_loaded = stamp
+        st.rerun()
+
+
 def _new_session_view() -> None:
     st.markdown("### New evaluation session")
     st.caption("Certified items in their own dataset folder, every model's answers in a "
                "separate results folder. Runs resume after any interruption.")  # fmt: skip
+    _import_campaign()
     left, right = st.columns(2, gap="medium")
     with left:
         setup = _setup_card()
@@ -601,6 +630,35 @@ def _controls(entry_dir: Path, cfg: SessionConfig, state: str, running: bool) ->
         st.code(storage.cli_command(entry_dir), language="powershell", wrap_lines=True)
         st.caption("Runs or resumes this session from a terminal or CI job. Live runs read the key "
                    "from the OPENROUTER_API_KEY environment variable.")  # fmt: skip
+        st.download_button("Export campaign.yaml", export_campaign_yaml(cfg),
+                           f"{cfg.slug}_campaign.yaml", mime="application/yaml",
+                           icon=":material/download:", key="ar_campaign_dl",
+                           help=guide.tip("ar_campaign_export"))  # fmt: skip
+        st.code("uv run knot arena-run --campaign campaign.yaml --report", language="powershell")
+    _suite_section(cfg)
+
+
+def _suite_section(cfg: SessionConfig) -> None:
+    path = _suite_path(cfg)
+    try:
+        suite = regression.load_suite(path) if path.is_file() else None
+    except ValueError as exc:
+        st.warning(f"regression_suite.yaml is invalid: {exc}", icon=":material/warning:")
+        return
+    if suite is None or not suite.cases:
+        return
+    with st.expander(f"Regression suite ({len(suite.cases)} pinned)", icon=":material/push_pin:"):
+        rows = [{"Item": c.case_id, "Domain": DOMAIN_LABELS.get(c.domain, c.domain),
+                 "Seed": c.seed, "Family": c.question_family, "Expected": c.truth,
+                 "Pinned from": report.short(c.pinned_from_model)} for c in suite.cases]  # fmt: skip
+        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+        st.download_button("Download regression_suite.yaml", regression.dump_suite(suite),
+                           regression.SUITE_FILE, mime="application/yaml",
+                           icon=":material/download:", key="ar_suite_dl",
+                           help=guide.tip("ar_suite_download"))  # fmt: skip
+        st.caption("Gate a model on these cases in CI (exit 1 below min_accuracy):")
+        st.code(regression.gate_command(relative(path), cfg.default_models[0]),
+                language="powershell", wrap_lines=True)  # fmt: skip
 
 
 def _relaunch(entry_dir: Path, key: str | None, retry: bool) -> None:
@@ -763,10 +821,33 @@ def _model_card(
                    + (" · simulated" if trial.simulated else ""))  # fmt: skip
         with st.expander("Raw reply", icon=":material/notes:"):
             st.text(trial.reply or "(empty)")
-        if not trial.correct and st.button("Send failure to Forensics", icon=":material/troubleshoot:",
-                                           key=f"ar_fx_{trial.trial_id}", width="stretch",
-                                           help=guide.tip("ar_send_forensics")):  # fmt: skip
-            _to_forensics(item, trial, cfg)
+        if not trial.correct:
+            if st.button("Send failure to Forensics", icon=":material/troubleshoot:",
+                         key=f"ar_fx_{trial.trial_id}", width="stretch",
+                         help=guide.tip("ar_send_forensics")):  # fmt: skip
+                _to_forensics(item, trial, cfg)
+            if st.button("Pin to Regression", icon=":material/push_pin:",
+                         key=f"ar_pin_{trial.trial_id}", width="stretch",
+                         help=guide.tip("ar_pin")):  # fmt: skip
+                _pin(item, trial, cfg)
+
+
+def _suite_path(cfg: SessionConfig) -> Path:
+    return storage.resolve(cfg.results_dir) / regression.SUITE_FILE
+
+
+def _pin(item: ItemRecord, trial: TrialRecord, cfg: SessionConfig) -> None:
+    note = f"{trial.error_category or 'wrong'}: answered {trial.extracted or '(nothing)'}"
+    case = regression.case_from_item(item, cfg.slug, trial.model, storage.utc_now(), note)
+    try:
+        suite, added = regression.pin_case_to_suite(_suite_path(cfg), case,
+                                                    f"{cfg.session_name} regressions")  # fmt: skip
+    except ValueError as exc:
+        st.error(f"Could not pin: {exc}", icon=":material/error:")
+        return
+    verb = "Pinned" if added else "Updated pinned case"
+    st.toast(f"{verb} #{item.item_index:03d}. Regression suite: {len(suite.cases)} pinned.",
+             icon=":material/push_pin:")  # fmt: skip
 
 
 def _to_forensics(item: ItemRecord, trial: TrialRecord, cfg: SessionConfig) -> None:
@@ -825,6 +906,8 @@ def _inspector(cfg: SessionConfig) -> None:
         with st.container(border=True):
             st.markdown(item.question.split("\nEnd your reply")[0])
             st.markdown(f"Certified answer **{item.truth}** · `{item.bundle_id}`")
+            review_controls(storage.resolve(cfg.results_dir) / review.LOG_NAME, item.bundle_id,
+                            item.domain, item.seed, f"ar_{item.bundle_id}")  # fmt: skip
         models = cfg.models_for(cfg.block(item.block_id))
         for start in range(0, len(models), 3):
             row = models[start : start + 3]

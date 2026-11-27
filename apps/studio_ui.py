@@ -181,3 +181,29 @@ def guide_strip(page: str | None) -> None:
             label = f"Next step: {guide.PAGES[target][0]} →" if following else "Back to Studio"
             if st.button(label, key="guide_next", help=guide.tip("next_step")):
                 _go(target)
+
+
+def review_controls(log: Path, item_id: str, domain: str, seed: int | None, key: str) -> str:
+    """Human QA triage for one item: its current status badge, an optional one-line note and
+    Approve / Flag buttons, appended to `log` (review_log.jsonl). Returns the current status."""
+    from knotwork.studio import review
+
+    status = review.status_of(review.load_review_states(log), item_id)
+    text, color, icon = review.BADGES[status]
+    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+        st.badge(text, color=color, icon=icon)  # type: ignore[arg-type]
+        note = st.text_input("Review note", key=f"qa_note_{key}", placeholder="Optional note",
+                             label_visibility="collapsed", max_chars=200,
+                             help=guide.tip("qa_note"))  # fmt: skip
+        clicked = None
+        if st.button("Approve", icon=":material/verified:", key=f"qa_ok_{key}",
+                     disabled=status == "approved", help=guide.tip("qa_approve")):  # fmt: skip
+            clicked = "approved"
+        if st.button("Flag", icon=":material/flag:", key=f"qa_flag_{key}",
+                     disabled=status == "flagged", help=guide.tip("qa_flag")):  # fmt: skip
+            clicked = "flagged"
+    if clicked:
+        review.record_review(log, item_id, clicked, domain, seed, note=str(note or ""))
+        st.toast(f"{review.BADGES[clicked][0]}: {item_id}", icon=review.BADGES[clicked][2])
+        st.rerun()
+    return status

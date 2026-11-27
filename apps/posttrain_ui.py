@@ -14,7 +14,7 @@ from knotwork.arena import storage
 from knotwork.arena.schemas import ItemRecord, SessionConfig
 from knotwork.posttrain import curriculum, vcot
 from knotwork.posttrain.reward import score_rollout
-from knotwork.studio import factory, guide
+from knotwork.studio import factory, guide, review
 from studio_ui import relative, run_with_status
 
 EXAMPLES = ("Grounded vCoT", "Lucky guess (no boxes)", "Wrong answer")
@@ -143,10 +143,24 @@ def _export(cfg: SessionConfig, entry_dir: Path) -> None:
     st.markdown("**Post-training pack**")
     st.caption("SFT traces for failed and cold-start items, DPO pairs from real failures, a verl "
                "GRPO parquet, the curriculum spec, the RLVR kit and a provenance attestation.")  # fmt: skip
+    only = st.toggle("Approved items only", key=f"pt_approved_{cfg.slug}",
+                     help=guide.tip("qa_approved_only"))  # fmt: skip
+    blocked = False
+    if only:
+        states = review.load_review_states(entry_dir / review.LOG_NAME)
+        ids = [i.bundle_id for i in storage.dataset_items(storage.resolve(cfg.data_dir))
+               if i.certified and i.block_id in {b.block_id for b in cfg.blocks}]  # fmt: skip
+        approved = review.counts(states, ids)["approved"]
+        if approved:
+            st.caption(review.filter_note(approved, len(ids)) + ": only these go into the pack.")
+        else:
+            blocked = True
+            st.warning(f"{review.filter_note(0, len(ids))}. Approve items in the Item inspector, "
+                       "or turn this off to export every item.", icon=":material/rule:")  # fmt: skip
     if st.button("Export post-training pack", type="primary", icon=":material/package_2:",
-                 key="pt_export", help=guide.tip("pt_export")):  # fmt: skip
+                 key="pt_export", disabled=blocked, help=guide.tip("pt_export")):  # fmt: skip
         done = run_with_status("Export the post-training pack",
-                               lambda: curriculum.export_pack(entry_dir))  # fmt: skip
+                               lambda: curriculum.export_pack(entry_dir, approved_only=only))  # fmt: skip
         if done:
             st.session_state[f"pt_done_{cfg.slug}"] = {k: str(v) for k, v in done.items()}
     done = st.session_state.get(f"pt_done_{cfg.slug}")

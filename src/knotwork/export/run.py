@@ -20,10 +20,25 @@ PROFILE = REPO_ROOT / "configs" / "default_profile.yaml"
 
 
 def run_export(
-    data: Path, fmt: str, out: Path, limit: int | None, max_shard_mb: float | None = None
+    data: Path,
+    fmt: str,
+    out: Path,
+    limit: int | None,
+    max_shard_mb: float | None = None,
+    only_ids: set[str] | None = None,
 ) -> int:
+    """Export a dataset. `only_ids` (the Human QA *Approved items only* filter) keeps just those
+    bundle ids and records `qa_filter` / `approved_count` in the summary and the manifest."""
     profile = yaml.safe_load(PROFILE.read_text(encoding="utf-8"))
-    items = load_items(Path(data), profile, limit)
+    items = load_items(Path(data), profile, None if only_ids is not None else limit)
+    qa: dict[str, object] | None = None
+    if only_ids is not None:
+        total = len(items)
+        items = [i for i in items if i.task["bundle_id"] in only_ids][: limit or None]
+        qa = {"qa_filter": "approved_only", "approved_count": len(items), "candidate_count": total}
+        if not items:
+            print(f"export: 0 of {total} bundles under {data} are approved; nothing to export")
+            return 1
     if not items:
         print(f"export: no bundles under {data}")
         return 1
@@ -32,6 +47,7 @@ def run_export(
         chosen = {"harbor", "hf", "rlvr"}
     out = Path(out)
     summary: dict[str, object] = {"n_bundles": len(items), "sealed": sum(i.sealed for i in items)}
+    summary.update(qa or {})
     if "harbor" in chosen:
         harbor = out / "harbor"
         shutil.rmtree(harbor, ignore_errors=True)
@@ -60,7 +76,7 @@ def run_export(
         shutil.rmtree(out / "rlvr", ignore_errors=True)
         summary["rlvr"] = write_rlvr(items, out)
     out.mkdir(parents=True, exist_ok=True)
-    write_manifest(items, out, profile)  # last data file written: it hashes all the others
+    write_manifest(items, out, profile, qa)  # last data file written: it hashes all the others
     summary["manifest"] = MANIFEST
     (out / "export_summary.json").write_text(
         json.dumps(summary, indent=1, sort_keys=True), encoding="utf-8"
