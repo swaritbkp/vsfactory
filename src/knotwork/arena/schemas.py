@@ -36,12 +36,22 @@ DOMAIN_LABELS: dict[str, str] = {
 PRESETS: tuple[str, ...] = ("Clean", "Hard logic", "High stress", "CVD")
 MAX_BLOCK_ITEMS = 100_000
 MAX_SPEND_USD = 250.0
+#: repeats per (item, model) for pass@k / pass^k reliability (ZeroBench, Roberts et al., ICML 2026)
+MAX_REPEATS = 5
 #: anything shaped like a provider secret (OpenRouter, OpenAI, Anthropic, bearer tokens)
 SECRET_RE = re.compile(r"(sk-[A-Za-z0-9_-]{8,}|Bearer\s+[A-Za-z0-9._-]{8,})")
 
 
 class _Record(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+def trial_key(block_id: str, item_index: int, model: str, repeat_idx: int = 0) -> str:
+    """The resume / dedup key of one trial, (block, item, model, repeat). Repeat 0 keeps the
+    pre-repeats form `block:item:model`, so results.jsonl files written before repeats resume
+    unchanged; later repeats append `#r`."""
+    base = f"{block_id}:{item_index}:{model}"
+    return base if repeat_idx == 0 else f"{base}#{repeat_idx}"
 
 
 def find_secret(value: Any) -> str | None:
@@ -94,6 +104,7 @@ class SessionConfig(_Record):
     rpm: int = Field(default=60, ge=1, le=1000)
     max_tokens: int = Field(default=512, ge=16, le=8192)
     mock_delay_s: float = Field(default=0.0, ge=0.0, le=5.0)
+    repeats: int = Field(default=1, ge=1, le=MAX_REPEATS)  # k: asks per (item, model)
     created_utc: str = ""
     run_id: str = ""
 
@@ -121,7 +132,7 @@ class SessionConfig(_Record):
 
     @property
     def total_trials(self) -> int:
-        return sum(b.n * len(self.models_for(b)) for b in self.blocks)
+        return sum(b.n * len(self.models_for(b)) for b in self.blocks) * self.repeats
 
     def block(self, block_id: str) -> BlockSpec:
         return next(b for b in self.blocks if b.block_id == block_id)
@@ -161,6 +172,7 @@ class TrialRecord(_Record):
     item_index: int
     bundle_id: str
     model: str
+    repeat_idx: int = Field(default=0, ge=0)  # 0 for rows written before repeats existed
     status: TrialStatus
     correct: bool | None = None
     truth: str = ""

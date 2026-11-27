@@ -139,7 +139,7 @@ KPI and leaderboard column.
 | **Forensics** | KPI strip (yield, quarantine rate, 14 / 14 fault coverage); counterfactual twins that separate vision failures from reasoning failures (perceptual-clean, palette-swap, step-down and text-IR twins); quarantine browser; fault proofs that open on a committed default pair (`M3 → E_LABEL_MISMATCH`, [`samples/fault_proof/`](samples/fault_proof/)). The opening twin sample uses real certified renders paired with **labelled sample demo replies, not live VLM output**. To inspect real failures, send them live from Model Arena. |
 | **Human Eval** | Human calibration lab: one blind certified item at a time, scored live against the benchmarked models. |
 | **Export** | Harbor task folders (oracle `solve.sh`, `tests/test.sh` → reward), HF parquet, RLVR jsonl. |
-| **Model Arena** | A **Sessions Sidebar** (search, clone, compare, archive, register an external folder). Each session keeps a frozen `data_dir` separate from its `results_dir`. A multi-block campaign builder covers every plugin, `rack_patch` included, from 1 to 100,000 items. Choose **Offline Mock** mode, or opt in to the OpenRouter vision catalog: the explicit **"Refresh live catalog"** button, plus a custom API key kept for the session only. Background campaigns are crash-safe and resumable (pause / stop / retry-failed-only / spend cap). Any wrong answer can be sent to Forensics with **"Send failure to Forensics"**. Reports export as `report.html`, `report.md`, `report_metrics.json`, `trials.csv` and an audit ZIP, with 95 % Wilson CIs, z / Fisher tests and inline SVG charts. |
+| **Model Arena** | A **Sessions Sidebar** (search, clone, compare, archive, register an external folder). Each session keeps a frozen `data_dir` separate from its `results_dir`. A multi-block campaign builder covers every plugin, `rack_patch` included, from 1 to 100,000 items. Choose **Offline Mock** mode, or opt in to the OpenRouter vision catalog: the explicit **"Refresh live catalog"** button, plus a custom API key kept for the session only. Background campaigns are crash-safe and resumable (pause / stop / retry-failed-only / spend cap). Any wrong answer can be sent to Forensics with **"Send failure to Forensics"**. Optional **Repeats per item (k = 1–5)** adds ZeroBench-style reliability: pass@1, pass@k (solved at least once) and pass^k (solved on every repeat), with a finding whenever a model's pass@k − pass^k gap is 10 points or more. Reports export as `report.html`, `report.md`, `report_metrics.json`, `trials.csv` and an audit ZIP, with 95 % Wilson CIs, z / Fisher tests, inline SVG charts and a Methodology & Literature References section. |
 
 ## Quickstart (offline, 3 commands) or Docker
 
@@ -180,6 +180,26 @@ The image is Python 3.12 slim built with `uv sync --locked`. It runs as the non-
 | `tests/` | offline suite, tiered: `tier0` + `tier1` in `ci.yml`, `tier2` in `nightly.yml` |
 | `Dockerfile` · `.github/workflows/` | offline image · CI (`ci.yml`) and nightly (`nightly.yml`) |
 | `SPEC.md` · `VERIFICATION.md` · `DATA_CARD.md` · `BLOCKERS.md` | spec and decision log · gate results · data card · open limitations |
+
+## Related work and research positioning
+
+| Work | What it established | What Knotwork adds |
+|---|---|---|
+| **BlindTest**, *Vision language models are blind*, Rahmanzadehgervi et al., ACCV 2024 [1] | VLMs that score well on chart and document benchmarks still fail simple 2-D tasks such as counting line intersections, spotting overlaps and following paths. | Takes the same weakness to industrial scenes (2U rack patch bays, control panels, analog gauges) and certifies every label with the TCB kernel; the fault matrix catches 56 / 56 injected defects. |
+| **The Vendi Score**, Friedman & Dieng, TMLR 2023 [2] | A reference-free diversity metric (an effective number of distinct samples). It measures diversity, not quality. | Reports Vendi only over items the kernel has certified with 0 `E_*` codes, so the 2.1×–3.7× gain over recolouring is diversity among valid items. |
+| **VLind-Bench**, Lee et al., Findings of NAACL 2025 [3]; **PriVE-Bench / PriVE-Tools**, Sun et al., EMNLP 2026 [4] | Counterfactual image pairs separate answers driven by visual evidence from answers driven by language or category priors. | Generates the counterfactuals parametrically and certifies them: causal vs. nuisance twins plus Perceptual Clean, Palette Swap, Step Down and Text IR twins, inside Forensics and the Model Arena failure loop. |
+| **ZeroBench**, Roberts et al., ICML 2026 [5] | 100 hand-built questions designed to be unsolved at release, scored with pass@k and the stricter pass^k (correct on every one of k attempts). | Adopts pass@1 / pass@k / pass^k in Model Arena, over seed-controlled programmatic items with OOD holdout splits instead of a fixed hand-authored set. |
+| **VisualSphinx**, Feng et al., 2025 [6] | Large-scale synthetic vision-logic puzzles for RL (GRPO), with LLM and VLM scoring used to filter quality. | Replaces model-based quality checks with an offline deterministic verifier, and exports Harbor tasks and RLVR data whose rewards come from certified answers. |
+
+## References and credits
+
+1. P. Rahmanzadehgervi, L. Bolton, M. R. Taesiri, A. T. Nguyen. *Vision language models are blind.* ACCV 2024. [arXiv:2407.06581](https://arxiv.org/abs/2407.06581)
+2. D. Friedman, A. B. Dieng. *The Vendi Score: A Diversity Evaluation Metric for Machine Learning.* TMLR 2023. [arXiv:2210.02410](https://arxiv.org/abs/2210.02410)
+3. K. Lee et al. *VLind-Bench: Measuring Language Priors in Large Vision-Language Models.* Findings of NAACL 2025. [arXiv:2406.08702](https://arxiv.org/abs/2406.08702)
+4. J. Sun et al. *Seeing What Is Actually There: PriVE-Bench and PriVE-Tools for Counterfactual Evaluation of Agentic Visual Evidence in VLMs.* EMNLP 2026. [ACL Anthology 2026.emnlp-main.760](https://aclanthology.org/2026.emnlp-main.760/)
+5. J. Roberts et al. *ZeroBench: An Impossible Visual Benchmark for Contemporary Large Multimodal Models.* ICML 2026 (PMLR 306). [arXiv:2502.09696](https://arxiv.org/abs/2502.09696)
+6. Y. Feng et al. *VisualSphinx: Large-Scale Synthetic Vision Logic Puzzles for RL.* 2025. [arXiv:2505.23977](https://arxiv.org/abs/2505.23977)
+7. E. B. Wilson. *Probable inference, the law of succession, and statistical inference.* JASA 22(158), 1927. Used for every 95 % binomial interval.
 
 ## Honest disclosures and current limits
 

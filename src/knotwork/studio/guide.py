@@ -289,6 +289,13 @@ TOOLTIPS: Final[dict[str, str]] = {
     "ar_conc": "How many model calls run at the same time.",
     "ar_rpm": "Maximum requests per minute, to stay within provider rate limits.",
     "ar_delay": "Simulated latency per mock call, so offline runs behave like live ones.",
+    "ar_repeats": "Ask each item k times. k > 1 adds pass@k and pass^k (ZeroBench's consistency "
+    "protocol). Live calls use temperature 0, so this measures answer stability.",
+    "col_rel_items": "Items with all k repeats scored. Partly answered items are left out.",
+    "col_pass1": "pass@1: mean single-try accuracy over every repeat.",
+    "col_passk": "pass@k: share of items answered correctly at least once in k tries.",
+    "col_passhatk": "pass^k: share of items answered correctly on all k tries, the strict "
+    "reliability bar.",
     "ar_refresh": "Fetch the current vision-model list from OpenRouter. Nothing is fetched "
     "until you click; offline, a curated list is used.",
     "ar_free_only": "Show only models with a :free variant.",

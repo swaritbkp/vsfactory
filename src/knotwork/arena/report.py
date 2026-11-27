@@ -51,8 +51,29 @@ CATEGORIES = (
 GALLERY_MAX = 6
 THUMB_PX = 220
 BRIEF_TITLE = "AI-Assisted Executive Synthesis (Grounded in Deterministic Metrics)"
+#: pass@k minus pass^k at or above this is reported as a material reliability gap
+RELIABILITY_GAP = 0.10
+#: Methodology & Literature References printed at the foot of report.html / report.md
+REFERENCES: tuple[str, ...] = (
+    "Wilson, E. B. (1927). Probable inference, the law of succession, and statistical inference. "
+    "JASA 22(158). Used for every 95% binomial score interval in this report.",
+    "Roberts, J. et al. ZeroBench: An Impossible Visual Benchmark for Contemporary Large "
+    "Multimodal Models. ICML 2026 (PMLR 306), arXiv:2502.09696. Source of the pass@k / pass^k "
+    "reliability protocol used when a session asks each item k > 1 times.",
+    "Rahmanzadehgervi, P. et al. Vision language models are blind. ACCV 2024, arXiv:2407.06581. "
+    "VLMs fail simple 2-D geometric tasks such as line intersections and path following.",
+    "Friedman, D. and Dieng, A. B. The Vendi Score: A Diversity Evaluation Metric for Machine "
+    "Learning. TMLR 2023, arXiv:2210.02410. Knotwork reports Vendi only over kernel-certified items.",
+    "Lee, K. et al. VLind-Bench: Measuring Language Priors in Large Vision-Language Models. "
+    "Findings of NAACL 2025, arXiv:2406.08702. Counterfactual tests of language priors.",
+    "Sun, J. et al. Seeing What Is Actually There: PriVE-Bench and PriVE-Tools for Counterfactual "
+    "Evaluation of Agentic Visual Evidence in VLMs. EMNLP 2026 (2026.emnlp-main.760).",
+    "Feng, Y. et al. VisualSphinx: Large-Scale Synthetic Vision Logic Puzzles for RL. "
+    "arXiv:2505.23977 (2025). Synthetic puzzles filtered with LLM / VLM scoring.",
+)
 CSV_FIELDS = (
     "trial_id", "block_id", "domain", "preset", "family", "item_index", "bundle_id", "model",
+    "repeat_idx",
     "status", "correct", "truth", "extracted", "error_category", "latency_ms", "prompt_tokens",
     "completion_tokens", "cost_usd", "attempts", "simulated", "ts_utc",
 )  # fmt: skip
@@ -155,6 +176,57 @@ def leaderboard(cfg: SessionConfig, trials: dict[str, TrialRecord]) -> dict[str,
         overall.append({"model": model, **_cell(group, errs)})
     overall.sort(key=lambda r: (-(r["accuracy"] or 0.0), r["model"]))
     return {"cells": cells, "models": overall}
+
+
+def pass_at_k(outcomes: dict[int, list[bool]], k: int) -> dict[str, Any]:
+    """pass@1, pass@k and pass^k over items that have all `k` repeats scored (ZeroBench).
+
+    `outcomes` maps an item index to the correctness of each scored repeat. pass@1 is the mean
+    single-trial accuracy, pass@k the share of items solved at least once, pass^k the share solved
+    on every repeat. Items with fewer than `k` scored repeats are left out (`items_partial`).
+    """
+    full = [v[:k] for v in outcomes.values() if len(v) >= k]
+    n = len(full)
+    flat = [x for v in full for x in v]
+    at_k = sum(any(v) for v in full)
+    hat_k = sum(all(v) for v in full)
+    return {
+        "k": k, "items": n, "items_partial": len(outcomes) - n,
+        "pass_at_1": (sum(flat) / len(flat)) if flat else None,
+        "pass_at_k": (at_k / n) if n else None, "pass_hat_k": (hat_k / n) if n else None,
+        "solved_any": at_k, "solved_all": hat_k,
+    }  # fmt: skip
+
+
+def reliability(cfg: SessionConfig, trials: dict[str, TrialRecord]) -> dict[str, Any] | None:
+    """pass@1 / pass@k / pass^k per (block, model) when the session asks each item k > 1 times,
+    plus one deterministic finding per cell whose pass@k - pass^k gap is material."""
+    if cfg.repeats <= 1:
+        return None
+    k = cfg.repeats
+    ordered = sorted(trials.values(), key=lambda t: (t.item_index, t.repeat_idx))
+    cells, findings = [], []
+    for block in cfg.blocks:
+        for model in cfg.models_for(block):
+            outcomes: dict[int, list[bool]] = {}
+            for t in ordered:
+                if t.block_id == block.block_id and t.model == model and t.status == "ok":
+                    outcomes.setdefault(t.item_index, []).append(bool(t.correct))
+            row: dict[str, Any] = {"block_id": block.block_id, "block": block.label,
+                                   "model": model, **pass_at_k(outcomes, k)}  # fmt: skip
+            gap = None
+            if row["pass_at_k"] is not None and row["pass_hat_k"] is not None:
+                gap = row["pass_at_k"] - row["pass_hat_k"]
+            row["gap"] = gap
+            cells.append(row)
+            if gap is not None and gap >= RELIABILITY_GAP:
+                findings.append(
+                    f"{short(model)} on {block.label}: solves {pct(row['pass_at_k'])} of items at "
+                    f"least once in {k} tries but only {pct(row['pass_hat_k'])} on all {k} "
+                    f"(gap {100 * gap:.1f} pp). Its answers are not consistent across repeats, "
+                    f"so single-run accuracy ({pct(row['pass_at_1'])}) overstates its reliability."
+                )
+    return {"k": k, "gap_threshold": RELIABILITY_GAP, "cells": cells, "findings": findings}
 
 
 def contrasts(cfg: SessionConfig, trials: dict[str, TrialRecord]) -> list[dict[str, Any]]:
@@ -340,7 +412,11 @@ def compute_metrics(
         "contrasts": contrasts(cfg, trials),
         "taxonomy": taxonomy(cfg, by_key, trials),
         "gallery": gallery_rows(cfg, by_key, trials),
+        "references": list(REFERENCES),
     }
+    rel = reliability(cfg, trials)
+    if rel is not None:
+        out["reliability"] = rel
     if compare is not None:
         out["regression"] = regression(cfg, trials, compare[0], compare[1])
     return out
@@ -571,6 +647,13 @@ def render_html(m: dict[str, Any], data_dir: Path, brief: str | None = None) -> 
           f"{ms(c['latency_p50_ms'])} / {ms(c['latency_p95_ms'])}",
           f"{c['prompt_tokens']:,} / {c['completion_tokens']:,}", usd(c["cost_usd"]),
           usd(c["cost_per_correct"])] for c in m["leaderboard"]["cells"]]))  # fmt: skip
+    if "reliability" in m:
+        rel = m["reliability"]
+        out.append(
+            f"<h2>Reliability over k = {rel['k']} repeats (pass@k / pass^k)</h2>"
+            + _html_table(_REL_HEAD, _rel_rows(rel))
+            + "".join(f"<p class='callout warn'>{_esc(x)}</p>" for x in rel["findings"])
+        )
     out.append(f"<h2>Accuracy by model and block (95% Wilson CI)</h2>{svg_accuracy(m)}")
     out.append(f"<h2>Accuracy vs. cost (Pareto frontier)</h2>{svg_pareto(m)}")
     if m["contrasts"]:
@@ -630,8 +713,25 @@ def render_html(m: dict[str, Any], data_dir: Path, brief: str | None = None) -> 
             ("Python / OS", f"{h['python']} · {h['platform']}"), ("Reproduce", h["cli"])]  # fmt: skip
     out.append("<h2>Publication and audit header</h2><div class='meta'>" + "".join(
         f"<div>{_esc(k)}</div><div><code>{_esc(v)}</code></div>" for k, v in meta) + "</div>")  # fmt: skip
+    refs = m.get("references", REFERENCES)
+    out.append(
+        "<h2>Methodology &amp; Literature References</h2><ol class='refs'>"
+        + "".join(f"<li>{_esc(r)}</li>" for r in refs)
+        + "</ol>"
+    )
     out.append(f"<footer>{_esc(FOOTER)}</footer></main></body></html>")
     return "".join(out)
+
+
+_REL_HEAD = ["Block", "Model", "Items", "pass@1", "pass@k", "pass^k", "Gap (pp)"]
+
+
+def _rel_rows(rel: dict[str, Any]) -> list[list[Any]]:
+    return [
+        [c["block"], short(c["model"]), c["items"], pct(c["pass_at_1"]), pct(c["pass_at_k"]),
+         pct(c["pass_hat_k"]), "—" if c["gap"] is None else f"{100 * c['gap']:.1f}"]
+        for c in rel["cells"]
+    ]  # fmt: skip
 
 
 def _trio(s: dict[str, float | None]) -> str:
@@ -663,6 +763,11 @@ def render_md(m: dict[str, Any], brief: str | None = None) -> str:
         [[c["block"], c["model"], pct(c["accuracy"]), f"{pct(c['ci_lo'])}–{pct(c['ci_hi'])}",
           f"{c['correct']}/{c['n']}", ms(c["latency_p50_ms"]), usd(c["cost_usd"]),
           usd(c["cost_per_correct"])] for c in m["leaderboard"]["cells"]]), ""]  # fmt: skip
+    if "reliability" in m:
+        rel = m["reliability"]
+        out += [f"## Reliability over k = {rel['k']} repeats (pass@k / pass^k)", "",
+                _md_table(_REL_HEAD, _rel_rows(rel)), "",
+                *[f"> {x}" for x in rel["findings"]], ""]  # fmt: skip
     if m["contrasts"]:
         out += ["## Cross-block contrasts", "", _md_table(
             ["Model", "A", "B", "Effect (pp)", "p (z)", "p (Fisher)"],
@@ -687,7 +792,10 @@ def render_md(m: dict[str, Any], brief: str | None = None) -> str:
     out += ["## Audit header", "", *[f"- **{k}:** `{h[k]}`" for k in (
         "session_name", "client", "run_id", "mode", "started_utc", "finished_utc", "git_sha",
         "kernel_sha256", "dataset_sha256", "data_dir", "results_dir", "python", "platform", "cli")],
-        "", f"_{FOOTER}_", ""]  # fmt: skip
+        ""]  # fmt: skip
+    out += ["## Methodology & Literature References", "",
+            *[f"{i}. {r}" for i, r in enumerate(m.get("references", REFERENCES), 1)],
+            "", f"_{FOOTER}_", ""]  # fmt: skip
     return "\n".join(out)
 
 
@@ -804,6 +912,6 @@ def ai_brief(metrics: dict[str, Any], model: str, api_key: str, transport: Any =
 
 __all__ = [
     "BRIEF_TITLE", "ai_brief", "compute_metrics", "contrasts", "export", "fisher_exact",
-    "leaderboard", "pareto_front", "percentile", "render_html", "render_md", "svg_accuracy",
+    "leaderboard", "pareto_front", "pass_at_k", "percentile", "reliability", "render_html", "render_md", "svg_accuracy",
     "svg_pareto", "taxonomy", "two_proportion_z", "wilson",
 ]  # fmt: skip

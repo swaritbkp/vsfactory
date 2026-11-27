@@ -39,7 +39,7 @@ from typing import Any, cast
 from knotwork import net
 from knotwork.arena import catalog, storage
 from knotwork.arena.generation import make_item_job
-from knotwork.arena.schemas import ItemRecord, SessionConfig, TrialRecord
+from knotwork.arena.schemas import ItemRecord, SessionConfig, TrialRecord, trial_key
 from knotwork.knotcore.grading import ANSWER_RE, extract, grade_prediction, is_hedged
 from knotwork.knotcore.seeds import SeedTree
 from knotwork.render.canvas import REPO_ROOT
@@ -164,9 +164,13 @@ class ApiError(RuntimeError):
         self.attempts = attempts
 
 
-def mock_reply(model: str, item: ItemRecord, prices: dict[str, tuple[float, float]]) -> Reply:
-    """A deterministic simulated model: skill from the model id, harder presets lower it."""
-    rng = SeedTree(0).child("arena-mock", model, item.bundle_id).rng()
+def mock_reply(
+    model: str, item: ItemRecord, prices: dict[str, tuple[float, float]], repeat_idx: int = 0
+) -> Reply:
+    """A deterministic simulated model: skill from the model id, harder presets lower it. Each
+    repeat draws afresh (repeat 0 keeps the draw it had before repeats existed)."""
+    path = ("arena-mock", model, item.bundle_id) + ((f"r{repeat_idx}",) if repeat_idx else ())
+    rng = SeedTree(0).child(*path).rng()
     skill = 0.30 + 0.5 * SeedTree(0).child("arena-skill", model).rng().random()
     skill += {"Clean": 0.12, "Hard logic": -0.15, "High stress": -0.10}.get(item.preset, 0.0)
     skill -= 0.05 if item.domain == "rack_patch" else 0.0
@@ -326,7 +330,7 @@ class Runner:
         storage.write_manifest(self.data, items, meta)
 
     # -------------------------------------------------------------- phase 2: trials
-    def plan(self, items: list[ItemRecord]) -> list[tuple[str, str, ItemRecord]]:
+    def plan(self, items: list[ItemRecord]) -> list[tuple[str, str, ItemRecord, int]]:
         by_block: dict[str, list[ItemRecord]] = {}
         for item in items:
             if item.certified:
@@ -335,7 +339,9 @@ class Runner:
         for block in self.cfg.blocks:
             for item in sorted(by_block.get(block.block_id, []), key=lambda i: i.item_index):
                 for model in self.cfg.models_for(block):
-                    out.append((f"{block.block_id}:{item.item_index}:{model}", model, item))
+                    for r in range(self.cfg.repeats):
+                        tid = trial_key(block.block_id, item.item_index, model, r)
+                        out.append((tid, model, item, r))
         return out
 
     def evaluate(self, items: list[ItemRecord]) -> int:
@@ -372,19 +378,19 @@ class Runner:
         out = min(EST_COMPLETION_TOKENS, self.cfg.max_tokens)
         return (EST_PROMPT_TOKENS * p + out * c) * COST_MARGIN
 
-    def _dispatch(self, todo: list[tuple[str, str, ItemRecord]]) -> str | None:
+    def _dispatch(self, todo: list[tuple[str, str, ItemRecord, int]]) -> str | None:
         live = self.cfg.mode == "live"
         gap = 60.0 / float(self.cfg.rpm)
         queue = list(reversed(todo))
-        pending: dict[Future[Reply], tuple[str, str, ItemRecord, float]] = {}
+        pending: dict[Future[Reply], tuple[str, str, ItemRecord, int, float]] = {}
         halted: str | None = None
         with ThreadPoolExecutor(self.cfg.max_concurrency) as pool:
             while queue or pending:
                 halted = halted or self._halt()
                 while queue and not halted and len(pending) < self.cfg.max_concurrency:
-                    tid, model, item = queue[-1]
+                    tid, model, item, rep = queue[-1]
                     reserve = self._estimate(model) if live else 0.0
-                    in_flight = sum(r[3] for r in pending.values())
+                    in_flight = sum(r[4] for r in pending.values())
                     if (
                         live
                         and self.status.spend_usd + in_flight + reserve > self.cfg.spend_cap_usd
@@ -396,18 +402,21 @@ class Runner:
                     if wait_s > 0:
                         self.sleep(wait_s)
                     self._last_call = time.monotonic()
-                    pending[pool.submit(self._ask, model, item)] = (tid, model, item, reserve)
+                    fut = pool.submit(self._ask, model, item, rep)
+                    pending[fut] = (tid, model, item, rep, reserve)
                 if not pending:
                     break
                 finished, _ = wait(list(pending), timeout=1.0, return_when=FIRST_COMPLETED)
                 for fut in finished:
-                    tid, model, item, _r = pending.pop(fut)
-                    self._record(tid, model, item, fut)
+                    tid, model, item, rep, _r = pending.pop(fut)
+                    self._record(tid, model, item, fut, rep)
         return halted
 
-    def _record(self, tid: str, model: str, item: ItemRecord, fut: Future[Reply]) -> None:
+    def _record(
+        self, tid: str, model: str, item: ItemRecord, fut: Future[Reply], repeat_idx: int = 0
+    ) -> None:
         base: dict[str, Any] = {"trial_id": tid, "block_id": item.block_id, "item_index": item.item_index,
-                "bundle_id": item.bundle_id, "model": model, "truth": item.truth,
+                "bundle_id": item.bundle_id, "model": model, "repeat_idx": repeat_idx, "truth": item.truth,
                 "answer_type": str(item.answer.get("type", "")), "ts_utc": storage.utc_now()}  # fmt: skip
         try:
             reply = fut.result()
@@ -434,11 +443,11 @@ class Runner:
         self._save(completed_trials=completed, failed_trials=failed,
                    spend_usd=round(self.status.spend_usd + trial.cost_usd, 6))  # fmt: skip
 
-    def _ask(self, model: str, item: ItemRecord) -> Reply:
+    def _ask(self, model: str, item: ItemRecord, repeat_idx: int = 0) -> Reply:
         if self.cfg.mode == "mock":
             if self.cfg.mock_delay_s:
                 self.sleep(self.cfg.mock_delay_s)
-            return mock_reply(model, item, self.prices)
+            return mock_reply(model, item, self.prices, repeat_idx)
         return self._ask_live(model, item)
 
     def _ask_live(self, model: str, item: ItemRecord) -> Reply:

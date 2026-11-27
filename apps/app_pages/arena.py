@@ -20,6 +20,7 @@ from knotwork.arena import catalog, keys, planning, report, runner, storage
 from knotwork.arena import forensics as arena_forensics
 from knotwork.arena.schemas import (
     DOMAIN_LABELS,
+    MAX_REPEATS,
     PRESETS,
     BlockSpec,
     ItemRecord,
@@ -143,6 +144,7 @@ def _load_form(cfg: SessionConfig) -> None:
     ss.ar_data_dir, ss.ar_results_dir = cfg.data_dir, cfg.results_dir
     ss.ar_mode = next(k for k, v in MODES.items() if v == cfg.mode)
     ss.ar_cap, ss.ar_conc, ss.ar_rpm = cfg.spend_cap_usd, cfg.max_concurrency, cfg.rpm
+    ss.ar_repeats = cfg.repeats
     known = set(_catalog(bool(ss.get("ar_live_catalog"))).ids())
     extra = [m for b in cfg.blocks for m in cfg.models_for(b) if m not in known]
     ss.ar_custom_models = list(dict.fromkeys([*ss.ar_custom_models, *extra]))
@@ -335,12 +337,14 @@ def _mode_card() -> dict[str, Any]:
                        help=guide.tip("ar_cap"))  # fmt: skip
         b.number_input("Max concurrency", 1, 8, 2, key="ar_conc", help=guide.tip("ar_conc"))
         c.number_input("Rate limit (RPM)", 1, 1000, 60, key="ar_rpm", help=guide.tip("ar_rpm"))
+        st.number_input("Repeats per item (k)", 1, MAX_REPEATS, 1, key="ar_repeats",
+                        help=guide.tip("ar_repeats"))  # fmt: skip
         delay = 0.0
         if mode == "mock":
             delay = float(st.number_input("Simulated latency per call (s)", 0.0, 5.0, 0.2, 0.1,
                                           key="ar_delay", help=guide.tip("ar_delay")))  # fmt: skip
     return {"mode": mode, "cap": float(ss.ar_cap), "conc": int(ss.ar_conc),
-            "rpm": int(ss.ar_rpm), "delay": delay}  # fmt: skip
+            "rpm": int(ss.ar_rpm), "delay": delay, "repeats": int(ss.ar_repeats)}  # fmt: skip
 
 
 def _models_card(live_mode: bool) -> tuple[list[str], catalog.Catalog]:
@@ -485,7 +489,7 @@ def _build_config(setup: dict[str, Any], mode: dict[str, Any], models: list[str]
         default_models=models or ["(none)"],
         blocks=[BlockSpec.model_validate(b) for b in blocks],
         spend_cap_usd=mode["cap"], max_concurrency=mode["conc"], rpm=mode["rpm"],
-        mock_delay_s=mode["delay"],
+        mock_delay_s=mode["delay"], repeats=mode["repeats"],
     )  # fmt: skip
 
 
@@ -509,7 +513,8 @@ def _launch_bar(setup: dict[str, Any], mode: dict[str, Any], models: list[str],
             a.metric("Images to generate", f"{pf.images_to_generate:,}",
                      f"~{planning.human_duration(pf.gen_seconds)}", delta_color="off",
                      delta_arrow="off", border=True, help=guide.tip("pf_images"))  # fmt: skip
-        b.metric("Model trials", f"{pf.trials:,}", "Σ N × models per block", delta_color="off",
+        per = "Σ N × models" + (f" × k={cfg.repeats}" if cfg.repeats > 1 else " per block")
+        b.metric("Model trials", f"{pf.trials:,}", per, delta_color="off",
                  delta_arrow="off", border=True, help=guide.tip("pf_trials"))  # fmt: skip
         c.metric("Est. evaluation time", planning.human_duration(pf.eval_seconds),
                  f"{cfg.max_concurrency} concurrent · {cfg.rpm} RPM", delta_color="off",
@@ -699,6 +704,33 @@ def _live_body(entry_dir: Path, cfg: SessionConfig, was_running: bool) -> None:
     _kpis(cfg, items, trials, status)
     st.markdown("**Block × model leaderboard**")
     _leaderboard(cfg, trials)
+    _reliability(cfg, trials)
+
+
+def _reliability(cfg: SessionConfig, trials: dict[str, TrialRecord]) -> None:
+    """pass@1 / pass@k / pass^k per (block, model) when each item is asked k > 1 times."""
+    rel = report.reliability(cfg, trials)
+    if rel is None:
+        return
+    st.markdown(f"**Reliability over k = {rel['k']} repeats**")
+    rows = [{
+        "Block": c["block"], "Model": report.short(c["model"]), "Items": c["items"],
+        "pass@1": None if c["pass_at_1"] is None else 100 * c["pass_at_1"],
+        "pass@k": None if c["pass_at_k"] is None else 100 * c["pass_at_k"],
+        "pass^k": None if c["pass_hat_k"] is None else 100 * c["pass_hat_k"],
+    } for c in rel["cells"]]  # fmt: skip
+    st.dataframe(
+        pd.DataFrame(rows), hide_index=True, width="stretch", key="ar_reliability",
+        alt="pass@1, pass@k and pass^k per block and model",
+        column_config={
+            "Items": st.column_config.NumberColumn(help=guide.tip("col_rel_items")),
+            "pass@1": st.column_config.NumberColumn(format="%.1f%%", help=guide.tip("col_pass1")),
+            "pass@k": st.column_config.NumberColumn(format="%.1f%%", help=guide.tip("col_passk")),
+            "pass^k": st.column_config.NumberColumn(format="%.1f%%", help=guide.tip("col_passhatk")),
+        },
+    )  # fmt: skip
+    for finding in rel["findings"]:
+        st.warning(finding, icon=":material/repeat:")
 
 
 def _model_card(
