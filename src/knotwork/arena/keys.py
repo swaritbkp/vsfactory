@@ -24,7 +24,12 @@ def from_dotenv(path: Path) -> str | None:
 
 
 def detect(dotenv: Path = REPO_ROOT / ".env") -> tuple[str | None, str]:
-    """(key, where it came from): the process environment first, then the repository `.env`."""
+    """(key, where it came from): the process environment first, then the repository `.env`.
+    In the public demo (`KNOTWORK_PUBLIC_DEMO=1`) the server's own key is never read."""
+    from knotwork.studio import demo_guard
+
+    if demo_guard.is_public_demo():
+        return None, ""
     env = os.environ.get(ENV_NAME, "").strip()
     if env:
         return env, "environment"

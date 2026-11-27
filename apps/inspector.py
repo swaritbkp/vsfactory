@@ -13,7 +13,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from knotwork.studio import guide, present
+from knotwork.studio import demo_guard, guide, present
 
 APP = Path(__file__).resolve().parent
 PAGES = (
@@ -62,11 +62,15 @@ def header(page: str | None) -> None:
             else:
                 st.badge("TCB audit failed", icon=":material/gpp_bad:", color="red")
             guide_controls(page)
+    if demo_guard.is_public_demo():
+        st.info(demo_guard.BANNER, icon=":material/science:")
     guide_strip(page)
 
 
 def main() -> None:
     os.environ["KNOTWORK_NETWORK"] = "deny"  # the studio never touches the network
+    if demo_guard.is_public_demo():  # sessions, datasets and results live in the sandbox only
+        os.environ["KNOTWORK_ARENA_ROOT"] = str(demo_guard.sandbox_root() / "arena")
     if str(APP) not in sys.path:
         sys.path.insert(0, str(APP))  # pages import `studio_ui`
     st.set_page_config(page_title="Knotwork VTF Studio", page_icon=":material/hub:", layout="wide")

@@ -9,9 +9,14 @@ from typing import Any
 import streamlit as st
 
 from knotwork.render.canvas import REPO_ROOT
-from knotwork.studio import forensics, guide
+from knotwork.studio import demo_guard, forensics, guide
 
-OUT = REPO_ROOT / "artifacts" / "studio"
+#: where the Studio writes: the repository's artifacts/, or the sandbox in the public demo
+OUT = (
+    demo_guard.SANDBOX_ROOT / "studio"
+    if demo_guard.is_public_demo()
+    else REPO_ROOT / "artifacts" / "studio"
+)
 FOOTER = (
     "© 2026 BilotaAI · Team Bilota (Swarit Sharma & Pankaj David) · Knotwork Visual Task Factory"
 )
@@ -34,6 +39,10 @@ def relative(path: Path) -> str:
 
 
 def resolve(text: str) -> Path:
+    """A typed folder as an absolute path. In the public demo it is confined to the sandbox
+    (check `demo_guard.path_problem` first: this raises SandboxViolation outside it)."""
+    if demo_guard.is_public_demo():
+        return demo_guard.confine(text)
     path = Path(text.strip())
     return path if path.is_absolute() else REPO_ROOT / path
 

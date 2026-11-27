@@ -12,7 +12,7 @@ engineering manual and wins on any detail; this file never contradicts it.
 | `src/knotwork/render/`, `pipeline/` | renderer; generate / certify / verify / mutate / twins | — |
 | `src/knotwork/arena/` | Model Arena: sessions, runner, reports, regression gate, `campaign.yaml` | — |
 | `src/knotwork/posttrain/` | vCoT, RLVR reward, verifier server, curriculum and pack exporter | — |
-| `src/knotwork/studio/` | Studio logic (factory, guide tooltips, Human QA review log) | — |
+| `src/knotwork/studio/` | Studio logic (factory, guide tooltips, Human QA review log, public-demo guard) | — |
 | `apps/` | Streamlit entry `inspector.py`, pages in `app_pages/` | — |
 | `tests/` | offline suite, tiered `tier0` / `tier1` (CI) and `tier2` (nightly) | — |
 
@@ -57,6 +57,13 @@ for ones that import their implementation directly — before you commit, or CI 
   ([`docs/PLUGIN_SDK.md`](docs/PLUGIN_SDK.md)); `uv run knot plugins` shows whether it was accepted.
 * Plugins may import `knotwork.knotcore` (contracts, seeds) and `knotwork.render`; `tangle` and `gauge`
   never import each other.
+
+## Public demo mode
+
+`KNOTWORK_PUBLIC_DEMO=1` (Cloud Run, [`docs/DEPLOY_CLOUD_RUN.md`](docs/DEPLOY_CLOUD_RUN.md)) confines
+storage to `/tmp/knotwork_demo/`, caps runs and never reads a server API key. Any new page control that
+takes a folder or a count must go through `knotwork.studio.demo_guard` (`path_problem`, `cap`,
+`config_problems`). With the variable unset or `0`, the guard must change nothing.
 
 ## Before you finish
 

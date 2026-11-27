@@ -72,6 +72,12 @@ def slugify(name: str, date: str | None = None) -> str:
 
 
 def resolve(text: str | Path) -> Path:
+    """A session folder as an absolute path (relative = repository-relative). In the public demo
+    it must lie inside the sandbox (relative = sandbox-relative), else SandboxViolation."""
+    from knotwork.studio import demo_guard
+
+    if demo_guard.is_public_demo():
+        return demo_guard.confine(text)
     path = Path(str(text).strip()).expanduser()
     return path if path.is_absolute() else REPO_ROOT / path
 

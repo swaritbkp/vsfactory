@@ -14,7 +14,7 @@ from knotwork.export.run import run_export
 from knotwork.freshness import lineage
 from knotwork.pipeline.io import read_json
 from knotwork.render.canvas import REPO_ROOT
-from knotwork.studio import factory, forensics, guide, present, review
+from knotwork.studio import demo_guard, factory, forensics, guide, present, review
 from studio_ui import OUT, dataset_label, dataset_select, relative, resolve
 
 FALLBACKS = ("artifacts/selftest/data/tangle", "artifacts/phase3/bench_split/tangle")
@@ -154,7 +154,10 @@ with controls:
                                    help=guide.tip("ex_out"))  # fmt: skip
     with st.container(border=True):
         st.markdown("**3. Export**")
-        out = resolve(folder)
+        refused = demo_guard.path_problem(folder)
+        if refused:
+            st.error(refused, icon=":material/folder_off:")
+        out = OUT / "export" / "sandbox" if refused else resolve(folder)
         only = st.toggle("Approved items only", key="ex_approved",
                          help=guide.tip("qa_approved_only"))  # fmt: skip
         only_ids: set[str] | None = None
@@ -170,7 +173,8 @@ with controls:
         st.caption(f"Writes to `{relative(out)}`.")
         go = st.button(
             "Export dataset", type="primary", width="stretch", icon=":material/package_2:",
-            disabled=dataset is None or not formats or only_ids == set(), key="ex_go",
+            disabled=dataset is None or not formats or only_ids == set() or bool(refused),
+            key="ex_go",
             help=guide.tip("ex_go"),
         )  # fmt: skip
         if not formats:

@@ -11,7 +11,7 @@ import streamlit as st
 from PIL import Image
 
 from knotwork.posttrain import vcot
-from knotwork.studio import factory, forensics, guide, present
+from knotwork.studio import demo_guard, factory, forensics, guide, present
 from knotwork.studio.present import AUTO
 from studio_ui import OUT, relative, resolve, run_with_status, verdict_badge
 
@@ -162,7 +162,8 @@ def _batch_panel(plugin: str) -> None:
     if not factory.batch_ready(plugin):
         st.caption("This plugin has no profile section, so it supports single items only.")
         return
-    n = int(st.number_input("Certified base items", 1, 1_000_000, 20, key="bt_n",
+    most = demo_guard.cap(1_000_000, demo_guard.DEMO_LIMITS.batch_items)
+    n = int(st.number_input("Certified base items", 1, most, min(20, most), key="bt_n",
                             help=guide.tip("bt_n")))  # fmt: skip
     split = st.segmented_control(
         "Split",
@@ -195,6 +196,10 @@ def _batch_panel(plugin: str) -> None:
     spec = factory.difficulty_from(
         _dials(("reasoning_load", "visual_stress", "occlusion_level", "color_regime"))
     )
+    refused = demo_guard.path_problem(folder)
+    if refused:
+        st.error(refused, icon=":material/folder_off:")
+        return
     out = resolve(folder)
     args = factory.batch_command(
         plugin,

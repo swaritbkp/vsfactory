@@ -158,12 +158,20 @@ Paid benchmarking is opt-in only: it needs a human approval file plus `OPENROUTE
 
 ```bash
 docker build -t knotwork .
-docker run --rm knotwork uv run knot selftest --seeds-only
-docker run --rm -p 8501:8501 knotwork uv run streamlit run apps/inspector.py --server.address 0.0.0.0
+docker run --rm knotwork uv run knot selftest --seeds-only   # kernel known-answer test, then exit
+docker run --rm -p 8501:8501 knotwork                        # the Studio at http://localhost:8501
 ```
 
 The image is Python 3.12 slim built with `uv sync --locked`. It runs as the non-root `appuser` with
-`KNOTWORK_NETWORK=deny`, `UV_OFFLINE=1` and no API keys baked in.
+`KNOTWORK_NETWORK=deny`, `UV_OFFLINE=1` and no API keys baked in. Its default command serves the
+Studio on `${PORT:-8501}`; self-hosted it has no caps and reads any folder you mount.
+
+**Hosted sandbox.** The same image can run as a public Cloud Run demo with `KNOTWORK_PUBLIC_DEMO=1`
+([`docs/DEPLOY_CLOUD_RUN.md`](docs/DEPLOY_CLOUD_RUN.md)). Every page then shows a sandbox banner, and all
+storage is confined to `/tmp/knotwork_demo/` (paths outside it, including `..` traversal, are refused).
+Runs are capped at 10 items per block, 3 blocks, k ≤ 3, 10-item Studio batches and a $1.00 spend cap.
+The server never reads `OPENROUTER_API_KEY`: runs default to Offline Mock, and a visitor's own key stays
+in their browser session. Unset or `0`, the switch changes nothing.
 
 ## Repository map (v2)
 
@@ -173,7 +181,7 @@ The image is Python 3.12 slim built with `uv sync --locked`. It runs as the non-
 | `src/knotwork/plugins/` | untrusted scene plugins: `rack_patch`, `tangle`, `gauge`, `panel` (+ registry) |
 | `src/knotwork/render/` · `pipeline/` | renderer (2× beauty, 1× non-AA masks and id buffer) · generate / certify / verify / mutate / twins |
 | `src/knotwork/arena/` | Model Arena engine: sessions storage, catalog, resumable runner, report engine, Forensics loop |
-| `src/knotwork/studio/` | Studio logic: factory, fault proofs, forensics, presentation |
+| `src/knotwork/studio/` | Studio logic: factory, fault proofs, forensics, presentation, Human QA review log, public-demo guard |
 | `src/knotwork/posttrain/` | post-training engine: grounded vCoT, RLVR reward + verifier server, curriculum and pack exporter, throughput |
 | `src/knotwork/export/` · `bench/` · `probes/` · `freshness/` | Harbor / HF / RLVR exporters · staircase bench · shortcut probes · beacon seeds and burn ledger |
 | `apps/` | Streamlit entry `inspector.py` and the 5 pages in `app_pages/` |

@@ -29,7 +29,7 @@ from knotwork.arena.schemas import (
     TrialRecord,
 )
 from knotwork.pipeline.io import read_json
-from knotwork.studio import factory, forensics, guide, review
+from knotwork.studio import demo_guard, factory, forensics, guide, review
 from posttrain_ui import posttrain_tab
 from studio_ui import relative, review_controls, run_with_status
 
@@ -211,7 +211,11 @@ def _sidebar() -> None:
             folder = st.text_input("Results folder", key="ar_mount",
                                    placeholder="D:/evals/rack-audit/results",
                                    help=guide.tip("ar_mount"))  # fmt: skip
-            if st.button("Add to sidebar", key="ar_mount_go", width="stretch"):
+            refused = demo_guard.path_problem(folder) if folder.strip() else None
+            if refused:
+                st.error(refused, icon=":material/folder_off:")
+            if st.button("Add to sidebar", key="ar_mount_go", width="stretch",
+                         disabled=bool(refused)):  # fmt: skip
                 entry = WS.register_existing(Path(folder)) if folder.strip() else None
                 if entry is None:
                     st.error("That folder has no valid config.json from a Model Arena session.")
@@ -283,7 +287,11 @@ def _setup_card() -> dict[str, Any]:
                                   placeholder="Pick a dataset or paste a folder path",
                                   help=guide.tip("ar_reuse_dir"))  # fmt: skip
             data_dir = str(picked or "")
-            items = storage.dataset_items(storage.resolve(data_dir)) if data_dir else []
+            refused = demo_guard.path_problem(data_dir) if data_dir else None
+            if refused:
+                st.error(refused, icon=":material/folder_off:")
+            ok = data_dir and not refused
+            items = storage.dataset_items(storage.resolve(data_dir)) if ok else []
             if data_dir and not items:
                 st.warning("This folder holds no certified dataset (no dataset_manifest.json "
                            "or index.jsonl).", icon=":material/folder_off:")  # fmt: skip
@@ -298,7 +306,10 @@ def _setup_card() -> dict[str, Any]:
                                      help=guide.tip("ar_data_dir"))  # fmt: skip
         results_dir = st.text_input("Results & reports folder (results_dir)", key="ar_results_dir",
                                     help=guide.tip("ar_results_dir"))  # fmt: skip
-        if results_dir and (storage.resolve(results_dir) / storage.RESULTS).is_file():
+        if demo_guard.path_problem(results_dir or "."):
+            st.error(f"Results folder: {demo_guard.path_problem(results_dir)}",
+                     icon=":material/folder_off:")  # fmt: skip
+        elif results_dir and (storage.resolve(results_dir) / storage.RESULTS).is_file():
             st.warning("This results folder already holds a session. Open it from the sidebar to "
                        "resume, or choose an empty folder.", icon=":material/warning:")  # fmt: skip
     return {"slug": slug, "reuse": reuse, "data_dir": data_dir, "results_dir": results_dir,
@@ -322,7 +333,12 @@ def _mode_card() -> dict[str, Any]:
                                               default="Offline Mock (No Key)", required=True,
                                               width="stretch", help=guide.tip("ar_mode")))]  # fmt: skip
         found, source = keys.detect()
-        if mode == "live":
+        if mode == "live" and demo_guard.is_public_demo():
+            ss.ar_override = True  # the sandbox never reads a server key: bring your own
+            st.text_input("Your OpenRouter API key", type="password", key=SECRET_KEY,
+                          placeholder="sk-or-…", help=guide.tip("ar_key"))  # fmt: skip
+            st.caption("Kept in this browser session only; never stored on the server.")
+        elif mode == "live":
             if found:
                 st.badge(f"Key loaded from {source} ({keys.mask(found)})", color="green",
                          icon=":material/key:")  # fmt: skip
@@ -336,12 +352,15 @@ def _mode_card() -> dict[str, Any]:
             st.caption("Simulated models answer the certified items offline: no key, no network, "
                        "no charges. Costs shown are what a live run would cost.")  # fmt: skip
         a, b, c = st.columns(3)
-        a.number_input("Spend cap ($)", 0.0, 250.0, 0.50, 0.25, key="ar_cap", format="%.2f",
+        lim = demo_guard.limits()
+        a.number_input("Spend cap ($)", 0.0, lim.spend_cap_usd if lim else 250.0, 0.50, 0.25,
+                       key="ar_cap", format="%.2f",
                        help=guide.tip("ar_cap"))  # fmt: skip
         b.number_input("Max concurrency", 1, 8, 2, key="ar_conc", help=guide.tip("ar_conc"))
         c.number_input("Rate limit (RPM)", 1, 1000, 60, key="ar_rpm", help=guide.tip("ar_rpm"))
         k, t = st.columns(2)
-        k.number_input("Repeats per item (k)", 1, MAX_REPEATS, 1, key="ar_repeats",
+        k.number_input("Repeats per item (k)", 1, lim.max_repeats if lim else MAX_REPEATS, 1,
+                       key="ar_repeats",
                        help=guide.tip("ar_repeats"))  # fmt: skip
         t.slider("Temperature", 0.0, 1.0, 0.0, 0.05, key="ar_temperature",
                  help=guide.tip("ar_temperature"))  # fmt: skip
@@ -439,14 +458,16 @@ def _block_editor(spec: dict[str, Any], models: list[str], frozen: bool) -> dict
         preset = cols[1].selectbox("Preset", presets, index=presets.index(spec["preset"]),
                                    key=f"blk_{bid}_preset", disabled=frozen,
                                    help=guide.tip("blk_preset"))  # fmt: skip
+        most = demo_guard.cap(100_000, demo_guard.DEMO_LIMITS.block_items)
         ss.setdefault(f"blk_{bid}_n", int(spec["n"]))
-        n = cols[2].number_input("Sample count", 1, 100_000, key=f"blk_{bid}_n", disabled=frozen,
+        ss[f"blk_{bid}_n"] = min(int(ss[f"blk_{bid}_n"]), most)
+        n = cols[2].number_input("Sample count", 1, most, key=f"blk_{bid}_n", disabled=frozen,
                                  help=guide.tip("blk_n"))  # fmt: skip
         ss.setdefault(f"blk_{bid}_seed", int(spec["seed"]))
         seed = cols[3].number_input("Start seed", 0, 2**31 - 1, key=f"blk_{bid}_seed",
                                     disabled=frozen, help=guide.tip("blk_seed"))  # fmt: skip
         if not frozen:
-            st.pills("Quick pick", list(planning.QUICK_N), key=f"blk_{bid}_pick",
+            st.pills("Quick pick", [q for q in planning.QUICK_N if q <= most], key=f"blk_{bid}_pick",
                      on_change=_quick_n, args=(bid,), label_visibility="collapsed",
                      format_func=lambda v: f"{v:,}", help=guide.tip("blk_quick"))  # fmt: skip
         ss.setdefault(f"blk_{bid}_default", spec.get("models") is None)
@@ -478,8 +499,10 @@ def _campaign(models: list[str], setup: dict[str, Any]) -> list[dict[str, Any]]:
     out = [_block_editor(spec, models, frozen) for spec in specs]
     if not frozen:
         ss.ar_blocks = out
+        lim = demo_guard.limits()
+        full = lim is not None and len(ss.ar_blocks) >= lim.max_blocks
         st.button("Add block", icon=":material/add:", key="ar_add_block", on_click=_add_block,
-                  help=guide.tip("ar_add_block"))  # fmt: skip
+                  disabled=full, help=guide.tip("ar_add_block"))  # fmt: skip
     return out
 
 
@@ -543,6 +566,7 @@ def _launch_bar(setup: dict[str, Any], mode: dict[str, Any], models: list[str],
                             "override field.")  # fmt: skip
         if setup["reuse"] and not setup["items"]:
             problems.append("Pick a certified dataset to reuse.")
+        problems += demo_guard.config_problems(cfg)
         for p in problems:
             st.warning(p, icon=":material/rule:")
         if pf.over_cap:
