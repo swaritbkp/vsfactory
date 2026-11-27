@@ -71,6 +71,30 @@ def repo_status() -> RepoStatus:
     }
 
 
+BUILD_ENV = "KNOTWORK_BUILD_SHA"
+UNKNOWN_SHAS = {"", "unknown", "untracked", "none"}
+
+
+def build_label(status: RepoStatus, env: dict[str, str] | None = None) -> str:
+    """The header's build badge. A checkout on a branch shows `branch @ sha`; a container (no
+    `.git`, or a detached HEAD) shows `build <sha>` from `KNOTWORK_BUILD_SHA`, else the package
+    version. Never `detached @ unknown`: the kernel badge beside it carries the verified hash."""
+    import os
+
+    from knotwork import __version__
+
+    source = os.environ if env is None else env
+    built = str(source.get(BUILD_ENV, "")).strip()
+    sha = str(status["sha"]).strip()
+    if status["branch"] != "detached" and sha.lower() not in UNKNOWN_SHAS:
+        return f"{status['branch']} @ {sha}" + (" + local" if status["dirty"] else "")
+    if built.lower() not in UNKNOWN_SHAS:
+        return f"v2 · build {built[:7]}"
+    if sha.lower() not in UNKNOWN_SHAS:
+        return f"v2 · build {sha}"
+    return f"package {__version__}"
+
+
 # ------------------------------------------------------------------ task studio
 def _clamp(x: float) -> int:
     return int(round(100 * min(max(x, 0.0), 1.0)))
@@ -131,11 +155,28 @@ def run_kpis(dataset: Path) -> dict[str, Any]:
             "yield_rate": round(1.0 - rate, 6), "quarantine_rate": rate,
             "candidates": s["n_candidates"], "source": "stats.json",
         }  # fmt: skip
+    meta = dataset / "working_set.json"
+    if meta.is_file():
+        from knotwork.studio.working_set import WorkingSet
+
+        return WorkingSet(dataset).kpis()
     return {"yield_rate": None, "quarantine_rate": None, "candidates": None, "source": "none"}
 
 
+#: committed copy of the full `knot mutate` report, for containers that ship without artifacts/
+FAULT_SAMPLE = REPO_ROOT / "samples" / "fault_matrix"
+
+
 def fault_coverage(root: Path = REPO_ROOT / "artifacts") -> dict[str, Any]:
-    """Faults caught with their exact code in the newest `knot mutate` report under `root`."""
+    """Faults caught with their exact code in the newest `knot mutate` report under `root`, else
+    in the committed sample report."""
+    found = _fault_coverage(root)
+    if found["caught"] is None and root != FAULT_SAMPLE and FAULT_SAMPLE.is_dir():
+        return _fault_coverage(FAULT_SAMPLE)
+    return found
+
+
+def _fault_coverage(root: Path) -> dict[str, Any]:
     total = len(FaultCode)
     found: list[tuple[float, Path, dict[str, Any]]] = []
     for pattern in ("*mutate*.json", "*/*mutate*.json", "mutate/*.json", "*/mutate/*.json"):

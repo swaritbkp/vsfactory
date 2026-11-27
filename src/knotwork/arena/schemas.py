@@ -16,6 +16,8 @@ SCHEMA_VERSION = 1
 Domain = Literal["rack_patch", "tangle", "gauge", "panel"]
 Preset = Literal["Clean", "Hard logic", "High stress", "CVD"]
 Mode = Literal["live", "mock"]
+#: who answers a live run: OpenRouter, or any OpenAI-compatible chat-completions server
+Provider = Literal["openrouter", "openai_compat"]
 DataMode = Literal["generate", "reuse"]
 State = Literal["idle", "running", "paused", "stopped", "done", "budget_stop", "failed"]
 TrialStatus = Literal["ok", "api_error"]
@@ -94,6 +96,10 @@ class SessionConfig(_Record):
     notes: str = ""
     tags: list[str] = Field(default_factory=list)
     mode: Mode = "mock"
+    #: live runs only; `openai_compat` calls `base_url` (e.g. http://localhost:8000/v1). Configs
+    #: written before v2.1 have neither field and load as OpenRouter.
+    provider: Provider = "openrouter"
+    base_url: str = Field(default="", max_length=2048)
     data_mode: DataMode = "generate"
     data_dir: str
     results_dir: str
@@ -124,7 +130,19 @@ class SessionConfig(_Record):
         ids = [b.block_id for b in self.blocks]
         if len(set(ids)) != len(ids):
             raise ValueError("block ids must be unique")
+        if self.provider == "openai_compat" and self.mode == "live":
+            from knotwork.studio.ssrf_guard import validate_custom_base_url
+
+            check = validate_custom_base_url(self.base_url, public_demo=False)
+            if not check.ok:
+                raise ValueError(f"base_url: {check.reason}")
         return self
+
+    @property
+    def provider_label(self) -> str:
+        if self.mode != "live":
+            return "Offline mock"
+        return "Live · Custom endpoint" if self.provider == "openai_compat" else "Live · OpenRouter"
 
     def models_for(self, block: BlockSpec) -> list[str]:
         return list(dict.fromkeys(block.models)) if block.models else list(self.default_models)

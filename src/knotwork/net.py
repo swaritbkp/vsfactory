@@ -3,7 +3,9 @@ and honours the process-wide policy `KNOTWORK_NETWORK` (SPEC 1.1):
 
 * ``deny`` (default) -- no request is ever made;
 * ``beacon``         -- GET to the configured drand / NIST beacon hosts only;
-* ``openrouter``     -- POST/GET to openrouter.ai only (paid path, triple-locked by the CLI).
+* ``openrouter``     -- POST/GET to openrouter.ai only (paid path, triple-locked by the CLI);
+* ``custom``         -- POST/GET to the one host named by ``KNOTWORK_CUSTOM_HOST`` only (a custom
+  OpenAI-compatible endpoint a person configured for a Model Arena run or a Test Endpoint click).
 """
 
 from __future__ import annotations
@@ -16,6 +18,7 @@ ALLOWED_HOSTS = {
     "beacon": {"api.drand.sh", "drand.cloudflare.com", "beacon.nist.gov"},
     "openrouter": {"openrouter.ai"},
 }
+CUSTOM_HOST_ENV = "KNOTWORK_CUSTOM_HOST"
 
 
 class NetworkPolicyError(PermissionError):
@@ -26,13 +29,18 @@ def policy() -> str:
     return os.environ.get("KNOTWORK_NETWORK", "deny")
 
 
-def check(url: str, policy_override: str | None = None) -> None:
+def check(url: str, policy_override: str | None = None, custom_host: str | None = None) -> None:
     """Refuse ``url`` unless the policy allows its host. ``policy_override`` is passed only by a call
-    a person started with an explicit click (Model Arena: refresh catalog, AI brief); it still only
-    reaches the hosts of that policy."""
+    a person started with an explicit click (Model Arena: refresh catalog, AI brief, Test Endpoint);
+    it still only reaches the hosts of that policy. Under ``custom`` the single allowed host is
+    ``custom_host`` (a click) or else ``KNOTWORK_CUSTOM_HOST`` (a runner process)."""
     active = policy_override or policy()
-    host = urlparse(url).hostname or ""
-    allowed = ALLOWED_HOSTS.get(active, set())
+    host = (urlparse(url).hostname or "").lower()
+    if active == "custom":
+        named = (custom_host or os.environ.get(CUSTOM_HOST_ENV, "")).strip().lower()
+        allowed = {named} if named else set()
+    else:
+        allowed = ALLOWED_HOSTS.get(active, set())
     if host not in allowed:
         raise NetworkPolicyError(f"KNOTWORK_NETWORK={active!r} forbids a request to {host!r}")
 

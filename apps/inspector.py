@@ -16,12 +16,13 @@ import streamlit as st
 from knotwork.studio import demo_guard, guide, present
 
 APP = Path(__file__).resolve().parent
+#: left to right in the order of the real journey and of the Guided Mode steps (`guide.PAGES`)
 PAGES = (
     ("studio.py", "Studio", ":material/science:"),
+    ("arena.py", "Model Arena", ":material/leaderboard:"),
     ("forensics.py", "Forensics", ":material/troubleshoot:"),
     ("human_eval.py", "Human Eval", ":material/person_check:"),
     ("export.py", "Export", ":material/package_2:"),
-    ("arena.py", "Model Arena", ":material/leaderboard:"),
 )
 
 
@@ -32,6 +33,7 @@ def _status() -> present.RepoStatus:
 
 def header(page: str | None) -> None:
     from studio_ui import guide_controls, guide_strip  # importable once APP is on sys.path
+    from ui_chrome import ws_pill
 
     status = _status()
     with st.container(
@@ -39,14 +41,14 @@ def header(page: str | None) -> None:
     ):
         st.markdown("#### :material/hub: Knotwork VTF v2", width="content")
         with st.container(horizontal=True, width="content", gap="small"):
-            local = " + local changes" if status["dirty"] else ""
+            ws_pill()
+            build = present.build_label(status)
+            container = build.startswith("package ")  # no git and no KNOTWORK_BUILD_SHA
+            if not container:
+                st.badge(build, icon=":material/commit:", color="gray")
+            verified = " · verified" if container and status["tcb_ok"] else ""
             st.badge(
-                f"{status['branch']} @ {status['sha']}{local}",
-                icon=":material/commit:",
-                color="gray",
-            )
-            st.badge(
-                f"kernel {status['kernel']}",
+                f"{'v2 · ' if container else ''}kernel {status['kernel']}{verified}",
                 icon=":material/fingerprint:",
                 color="gray",
                 help="First 12 characters of the trusted kernel's source SHA-256.",
@@ -63,7 +65,7 @@ def header(page: str | None) -> None:
                 st.badge("TCB audit failed", icon=":material/gpp_bad:", color="red")
             guide_controls(page)
     if demo_guard.is_public_demo():
-        st.info(demo_guard.BANNER, icon=":material/science:")
+        st.info(demo_guard.banner(), icon=":material/science:")
     guide_strip(page)
 
 
@@ -79,7 +81,9 @@ def main() -> None:
         for i, (name, title, icon) in enumerate(PAGES)
     ]
     from studio_ui import footer  # importable once APP is on sys.path
+    from ui_chrome import working_set
 
+    working_set()  # cold start: seed the shared Working Set before any page reads it
     current = st.navigation(pages, position="top")
     header(guide.page_key(current.title))
     current.run()

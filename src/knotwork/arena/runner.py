@@ -12,8 +12,9 @@ Guarantees:
   before every step, lets in-flight calls finish, records them and exits cleanly: no orphan workers.
 * **Bounded spend.** In live mode the spend cap is checked before every call against the spend so
   far plus a cautious estimate of every call in flight; reaching it ends the run as `budget_stop`.
-* **No secrets on disk.** The API key is read from the `OPENROUTER_API_KEY` environment variable
-  of this process only; error texts are scrubbed of it before they are recorded.
+* **No secrets on disk.** The API key is read from the `OPENROUTER_API_KEY` (or, for a custom
+  OpenAI-compatible endpoint, the optional `KNOTWORK_CUSTOM_API_KEY`) environment variable of this
+  process only; error texts are scrubbed of it before they are recorded.
 """
 
 from __future__ import annotations
@@ -37,15 +38,15 @@ from pathlib import Path
 from typing import Any, cast
 
 from knotwork import net
-from knotwork.arena import catalog, storage
+from knotwork.arena import catalog, client, storage
 from knotwork.arena.generation import make_item_job
 from knotwork.arena.schemas import ItemRecord, SessionConfig, TrialRecord, trial_key
 from knotwork.knotcore.grading import ANSWER_RE, extract, grade_prediction, is_hedged
 from knotwork.knotcore.seeds import SeedTree
 from knotwork.render.canvas import REPO_ROOT
 
-ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
-CALL_TIMEOUT_S = 60.0
+ENDPOINT = client.OPENROUTER_ENDPOINT
+CALL_TIMEOUT_S = client.OPENROUTER_TIMEOUT_S
 MAX_RETRIES = 4
 RETRY_STATUS = {408, 409, 425, 429, 500, 502, 503, 504}
 EST_PROMPT_TOKENS = 1300  # 768-px image + question (the benchmark's preflight figure)
@@ -83,18 +84,24 @@ def pid_alive(pid: int | None) -> bool:
 
 
 def launch(
-    results_dir: Path, live: bool, api_key: str | None = None, retry_failed: bool = False
+    results_dir: Path,
+    live: bool,
+    api_key: str | None = None,
+    retry_failed: bool = False,
+    provider: str = "openrouter",
+    base_url: str = "",
 ) -> subprocess.Popen[bytes]:
     """Start the runner in the background, detached from the page's process group. The key, if
-    any, travels only in the child's environment."""
+    any, travels only in the child's environment; the network policy allows only its provider."""
     cmd = [sys.executable, "-m", "knotwork.arena.runner", "--results-dir", str(results_dir),
            "--resume"]  # fmt: skip
     if retry_failed:
         cmd.append("--retry-failed-only")
-    env = {k: v for k, v in os.environ.items() if k != "OPENROUTER_API_KEY"}
-    env["KNOTWORK_NETWORK"] = "openrouter" if live else "deny"
-    if live and api_key:
-        env["OPENROUTER_API_KEY"] = api_key
+    if live:
+        env = client.runner_env(provider, base_url, api_key, dict(os.environ))
+    else:
+        env = client.runner_env("openrouter", "", None, dict(os.environ))
+        env["KNOTWORK_NETWORK"] = "deny"
     src = str(Path(__file__).resolve().parents[2])
     env["PYTHONPATH"] = os.pathsep.join(p for p in (src, env.get("PYTHONPATH", "")) if p)
     results_dir.mkdir(parents=True, exist_ok=True)
@@ -216,7 +223,7 @@ class Runner:
         self.cfg, self.results, self.retry_failed = cfg, results_dir, retry_failed
         self.data = storage.resolve(cfg.data_dir)
         self.transport, self.sleep, self.gen_workers = transport, sleep, max(1, gen_workers)
-        self.key = os.environ.get("OPENROUTER_API_KEY", "") if cfg.mode == "live" else ""
+        self.key = client.env_key(cfg.provider) if cfg.mode == "live" else ""
         raw = storage.read_json(results_dir / PRICES_FILE, {}) or {}
         self.prices = {str(m): (float(v[0]), float(v[1])) for m, v in raw.items()}
         self.status = storage.read_status(results_dir)
@@ -240,7 +247,7 @@ class Runner:
                    finished_utc=storage.utc_now())  # fmt: skip
 
     def run(self) -> int:
-        if self.cfg.mode == "live" and not self.key:
+        if self.cfg.mode == "live" and self.cfg.provider == "openrouter" and not self.key:
             self._save(
                 state="failed", pid=os.getpid(), message="Live mode needs OPENROUTER_API_KEY."
             )
@@ -451,44 +458,32 @@ class Runner:
         return self._ask_live(model, item)
 
     def _ask_live(self, model: str, item: ItemRecord) -> Reply:
-        import httpx
-
         from knotwork.bench.prompts import image_png, messages
 
+        try:
+            endpoint = client.endpoint_for(self.cfg.provider, self.cfg.base_url, self.key)
+        except client.EndpointError as exc:
+            raise ApiError(f"endpoint refused: {exc}", 1) from None
         png = image_png(self.data / item.dir / "beauty.png")
-        body = {"model": model, "messages": messages(png, item.question), "temperature": self.cfg.temperature,
-                "max_tokens": self.cfg.max_tokens, "usage": {"include": True},
-                "provider": {"data_collection": "deny", "allow_fallbacks": True}}  # fmt: skip
-        headers = {"Authorization": f"Bearer {self.key}", "Content-Type": "application/json",
-                   "X-Title": "knotwork-model-arena"}  # fmt: skip
-        net.check(ENDPOINT)
+        payload = client.body(endpoint, model, messages(png, item.question),
+                              self.cfg.temperature, self.cfg.max_tokens)  # fmt: skip
+        net.check(endpoint.url, custom_host=endpoint.host or None)
         last = "no attempt"
         for attempt in range(1, MAX_RETRIES + 2):
             t0 = time.perf_counter()
-            try:
-                with httpx.Client(timeout=CALL_TIMEOUT_S, transport=self.transport) as client:
-                    resp = client.post(ENDPOINT, json=body, headers=headers)
-                status = resp.status_code
-                data = resp.json() if resp.content else None
-            except (httpx.TimeoutException, httpx.TransportError, ValueError) as exc:
-                status, data = 599, None
-                last = type(exc).__name__
+            status, data, error = client.post(endpoint, payload, self.transport)
             latency = (time.perf_counter() - t0) * 1000
             if status == 200 and isinstance(data, dict):
-                choice = (data.get("choices") or [{}])[0]
-                text = str((choice.get("message") or {}).get("content") or "")
-                usage = data.get("usage") or {}
-                pt, ct = (
-                    int(usage.get("prompt_tokens") or 0),
-                    int(usage.get("completion_tokens") or 0),
-                )
-                cost = usage.get("cost")
+                text, pt, ct, cost = client.reply_text(data)
                 p, c = self.prices.get(model) or catalog.prices(model)
-                usd = float(cost) if isinstance(cost, (int, float)) else pt * p + ct * c
+                usd = cost if cost is not None else pt * p + ct * c
                 return Reply(text, pt, ct, usd, latency, attempt)
-            if status != 599:
-                last = f"HTTP {status}: {str(data)[:160]}"
-            if status not in RETRY_STATUS and status != 599 or attempt > MAX_RETRIES:
+            last = error or f"HTTP {status}: {str(data)[:160]}"
+            if (
+                status not in RETRY_STATUS
+                and status != client.NETWORK_ERROR
+                or attempt > MAX_RETRIES
+            ):
                 raise ApiError(last, attempt)
             jitter = float(
                 SeedTree(0).child("jitter", model, item.bundle_id, attempt).rng().random()

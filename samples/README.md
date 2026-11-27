@@ -56,3 +56,17 @@ zones and prompts, plus the per-model paired statistics).
 The committed default for the Forensics page's Fault proofs section: fault `M3` at seed 3, the clean
 control `CERTIFIED` and the faulty render `QUARANTINED` with `E_LABEL_MISMATCH` (and
 `E_D1_D3_MISMATCH`). See `proof.json`; rebuilt by `scripts/build_fault_proof_sample.py`.
+
+## `starter_working_set/`: the Studio's cold-start Working Set
+
+One certified item per built-in domain (tangle, gauge, panel, rack_patch), rendered on the Clean
+preset and kept as full lossless bundles (about 1.1 MB). The Studio copies this folder into its
+writable Working Set on first load, so every page opens on real certified items without rendering.
+Rebuild it with `uv run python scripts/build_starter_set.py`; `uv run knot verify
+samples/starter_working_set --out <file>` re-certifies it from files alone (SPEC D-50).
+
+## `fault_matrix/`: the committed `knot mutate` report
+
+`mutate_report.json` is the full fault-matrix report (14 / 14 fault types, 56 / 56 injections caught
+with their exact code). Forensics reads it for the fault-coverage KPI where `artifacts/` is absent,
+such as the Cloud Run image; a fresh `knot mutate` under `artifacts/` takes precedence.

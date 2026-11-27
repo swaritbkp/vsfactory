@@ -107,13 +107,17 @@ def start(
     from knotwork.studio import demo_guard
 
     if demo_guard.is_public_demo():
-        cfg, api_key = demo_guard.offline_only(cfg), None
+        cfg = demo_guard.offline_only(cfg)
+        api_key = api_key if cfg.mode == "live" else None
+        problems = demo_guard.config_problems(cfg)
+        if problems:
+            return problems, None
     if not cfg.run_id:
         cfg = cfg.model_copy(update={"run_id": uuid.uuid4().hex[:12]})
     if not cfg.created_utc:
         cfg = cfg.model_copy(update={"created_utc": storage.utc_now()})
     problems = storage.check_folders(cfg, resume)
-    if cfg.mode == "live" and not api_key:
+    if cfg.mode == "live" and cfg.provider == "openrouter" and not api_key:
         problems.append("Live mode needs an OpenRouter API key (from .env or the override field).")
     if problems:
         return problems, None
@@ -123,7 +127,9 @@ def start(
         storage.write_json_atomic(results / runner.PRICES_FILE, price_table(cfg, cat))
     workspace.register(cfg)
     storage.send_control(results, "run")
-    process = runner.launch(results, cfg.mode == "live", api_key if cfg.mode == "live" else None)
+    live = cfg.mode == "live"
+    process = runner.launch(results, live, api_key if live else None, provider=cfg.provider,
+                            base_url=cfg.base_url)  # fmt: skip
     return [], process
 
 
@@ -136,13 +142,18 @@ def resume(
     from knotwork.studio import demo_guard
 
     if demo_guard.is_public_demo() and cfg.mode != demo_guard.OFFLINE_MODE:
-        return ["The public sandbox resumes Offline Mock sessions only."], None
+        if not demo_guard.byok_allowed():
+            return ["The public sandbox resumes Offline Mock sessions only."], None
+        problems = demo_guard.config_problems(cfg)
+        if problems:
+            return problems, None
     status = storage.read_status(results_dir)
     if status.state == "running" and runner.pid_alive(status.pid):
         return ["This session is already running."], None
-    if cfg.mode == "live" and not api_key:
+    if cfg.mode == "live" and cfg.provider == "openrouter" and not api_key:
         return ["Live mode needs an OpenRouter API key (from .env or the override field)."], None
     workspace.register(cfg)
     storage.send_control(results_dir, "run")
-    key = api_key if cfg.mode == "live" else None
-    return [], runner.launch(results_dir, cfg.mode == "live", key, retry_failed)
+    live = cfg.mode == "live"
+    key = api_key if live else None
+    return [], runner.launch(results_dir, live, key, retry_failed, cfg.provider, cfg.base_url)

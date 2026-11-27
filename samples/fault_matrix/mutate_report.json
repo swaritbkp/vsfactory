@@ -1,0 +1,342 @@
+{
+ "catch_rate": 1.0,
+ "clean": {
+  "codes_seen": {},
+  "false_quarantine_rate": 0.0,
+  "n": 56,
+  "quarantined": 0
+ },
+ "exact_catch_rate": 1.0,
+ "faults": {
+  "M1": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_D1_D3_MISMATCH": 1,
+    "E_OCR_FAIL": 4,
+    "E_OOB": 4,
+    "E_TRACE_NO_TERMINAL": 4
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-d2d028bf9f9094b0b039",
+     "codes": [
+      "E_OOB",
+      "E_OCR_FAIL",
+      "E_TRACE_NO_TERMINAL",
+      "E_D1_D3_MISMATCH"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M1_0\\faulty"
+    }
+   ],
+   "expected": "E_OOB",
+   "injected": 4,
+   "plugin": "tangle",
+   "primary_match": 4
+  },
+  "M10": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_BEAUTY_MISMATCH": 4,
+    "E_ORACLE_GHOST": 4
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-14ab6a7295aef9648867",
+     "codes": [
+      "E_BEAUTY_MISMATCH",
+      "E_ORACLE_GHOST"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M10_0\\faulty"
+    }
+   ],
+   "expected": "E_BEAUTY_MISMATCH",
+   "injected": 4,
+   "plugin": "tangle",
+   "primary_match": 4
+  },
+  "M11": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_CLAIM_MISMATCH": 4,
+    "E_CROSSING_SPACING": 1,
+    "E_D1_D3_MISMATCH": 2
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-a5b810e4494f7618889f",
+     "codes": [
+      "E_CROSSING_SPACING",
+      "E_CLAIM_MISMATCH",
+      "E_D1_D3_MISMATCH"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M11_0\\faulty"
+    }
+   ],
+   "expected": "E_CLAIM_MISMATCH",
+   "injected": 4,
+   "plugin": "panel",
+   "primary_match": 3
+  },
+  "M12": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_OCCLUDED_CROSSING": 4,
+    "E_ORACLE_GHOST": 4,
+    "E_WITNESS_OCCLUDED": 4
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-f76c6763df85979172e7",
+     "codes": [
+      "E_ORACLE_GHOST",
+      "E_OCCLUDED_CROSSING",
+      "E_WITNESS_OCCLUDED"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M12_0\\faulty"
+    }
+   ],
+   "expected": "E_OCCLUDED_CROSSING",
+   "injected": 4,
+   "plugin": "panel",
+   "primary_match": 0
+  },
+  "M13": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_CLAIM_MISMATCH": 4,
+    "E_D1_D3_MISMATCH": 4,
+    "E_SCALE_MISMATCH": 4
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-9d4e957fb0d4f8f5eece",
+     "codes": [
+      "E_SCALE_MISMATCH",
+      "E_CLAIM_MISMATCH",
+      "E_D1_D3_MISMATCH"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M13_0\\faulty"
+    }
+   ],
+   "expected": "E_SCALE_MISMATCH",
+   "injected": 4,
+   "plugin": "panel",
+   "primary_match": 4
+  },
+  "M14": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_D1_D3_MISMATCH": 3,
+    "E_LABEL_MISMATCH": 4
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-508444e4bad0fbe68373",
+     "codes": [
+      "E_LABEL_MISMATCH",
+      "E_D1_D3_MISMATCH"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M14_0\\faulty"
+    }
+   ],
+   "expected": "E_LABEL_MISMATCH",
+   "injected": 4,
+   "plugin": "panel",
+   "primary_match": 4
+  },
+  "M2": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_D1_D3_MISMATCH": 1,
+    "E_ZORDER": 4
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-18d99eaad319ac1482a0",
+     "codes": [
+      "E_ZORDER"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M2_0\\faulty"
+    }
+   ],
+   "expected": "E_ZORDER",
+   "injected": 4,
+   "plugin": "tangle",
+   "primary_match": 4
+  },
+  "M3": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_LABEL_MISMATCH": 4
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-f1c6a7d7c3aa6936852b",
+     "codes": [
+      "E_LABEL_MISMATCH"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M3_0\\faulty"
+    }
+   ],
+   "expected": "E_LABEL_MISMATCH",
+   "injected": 4,
+   "plugin": "tangle",
+   "primary_match": 4
+  },
+  "M4": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_BEAUTY_MISMATCH": 2,
+    "E_CLAIM_MISMATCH": 4,
+    "E_CROSSING_SPACING": 4,
+    "E_D1_D3_MISMATCH": 1,
+    "E_OCCLUDED_CROSSING": 1,
+    "E_TANGENT_CROSSING": 4,
+    "E_WITNESS_OCCLUDED": 1,
+    "E_ZORDER": 2
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-91c70bca4e377031a2c2",
+     "codes": [
+      "E_TANGENT_CROSSING",
+      "E_ZORDER",
+      "E_CROSSING_SPACING",
+      "E_CLAIM_MISMATCH"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M4_0\\faulty"
+    }
+   ],
+   "expected": "E_TANGENT_CROSSING",
+   "injected": 4,
+   "plugin": "tangle",
+   "primary_match": 2
+  },
+  "M5": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_BEAUTY_MISMATCH": 4,
+    "E_CROSSING_SPACING": 4,
+    "E_D1_D3_MISMATCH": 2,
+    "E_ILLEGIBLE_RES": 4,
+    "E_TRACE_NO_TERMINAL": 4
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-f9f7858b748c30d97981",
+     "codes": [
+      "E_BEAUTY_MISMATCH",
+      "E_ILLEGIBLE_RES",
+      "E_CROSSING_SPACING",
+      "E_TRACE_NO_TERMINAL",
+      "E_D1_D3_MISMATCH"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M5_0\\faulty"
+    }
+   ],
+   "expected": "E_ILLEGIBLE_RES",
+   "injected": 4,
+   "plugin": "tangle",
+   "primary_match": 0
+  },
+  "M6": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_OCCLUDED_CROSSING": 4,
+    "E_ORACLE_GHOST": 4,
+    "E_WITNESS_OCCLUDED": 4
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-e3e4f3d89f67d8c8b610",
+     "codes": [
+      "E_ORACLE_GHOST",
+      "E_OCCLUDED_CROSSING",
+      "E_WITNESS_OCCLUDED"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M6_0\\faulty"
+    }
+   ],
+   "expected": "E_OCCLUDED_CROSSING",
+   "injected": 4,
+   "plugin": "tangle",
+   "primary_match": 0
+  },
+  "M7": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_UNEXPLAINED_INK": 4
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-caf66a4eb85e803a3290",
+     "codes": [
+      "E_UNEXPLAINED_INK"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M7_0\\faulty"
+    }
+   ],
+   "expected": "E_UNEXPLAINED_INK",
+   "injected": 4,
+   "plugin": "tangle",
+   "primary_match": 4
+  },
+  "M8": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_D1_D3_MISMATCH": 2,
+    "E_SCALE_MISMATCH": 4
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-2bf0e71d9af23213a8b0",
+     "codes": [
+      "E_SCALE_MISMATCH",
+      "E_D1_D3_MISMATCH"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M8_0\\faulty"
+    }
+   ],
+   "expected": "E_SCALE_MISMATCH",
+   "injected": 4,
+   "plugin": "gauge",
+   "primary_match": 4
+  },
+  "M9": {
+   "caught": 4,
+   "caught_exact": 4,
+   "codes_seen": {
+    "E_D1_D3_MISMATCH": 4,
+    "E_NEEDLE_OFFCENTER": 4
+   },
+   "examples": [
+    {
+     "bundle_id": "kw-23d4f1bc3e05871e7462",
+     "codes": [
+      "E_NEEDLE_OFFCENTER",
+      "E_D1_D3_MISMATCH"
+     ],
+     "dir": "artifacts\\mutate\\.report_work\\M9_0\\faulty"
+    }
+   ],
+   "expected": "E_NEEDLE_OFFCENTER",
+   "injected": 4,
+   "plugin": "gauge",
+   "primary_match": 4
+  }
+ },
+ "n_per_fault": 4
+}

@@ -1,0 +1,390 @@
+{
+ "background_rgb": [
+  230,
+  226,
+  216
+ ],
+ "beauty": "beauty.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "font_sha256": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
+ "gauges": [],
+ "id_buffer": "id_buffer.png",
+ "objects": [
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    156
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00001.png",
+   "name": "tangle/decor:screw0",
+   "obj_id": 1,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    156
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00002.png",
+   "name": "tangle/decor:screw1",
+   "obj_id": 2,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    156
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00003.png",
+   "name": "tangle/decor:screw2",
+   "obj_id": 3,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    156
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00004.png",
+   "name": "tangle/decor:screw3",
+   "obj_id": 4,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    17,
+    17,
+    255
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00005.png",
+   "name": "tangle/strand:s0",
+   "obj_id": 5,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    0,
+    114,
+    178
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00006.png",
+   "name": "tangle/strand:s1",
+   "obj_id": 6,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    0,
+    0,
+    0
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00007.png",
+   "name": "tangle/strand:s2",
+   "obj_id": 7,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    17,
+    119,
+    51
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00008.png",
+   "name": "tangle/strand:s3",
+   "obj_id": 8,
+   "parent": null
+  },
+  {
+   "box": {
+    "x0": 130,
+    "x1": 156,
+    "y0": 773,
+    "y1": 800
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "V",
+   "mask": "masks/obj_00009.png",
+   "name": "tangle/label:start_V",
+   "obj_id": 9,
+   "parent": "tangle/labels:start"
+  },
+  {
+   "box": {
+    "x0": 202,
+    "x1": 227,
+    "y0": 736,
+    "y1": 763
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "Y",
+   "mask": "masks/obj_00010.png",
+   "name": "tangle/label:start_Y",
+   "obj_id": 10,
+   "parent": "tangle/labels:start"
+  },
+  {
+   "box": {
+    "x0": 272,
+    "x1": 298,
+    "y0": 700,
+    "y1": 727
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "A",
+   "mask": "masks/obj_00011.png",
+   "name": "tangle/label:start_A",
+   "obj_id": 11,
+   "parent": "tangle/labels:start"
+  },
+  {
+   "box": {
+    "x0": 344,
+    "x1": 369,
+    "y0": 663,
+    "y1": 690
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "T",
+   "mask": "masks/obj_00012.png",
+   "name": "tangle/label:start_T",
+   "obj_id": 12,
+   "parent": "tangle/labels:start"
+  },
+  {
+   "box": {
+    "x0": 868,
+    "x1": 893,
+    "y0": 773,
+    "y1": 800
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "1",
+   "mask": "masks/obj_00013.png",
+   "name": "tangle/label:end_1",
+   "obj_id": 13,
+   "parent": "tangle/labels:end"
+  },
+  {
+   "box": {
+    "x0": 797,
+    "x1": 822,
+    "y0": 736,
+    "y1": 763
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "2",
+   "mask": "masks/obj_00014.png",
+   "name": "tangle/label:end_2",
+   "obj_id": 14,
+   "parent": "tangle/labels:end"
+  },
+  {
+   "box": {
+    "x0": 726,
+    "x1": 751,
+    "y0": 700,
+    "y1": 727
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "3",
+   "mask": "masks/obj_00015.png",
+   "name": "tangle/label:end_3",
+   "obj_id": 15,
+   "parent": "tangle/labels:end"
+  },
+  {
+   "box": {
+    "x0": 655,
+    "x1": 680,
+    "y0": 663,
+    "y1": 690
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "4",
+   "mask": "masks/obj_00016.png",
+   "name": "tangle/label:end_4",
+   "obj_id": 16,
+   "parent": "tangle/labels:end"
+  }
+ ],
+ "plugin": "tangle",
+ "schema_version": "1.1.0",
+ "supersample": 2,
+ "terminals": [
+  {
+   "box": {
+    "x0": 119,
+    "x1": 139,
+    "y0": 745,
+    "y1": 765
+   },
+   "label_obj": 9,
+   "role": "start",
+   "terminal_id": "tangle/terminal:start_V"
+  },
+  {
+   "box": {
+    "x0": 190,
+    "x1": 210,
+    "y0": 709,
+    "y1": 729
+   },
+   "label_obj": 10,
+   "role": "start",
+   "terminal_id": "tangle/terminal:start_Y"
+  },
+  {
+   "box": {
+    "x0": 261,
+    "x1": 281,
+    "y0": 673,
+    "y1": 693
+   },
+   "label_obj": 11,
+   "role": "start",
+   "terminal_id": "tangle/terminal:start_A"
+  },
+  {
+   "box": {
+    "x0": 333,
+    "x1": 353,
+    "y0": 636,
+    "y1": 656
+   },
+   "label_obj": 12,
+   "role": "start",
+   "terminal_id": "tangle/terminal:start_T"
+  },
+  {
+   "box": {
+    "x0": 885,
+    "x1": 905,
+    "y0": 745,
+    "y1": 765
+   },
+   "label_obj": 13,
+   "role": "end",
+   "terminal_id": "tangle/terminal:end_1"
+  },
+  {
+   "box": {
+    "x0": 814,
+    "x1": 834,
+    "y0": 709,
+    "y1": 729
+   },
+   "label_obj": 14,
+   "role": "end",
+   "terminal_id": "tangle/terminal:end_2"
+  },
+  {
+   "box": {
+    "x0": 743,
+    "x1": 763,
+    "y0": 673,
+    "y1": 693
+   },
+   "label_obj": 15,
+   "role": "end",
+   "terminal_id": "tangle/terminal:end_3"
+  },
+  {
+   "box": {
+    "x0": 671,
+    "x1": 691,
+    "y0": 636,
+    "y1": 656
+   },
+   "label_obj": 16,
+   "role": "end",
+   "terminal_id": "tangle/terminal:end_4"
+  }
+ ]
+}

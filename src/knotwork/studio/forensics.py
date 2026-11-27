@@ -91,6 +91,21 @@ def demo_suite(out: Path) -> Path:
     return out / "suites.json"
 
 
+def dataset_suite(data: Path, out: Path) -> Path:
+    """Counterfactual twins for the first base item of an existing dataset (the Working Set). No
+    model failed it, so the report shows twins and certified answers but no replies."""
+    base = next((r for r in bundles(data) if r.get("role", "base") == "base"), None)
+    if base is None:
+        raise RuntimeError("the dataset has no base item")
+    out.mkdir(parents=True, exist_ok=True)
+    failures = out / "dataset_failures.jsonl"
+    failures.unlink(missing_ok=True)
+    append_jsonl(failures, [{"bundle_id": base["bundle_id"]}])
+    if run_counterfactual(data, failures, out) != 0:
+        raise RuntimeError("no twin suite was built")
+    return out / "suites.json"
+
+
 def lineage_nodes(dataset: Path) -> list[dict[str, Any]]:
     """The stored DAG, or one recomputed from the task files when none was stored."""
     return lineage.read(dataset / lineage.FILENAME) or lineage.build(dataset)

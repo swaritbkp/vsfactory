@@ -103,11 +103,14 @@ def test_human_eval_scoreboard_first_and_verdict_under_the_picture(
     submit = next(b for b in app.button if b.label == "Submit")
     assert submit.proto.type == "primary"
     answer = next((t for t in app.text_input if t.label == "Your answer"), None)
+    group = next((g for g in app.button_group if g.label == "Your answer"), None)
     if answer is not None:
         answer.set_value("1")
-    else:
-        group = next(g for g in app.button_group if g.label == "Your answer")
+    elif group is not None:  # up to 8 options: buttons
         group.set_value(group.options[0])
+    else:  # more options (a rack patch-bay item): a select box
+        box = next(s for s in app.selectbox if s.label == "Your answer")
+        box.set_value(box.options[0])
     next(b for b in app.button if b.label == "Submit").click().run()
     assert not app.exception, app.exception
     order = [(type(e).__name__, getattr(e, "label", None)) for e in _walk(app.main, [])]

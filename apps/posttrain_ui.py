@@ -13,11 +13,19 @@ import streamlit as st
 from knotwork.arena import storage
 from knotwork.arena.schemas import ItemRecord, SessionConfig
 from knotwork.posttrain import curriculum, vcot
-from knotwork.posttrain.reward import score_rollout
+from knotwork.posttrain.reward import is_full_image, parse_boxes, score_rollout
 from knotwork.studio import factory, guide, review
 from studio_ui import relative, run_with_status
 
 EXAMPLES = ("Grounded vCoT", "Lucky guess (no boxes)", "Wrong answer")
+#: the always-on sandbox's one-click presets (Model Arena home, no campaign needed)
+PRESETS = ("Grounded trace", "Ungrounded lucky guess", "Full-image box cheat [0,0,1000,1000]")
+STYLE = {
+    "Grounded vCoT": "grounded", "Grounded trace": "grounded",
+    "Lucky guess (no boxes)": "lucky", "Ungrounded lucky guess": "lucky",
+    "Wrong answer": "wrong", PRESETS[2]: "cheat",
+}  # fmt: skip
+CHEAT_BOX = "[0, 0, 1000, 1000]"
 REGIME_NOTE = {
     "frontier": "GRPO Frontier",
     "cold_start": "SFT Cold-Start",
@@ -53,11 +61,16 @@ def _wrong(item: ItemRecord) -> str:
 
 
 def _example(kind: str, item: ItemRecord, trace: dict[str, Any]) -> str:
-    if kind == "Lucky guess (no boxes)":
-        return f"<think>\nIt looks like {item.truth}.\n</think>\n\\boxed{{{item.truth}}}"
+    style = STYLE.get(kind, "grounded")
+    answer = str(trace["final_answer"])
+    if style == "lucky":
+        return f"<think>\nIt looks like {answer}.\n</think>\n\\boxed{{{answer}}}"
+    if style == "cheat":
+        return (f"<think>\nStep 1 (perception): the whole board <box>{CHEAT_BOX}</box>\n"
+                f"</think>\n\\boxed{{{answer}}}")  # fmt: skip
     text = str(trace["formatted_cot"])
-    if kind == "Wrong answer":
-        return text.replace(f"\\boxed{{{trace['final_answer']}}}", f"\\boxed{{{_wrong(item)}}}")
+    if style == "wrong":
+        return text.replace(f"\\boxed{{{answer}}}", f"\\boxed{{{_wrong(item)}}}")
     return text
 
 
@@ -101,11 +114,28 @@ def _sandbox(cfg: SessionConfig) -> None:
     if not items:
         st.caption("No certified item yet. Run the session first.")
         return
+    reward_sandbox(items, data, "pt", EXAMPLES)
+
+
+def reward_sandbox(items: list[ItemRecord], data: Path, key: str,
+                   examples: tuple[str, ...] = PRESETS) -> None:  # fmt: skip
+    """Item picker, example rollouts and the live reward breakdown. A fragment: picking an item or
+    a preset, or editing the rollout, redraws only the sandbox."""
+    st.fragment(_sandbox_body)(items, data, key, examples)
+
+
+def _item_label(i: ItemRecord) -> str:
+    if i.preset == "Studio batch":
+        return f"{i.domain.replace('_', ' ').title()} · {i.family} · truth {i.truth}"
+    return f"{i.block_id} #{i.item_index:03d} · {i.family} · truth {i.truth}"
+
+
+def _sandbox_body(items: list[ItemRecord], data: Path, key: str,
+                  examples: tuple[str, ...]) -> None:  # fmt: skip
     left, right = st.columns([1, 1.35], gap="medium")
     with left:
-        item = st.selectbox("Item", items, key="pt_item", help=guide.tip("pt_item"),
-                            format_func=lambda i: f"{i.block_id} #{i.item_index:03d} · "
-                            f"{i.family} · truth {i.truth}")  # fmt: skip
+        item = st.selectbox("Item", items, key=f"{key}_item", help=guide.tip("pt_item"),
+                            format_func=_item_label)  # fmt: skip
         trace = _trace(str(data / item.dir))
         if trace is None:
             st.caption("This item has no grounded trace, so only outcome and format are scored.")
@@ -115,11 +145,13 @@ def _sandbox(cfg: SessionConfig) -> None:
                                   vcot.VCoTTrace.model_validate(trace)), width=IMAGE_PX,
                      alt="Item with its grounded vCoT boxes")  # fmt: skip
     with right:
-        kind = st.segmented_control("Example rollout", EXAMPLES, default=EXAMPLES[0],
-                                    key=f"pt_example_{item.bundle_id}", required=True,
-                                    help=guide.tip("pt_example"))  # fmt: skip
+        tip = "sb_preset" if examples == PRESETS else "pt_example"
+        kind = st.segmented_control("Example rollout", examples, default=examples[0],
+                                    key=f"{key}_example_{item.bundle_id}", required=True,
+                                    help=guide.tip(tip))  # fmt: skip
         start = _example(str(kind), item, trace) if trace else f"\\boxed{{{item.truth}}}"
-        text = st.text_area("Rollout", start, height=220, key=f"pt_roll_{item.bundle_id}_{kind}",
+        text = st.text_area("Rollout", start, height=220,
+                            key=f"{key}_roll_{item.bundle_id}_{kind}",
                             help=guide.tip("pt_rollout"))  # fmt: skip
         extra = {"domain": item.domain, "vcot_boxes_1000": [s["bbox_norm_1000"] for s in
                                                             trace["steps"]] if trace else []}  # fmt: skip
@@ -133,6 +165,9 @@ def _sandbox(cfg: SessionConfig) -> None:
             st.badge("Reward-hack flag: right answer, no box matched (IoU ≥ 0.5) · gated to "
                      f"≤ {r['weights']['format']:.2f}", color="red",
                      icon=":material/report:")  # fmt: skip
+            if any(is_full_image(b) for b in parse_boxes(text)):
+                st.caption("A box covering at least 85% of the canvas is never matched, so "
+                           "boxing the whole image earns no grounding credit.")  # fmt: skip
         else:
             st.badge(f"{r['matched_boxes']} of {r['ref_boxes']} certified boxes matched "
                      f"(IoU ≥ 0.5) · abstention {r['abstention_score']:.0f}",

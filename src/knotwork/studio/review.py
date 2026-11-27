@@ -28,6 +28,9 @@ from knotwork.render.canvas import REPO_ROOT
 
 ReviewStatus = Literal["approved", "flagged", "unreviewed"]
 STATUSES: tuple[str, ...] = ("unreviewed", "approved", "flagged")
+#: the QA tags the Studio offers; free-form tags are accepted too (lower-case, short)
+TAGS: tuple[str, ...] = ("hard-case", "monochrome", "stress", "regression", "needs-review")
+MAX_TAGS = 8
 LOG_NAME = "review_log.jsonl"
 #: the Studio's own review log (Human Eval and Export); Arena sessions keep one per results folder
 STUDIO_LOG = REPO_ROOT / "artifacts" / "review" / LOG_NAME
@@ -49,6 +52,18 @@ class ReviewRecord(BaseModel):
     note: str = Field(default="", max_length=280)
     reviewer: str = Field(default="operator", max_length=80)
     timestamp_utc: str = ""
+    #: optional QA tags (added in v2.1; absent in older logs, which still load unchanged)
+    tags: list[str] = Field(default_factory=list, max_length=MAX_TAGS)
+
+
+def clean_tags(tags: list[str] | tuple[str, ...] | None) -> list[str]:
+    """Lower-case, de-duplicated tags of at most 24 characters each, in first-seen order."""
+    out: list[str] = []
+    for tag in tags or ():
+        text = "-".join(str(tag).lower().split())[:24]
+        if text and text not in out:
+            out.append(text)
+    return out[:MAX_TAGS]
 
 
 def _now() -> str:
@@ -64,12 +79,13 @@ def record_review(
     note: str = "",
     reviewer: str = "operator",
     timestamp_utc: str | None = None,
+    tags: list[str] | tuple[str, ...] | None = None,
 ) -> ReviewRecord:
     """Append one decision and flush it to disk. Raises ValueError for an unknown status."""
     try:
         rec = ReviewRecord(item_id=item_id, domain=domain, seed=seed, status=status,  # type: ignore[arg-type]
                            note=" ".join(note.split())[:280], reviewer=reviewer.strip() or "operator",
-                           timestamp_utc=timestamp_utc or _now())  # fmt: skip
+                           timestamp_utc=timestamp_utc or _now(), tags=clean_tags(tags))  # fmt: skip
     except ValidationError as exc:
         raise ValueError(exc.errors()[0]["msg"]) from None
     path = Path(log_path)
@@ -119,7 +135,13 @@ def filter_note(approved: int, total: int) -> str:
     return f"{approved} of {total} items approved"
 
 
+def tags_of(states: dict[str, ReviewRecord], item_id: str) -> list[str]:
+    rec = states.get(item_id)
+    return list(rec.tags) if rec else []
+
+
 __all__ = [
-    "BADGES", "LOG_NAME", "QA_FILTER", "STATUSES", "STUDIO_LOG", "ReviewRecord", "approved_ids",
-    "counts", "filter_note", "load_review_states", "record_review", "status_of",
+    "BADGES", "LOG_NAME", "MAX_TAGS", "QA_FILTER", "STATUSES", "STUDIO_LOG", "TAGS",
+    "ReviewRecord", "approved_ids", "clean_tags", "counts", "filter_note", "load_review_states",
+    "record_review", "status_of", "tags_of",
 ]  # fmt: skip

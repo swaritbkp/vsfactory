@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import uuid
 from pathlib import Path
@@ -11,9 +12,11 @@ import streamlit as st
 from PIL import Image
 
 from knotwork.posttrain import vcot
-from knotwork.studio import demo_guard, factory, forensics, guide, present
+from knotwork.studio import demo_guard, factory, forensics, guide, present, working_set
 from knotwork.studio.present import AUTO
 from studio_ui import OUT, relative, resolve, run_with_status, verdict_badge
+from ui_chrome import qa_review
+from ui_chrome import working_set as active_set
 
 VIEWS = ("Beauty", "Witness Overlay", "ID Buffer", "CVD Simulation", "vCoT Steps")
 CAPTIONS = {
@@ -332,6 +335,57 @@ def _witness_pill(cert: dict[str, Any]) -> None:
              icon=":material/verified_user:" if clean else ":material/gpp_bad:")  # fmt: skip
 
 
+# ------------------------------------------------------------------ workflow action bar
+@st.cache_data(show_spinner=False, max_entries=16)
+def _bundle_zip(directory: str, certificate: str) -> bytes:
+    """beauty, witness overlay, manifest, task and vCoT SFT line of one item, zipped in memory."""
+    buf = io.BytesIO()
+    _image(directory, "Witness Overlay", "deuteranopia", certificate).save(buf, format="PNG")
+    bundle = Path(directory)
+    return working_set.bundle_zip(bundle, buf.getvalue(), working_set.vcot_line(bundle))
+
+
+def _add(item: dict[str, Any]) -> working_set.AddResult:
+    return active_set().add(Path(item["dir"]), "studio", item["seed"], item["attempts"])
+
+
+def _workflow(item: dict[str, Any]) -> None:
+    """Add to Working Set, Quick test in Arena, Download bundle and inline Human QA, in one card
+    under the stage. Only certified items can be handed on."""
+    if item["certificate"]["verdict"] != "CERTIFIED" or not item["task"]:
+        return
+    bid = str(item["task"]["bundle_id"])
+    ws = active_set()
+    in_set = bid in ws.ids()
+    with st.container(border=True, key="studio_workflow"):
+        with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+            add = st.button(
+                "In the Working Set" if in_set else "Add to Working Set",
+                icon=":material/library_add_check:" if in_set else ":material/library_add:",
+                disabled=in_set, key="st_add", help=guide.tip("st_add_ws"),
+            )  # fmt: skip
+            quick = st.button("Quick test in Arena", icon=":material/arrow_forward:",
+                              icon_position="right", key="st_quick",
+                              help=guide.tip("st_quick_arena"))  # fmt: skip
+            certificate = json.dumps(item["certificate"])
+            st.download_button(
+                "Download bundle (.zip)", lambda: _bundle_zip(item["dir"], certificate),
+                file_name=f"{bid}.zip", mime="application/zip", icon=":material/download:",
+                on_click="ignore", key="st_zip", help=guide.tip("st_download"),
+            )  # fmt: skip
+        qa_review(ws, bid, f"st_{bid}", Path(item["dir"]), item["seed"], item["attempts"])
+    if add:
+        result = _add(item)
+        st.toast(f"Added to the Working Set: {result.count} items" if result.added
+                 else result.reason, icon=":material/library_add_check:")  # fmt: skip
+        st.rerun()
+    if quick:
+        _add(item)
+        st.session_state.ar_quick_ids = [bid]
+        st.session_state.ar_quick_pending = True  # Model Arena opens its builder on the set
+        st.switch_page("app_pages/arena.py")
+
+
 @st.fragment
 def _stage() -> None:
     item = st.session_state.item
@@ -377,6 +431,7 @@ def _stage() -> None:
             else:
                 st.badge(f"{len(trace['steps'])} grounded steps · answer {trace['final_answer']}",
                          color="green", icon=":material/route:")  # fmt: skip
+    _workflow(item)
     with st.container(border=True):
         st.caption("Question")
         question = item["question"]

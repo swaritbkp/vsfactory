@@ -10,26 +10,15 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+from knotwork.arena import showcase
 from knotwork.pipeline.io import read_json, read_jsonl
-from knotwork.studio import calibration, factory, forensics, guide, present, review
-from studio_ui import dataset_select, relative, review_controls
+from knotwork.studio import calibration, factory, guide, present, review
+from studio_ui import dataset_select, review_controls
+from ui_chrome import is_working_set, qa_review, qa_strip, working_set
 
 IMAGE_PX = 520
 MAX_BUTTON_OPTIONS = 8
 EMPTY_ANSWER = "Enter an answer before submitting."
-
-
-@st.cache_data(ttl=60, show_spinner=False)
-def _preferred_dataset() -> str | None:
-    """A dataset whose bundles the committed live run also answered, for head-to-head scores."""
-    trials = calibration.VLM_TRIALS
-    if not trials.is_file():
-        return None
-    asked = set(calibration.BUNDLE_RE.findall(trials.read_text(encoding="utf-8")))
-    for dataset in forensics.find_datasets():
-        if any(row["bundle_id"] in asked for row in forensics.bundles(dataset)):
-            return relative(dataset)
-    return None
 
 
 def _session_rows(who: str) -> list[dict[str, Any]]:
@@ -91,8 +80,11 @@ def _show_result(result: dict[str, Any]) -> None:
     st.markdown(_question_text(item))
     with st.container(border=True, key="he_verdict"):
         _verdict(row, item)
-        review_controls(review.STUDIO_LOG, item["bundle_id"], item["plugin"], None,
-                        f"he_{item['bundle_id']}")  # fmt: skip
+        if result.get("working_set"):
+            qa_review(working_set(), item["bundle_id"], f"he_{item['bundle_id']}")
+        else:
+            review_controls(review.STUDIO_LOG, item["bundle_id"], item["plugin"], None,
+                            f"he_{item['bundle_id']}")  # fmt: skip
     with st.container(horizontal=True, vertical_alignment="center"):
         st.toggle("Show witness overlay", key="he_witness", help=guide.tip("he_witness"))
         next_item = st.button("Next item", type="primary", icon=":material/skip_next:",
@@ -112,8 +104,8 @@ def _trial(dataset: Path, who: str) -> None:
     left = [i for i in items if i["bundle_id"] not in answered]
     if not left:
         st.success(
-            "You have answered every item in this set. Pick another item set under Session "
-            "to keep going.",
+            "You have answered every item in this set. Pick another item set above, or add "
+            "items to the Working Set in Studio.",
             icon=":material/task_alt:",
         )
         return
@@ -142,7 +134,8 @@ def _trial(dataset: Path, who: str) -> None:
             return
         elapsed = time.monotonic() - trial["start"]
         row = calibration.record(item, reply.strip(), elapsed, who)
-        st.session_state.last_result = {"item": item, "row": row}
+        st.session_state.last_result = {"item": item, "row": row,
+                                        "working_set": is_working_set(dataset)}  # fmt: skip
         st.rerun()
 
 
@@ -176,9 +169,35 @@ def _scoreboard(who: str) -> None:
         height=36 * (len(frame) + 1) + 2,  # every row visible: no inner scroll, no blank space
     )  # fmt: skip
     st.caption(
-        "VLM baselines from the committed live benchmark run. A Shared column appears once "
+        "v1 baselines from the committed live benchmark run. A Shared column appears once "
         "people and models have answered the same items."
     )
+    _v2_board()
+
+
+@st.cache_data(show_spinner=False)
+def _v2_rows() -> list[dict[str, Any]]:
+    sc = showcase.load()
+    if sc is None:
+        return []
+    return [{"Model": r["Model"], "Accuracy": r["Accuracy"]}
+            for r in sc.leaderboard()]  # fmt: skip
+
+
+def _v2_board() -> None:
+    """The v2 live audit beside the v1 baseline: harder, mixed-domain items at T = 0.7."""
+    rows = _v2_rows()
+    if not rows:
+        return
+    sc = showcase.load()
+    calls = sc.calls if sc else 0
+    st.markdown(f"**v2 live audit · {calls} calls**")
+    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch", key="he_v2_board",
+                 alt="Model accuracy in the v2 four-domain live audit",
+                 column_config={"Accuracy": st.column_config.ProgressColumn(
+                     format="%.1f%%", min_value=0.0, max_value=100.0,
+                     help=guide.tip("col_he_accuracy"))},
+                 height=36 * (len(rows) + 1) + 2)  # fmt: skip
 
 
 def baseline_frame() -> pd.DataFrame:
@@ -200,16 +219,16 @@ def baseline_frame() -> pd.DataFrame:
 # ------------------------------------------------------------------ page
 if "participant" not in st.session_state:
     st.session_state.participant = f"p-{uuid.uuid4().hex[:6]}"
-card, side = st.columns([2.2, 1], gap="large")
+qa_strip(working_set())
+card, side = st.columns([2, 1.15], gap="large")
 with side:
+    chosen = dataset_select("Item set", "he_dataset", help=guide.tip("he_item_set"))
     with st.container(border=True, key="he_scoreboard"):
         st.markdown("**Scoreboard**")
-        _scoreboard(str(st.session_state.participant))  # drawn first: above the fold on load
+        _scoreboard(str(st.session_state.participant))
     with st.expander("Session", icon=":material/badge:"):
         participant = st.text_input("Participant id", key="participant",
                                     help=guide.tip("he_participant"))  # fmt: skip
-        chosen = dataset_select("Item set", "he_dataset", _preferred_dataset(),
-                                help=guide.tip("he_item_set"))  # fmt: skip
         if calibration.LOG.is_file():
             st.download_button(
                 "Download responses", calibration.LOG.read_bytes(), "human_calibration.jsonl",
@@ -217,7 +236,7 @@ with side:
             )  # fmt: skip
 with card, st.container(border=True):
     if chosen is None:
-        st.info("Open Session on the right and pick an item set to start answering.",
+        st.info("Pick an item set on the right to start answering.",
                 icon=":material/playlist_add:")  # fmt: skip
     else:
         _trial(chosen, participant)

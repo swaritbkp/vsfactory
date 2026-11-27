@@ -75,8 +75,21 @@ def _dispatch(command: str, **kwargs: Any) -> None:
 
 
 def _set_network(policy: str) -> None:
-    """Process-wide network policy read by knotwork.net (deny | beacon | openrouter)."""
+    """Process-wide network policy read by knotwork.net (deny | beacon | openrouter | custom)."""
     os.environ["KNOTWORK_NETWORK"] = policy
+
+
+def _set_custom_network(base_url: str) -> None:
+    """Allow exactly the host of a validated custom OpenAI-compatible base URL (in the public demo
+    the SSRF guard's stricter policy applies)."""
+    from knotwork.arena.client import EndpointError, custom_endpoint
+
+    try:
+        endpoint = custom_endpoint(base_url)
+    except EndpointError as exc:
+        raise click.UsageError(f"invalid --base-url / base_url: {exc}") from None
+    os.environ["KNOTWORK_NETWORK"] = "custom"
+    os.environ["KNOTWORK_CUSTOM_HOST"] = endpoint.host
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
@@ -476,15 +489,24 @@ def posttrain_generate(spec: Path, split: str, out: Path, workers: int, limit: i
               help="regression_suite.yaml (pinned from Model Arena).")  # fmt: skip
 @click.option("--model", "model", required=True, help="Model id to gate, e.g. openai/gpt-5.4.")
 @click.option("--mode", type=click.Choice(["mock", "live"]), default="mock", show_default=True,
-              help="mock is offline; live calls OpenRouter with OPENROUTER_API_KEY.")  # fmt: skip
+              help="mock is offline; live calls OpenRouter or --base-url.")  # fmt: skip
+@click.option("--provider", type=click.Choice(["openrouter", "openai_compat"]),
+              default="openrouter", show_default=True,
+              help="Live provider; openai_compat calls --base-url.")  # fmt: skip
+@click.option("--base-url", default="",
+              help="OpenAI-compatible base URL, e.g. http://localhost:8000/v1 "
+              "(key: optional KNOTWORK_CUSTOM_API_KEY).")  # fmt: skip
 @click.option("--min-accuracy", type=click.FloatRange(0.0, 1.0), default=None,
               help="Override the suite's min_accuracy.")  # fmt: skip
 @click.option("--json-out", type=click.Path(path_type=Path), default=None)
 def gate(
-    suite: Path, model: str, mode: str, min_accuracy: float | None, json_out: Path | None
-) -> None:
+    suite: Path, model: str, mode: str, provider: str, base_url: str,
+    min_accuracy: float | None, json_out: Path | None,
+) -> None:  # fmt: skip
     """CI quality gate over pinned regression cases: exit 0 pass, 1 below threshold, 2 invalid."""
-    if mode == "live":
+    if mode == "live" and provider == "openai_compat":
+        _set_custom_network(base_url)
+    elif mode == "live":
         if not os.environ.get("OPENROUTER_API_KEY"):
             raise SafetyRefusal("E_API_KEY_MISSING: --mode live needs OPENROUTER_API_KEY.")
         _set_network("openrouter")
@@ -492,7 +514,8 @@ def gate(
         _set_network("deny")
     from knotwork.arena.regression import main_gate
 
-    rc, text = main_gate(suite, model, mode, min_accuracy, json_out)  # type: ignore[arg-type]
+    rc, text = main_gate(suite, model, mode, min_accuracy, json_out,  # type: ignore[arg-type]
+                         provider=provider, base_url=base_url)  # fmt: skip
     click.echo(text, err=rc == EXIT_USAGE)
     sys.exit(rc)
 
@@ -518,7 +541,9 @@ def arena_run(
         cfg = load_campaign_yaml(campaign)
     except ValueError as exc:
         raise click.UsageError(f"invalid campaign: {exc}") from None
-    if cfg.mode == "live":
+    if cfg.mode == "live" and cfg.provider == "openai_compat":
+        _set_custom_network(cfg.base_url)
+    elif cfg.mode == "live":
         if not os.environ.get("OPENROUTER_API_KEY"):
             raise SafetyRefusal("E_API_KEY_MISSING: a live campaign needs OPENROUTER_API_KEY.")
         _set_network("openrouter")

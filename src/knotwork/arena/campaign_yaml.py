@@ -2,7 +2,10 @@
 headless runner behind `knot arena-run`.
 
     session_name: Rack monochrome audit
-    mode: mock                       # mock (offline) | live (OpenRouter, key from the environment)
+    mode: mock                       # mock (offline) | live (key from the environment)
+    provider: openrouter             # live only: openrouter | openai_compat
+    # base_url: http://localhost:8000/v1   # openai_compat: vLLM, SGLang, Ollama, OpenAI, Gemini
+    # model_id: Qwen/Qwen2.5-VL-7B-Instruct # shorthand for default_models: [<model_id>]
     data_mode: generate
     default_models: [openai/gpt-5.4, google/gemini-2.5-flash]
     blocks:
@@ -11,7 +14,8 @@ headless runner behind `knot arena-run`.
 Round trip: `load_campaign_yaml(export_campaign_yaml(cfg))` equals `cfg` minus the transient run
 fields (`run_id`, `created_utc`). The file never holds a secret: `SessionConfig` has no key field,
 rejects unknown fields and any secret-shaped value, and the exporter re-checks its own output. The
-OpenRouter key of a live run is read only from the `OPENROUTER_API_KEY` environment variable.
+OpenRouter key of a live run is read only from the `OPENROUTER_API_KEY` environment variable, and
+the optional key of a custom endpoint only from `KNOTWORK_CUSTOM_API_KEY`.
 """
 
 from __future__ import annotations
@@ -35,13 +39,17 @@ SECRET_FIELDS = {"api_key", "openrouter_api_key", "key", "token", "secret", "pas
 HEADER = (
     "# Knotwork Model Arena campaign. Run it headlessly with:\n"
     "#   uv run knot arena-run --campaign campaign.yaml --report\n"
-    "# Live mode reads the key from the OPENROUTER_API_KEY environment variable; never put it here.\n"
+    "# Live mode reads the key from OPENROUTER_API_KEY (provider: openrouter) or the optional\n"
+    "# KNOTWORK_CUSTOM_API_KEY (provider: openai_compat) environment variable; never put it here.\n"
 )
 
 
 def export_campaign_yaml(config: SessionConfig) -> str:
     """The session as YAML (no transient fields, never a secret)."""
     data = config.model_dump(mode="json", exclude=set(TRANSIENT))
+    if data.get("provider") == "openrouter" and not data.get("base_url"):
+        data.pop("provider")  # the pre-v2.1 file shape for OpenRouter and mock campaigns
+        data.pop("base_url")
     for block in data["blocks"]:
         if block.get("models") is None:
             block.pop("models")
@@ -91,6 +99,11 @@ def load_campaign_yaml(path_or_text: str | Path) -> SessionConfig:
     if find_secret(raw):
         raise ValueError("the campaign carries a secret-shaped value; remove it")
     data = {k: v for k, v in raw.items() if k not in TRANSIENT}
+    model_id = data.pop("model_id", None)
+    if model_id is not None:
+        if data.get("default_models"):
+            raise ValueError("give either model_id or default_models, not both")
+        data["default_models"] = [str(model_id)]
     data.setdefault("session_name", "Untitled campaign")
     data.setdefault("slug", storage.slugify(str(data["session_name"]), ""))
     default_data, default_results = storage.default_dirs(str(data["slug"]))
@@ -134,7 +147,11 @@ def run_campaign(
     if data_dir is not None:
         update["data_dir"] = str(data_dir)
     cfg = cfg.model_copy(update=update)
-    if cfg.mode == "live" and not os.environ.get("OPENROUTER_API_KEY"):
+    if (
+        cfg.mode == "live"
+        and cfg.provider == "openrouter"
+        and not os.environ.get("OPENROUTER_API_KEY")
+    ):
         return 4, "arena-run: live mode needs OPENROUTER_API_KEY in the environment"
     results = storage.resolve(cfg.results_dir)
     existing = storage.load_config(results)

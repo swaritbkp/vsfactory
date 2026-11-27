@@ -35,7 +35,7 @@ def relative(path: Path) -> str:
     try:
         return path.resolve().relative_to(REPO_ROOT).as_posix()
     except ValueError:
-        return str(path)
+        return str(path.resolve())
 
 
 def resolve(text: str) -> Path:
@@ -62,8 +62,27 @@ def _item_count(folder: str) -> int:
         return sum(1 for line in handle if line.strip())
 
 
+def working_set_folder() -> str:
+    from ui_chrome import working_set
+
+    return relative(working_set().root)
+
+
+def dataset_options() -> list[str]:
+    """The Working Set first, then every discovered dataset that holds at least one item. Empty
+    or unbuilt folders (such as test fixtures before their first run) are never offered."""
+    found = [relative(p) for p in forensics.find_datasets()]
+    built = [f for f in found if _item_count(f) > 0]
+    return list(dict.fromkeys([working_set_folder(), *built]))
+
+
 def dataset_label(folder: str) -> str:
     """`Tangle · Benchmark split · 600 items` for a repository-relative dataset folder."""
+    if folder == working_set_folder():
+        from ui_chrome import working_set
+
+        n = len(working_set().rows())
+        return f"Working Set · {n} certified item{'s' if n != 1 else ''}"
     source = next((name for prefix, name in SOURCES if folder.startswith(prefix)), "Folder")
     name = folder.rstrip("/").rsplit("/", 1)[-1].replace("data_", "").replace("_", " ")
     count = _item_count(folder)
@@ -74,8 +93,9 @@ def dataset_label(folder: str) -> str:
 def dataset_select(
     label: str, key: str, prefer: str | None = None, help: str | None = None
 ) -> Path | None:
-    """One searchable box over discovered datasets that also accepts a typed folder."""
-    options = [relative(p) for p in forensics.find_datasets()]
+    """One searchable box over discovered datasets that also accepts a typed folder. The Working
+    Set comes first and is the default unless `prefer` names another listed dataset."""
+    options = dataset_options()
     index = options.index(prefer) if prefer in options else (0 if options else None)
     chosen = st.selectbox(
         label,
@@ -97,7 +117,8 @@ def dataset_select(
             icon=":material/folder_off:",
         )
         return None
-    st.caption(f"Folder: `{relative(path)}`")
+    if str(chosen) != working_set_folder():
+        st.caption(f"Folder: `{relative(path)}`")
     return path
 
 
