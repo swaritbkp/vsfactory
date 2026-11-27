@@ -1131,3 +1131,12 @@ spec leaves open. Never silently change a threshold.
   items in 75 trials). Each trial takes an unused item from the nearest level that has one, the
   history records the level shown, the staircase ends when the pool is exhausted, and
   `per_crossing` counts each distinct (image, prompt) once.
+
+* D-47: Gate `p6.docs` validates the live documentation set instead of `docs/DECK_COPY.md` and
+  `docs/PORTAL_SUBMISSION.md`, which are written at submission time and not committed (owner
+  direction, 2026-11-27). The slide-order, template-phrase and portal-field checks moved to
+  `docs/SUBMISSION_CHECKLIST.md` sections C and D with the same official titles and phrases; new
+  checks: no broken relative link in README / checklist / VERIFICATION / DATA_CARD / BLOCKERS, README
+  carries the verified kernel wording, BLOCKERS.md states a status per entry. The per-field
+  1,024-character portal limit is no longer checked because the portal text is not in the repo.
+  The requirement that `artifacts/gates/phase0..5.json` are all `ok` is unchanged.

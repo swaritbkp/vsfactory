@@ -63,7 +63,6 @@ HARBOR_ORACLE_SAMPLE = 20
 MOCK_P_ABS_TOL = 0.03
 MOCK_CI_SLACK = 0.015
 STAIRCASE_LEVEL_TOL = 1.5
-PORTAL_LIMIT = 1024
 #: Official Innodata 11-slide template order (docs/SUBMISSION_CHECKLIST.md section C).
 OFFICIAL_SLIDES = [
     "Cover",
@@ -1139,52 +1138,104 @@ def gate_cp2() -> str:
     return "CP2 skipped (offline-only submission; mock + replay results used)"
 
 
-def _portal_fields() -> dict[str, str]:
-    text = (REPO / "docs/PORTAL_SUBMISSION.md").read_text(encoding="utf-8")
-    return {
-        m.group(1): m.group(2).strip()
-        for m in re.finditer(r"<!-- FIELD:(\w+) -->\n(.*?)\n<!-- /FIELD -->", text, flags=re.S)
-    }
+#: the live submission documentation set validated by gate p6.docs (D-47)
+LIVE_DOCS = (
+    "README.md",
+    "docs/SUBMISSION_CHECKLIST.md",
+    "VERIFICATION.md",
+    "DATA_CARD.md",
+    "BLOCKERS.md",
+)
+#: verified kernel wording every reader-facing doc set must carry (README)
+KERNEL_CLAIM = "re-derives every answer from renderer object masks"
+PORTAL_FIELDS = (
+    "Challenges",
+    "Prototype Brief",
+    "Technology Stack",
+    "GitHub Public Repo Link",
+    "Demo Video Link",
+    "Solution Deck (PDF)",
+)
+_LINK = re.compile(r"\]\(([^)\s]+)\)")
 
 
-def gate_docs() -> str:
-    deck = (REPO / "docs/DECK_COPY.md").read_text(encoding="utf-8")
-    slides = re.findall(r"^## Slide (\d+)\b", deck, flags=re.M)
-    lines = re.findall(r"^(## Slide \d+\b[^\n]*)", deck, flags=re.M)
-    for i, (title, line) in enumerate(zip(OFFICIAL_SLIDES, lines, strict=False), start=1):
-        require(
-            title.lower() in line.lower(),
-            f"Slide {i} heading must contain official title '{title}': {line!r}",
-        )
-    bodies = re.split(r"^## Slide \d+\b[^\n]*$", deck, flags=re.M)[1:]
+def _section(text: str, start: str, stop: str) -> str:
+    """Text between the headings starting with `start` and `stop` (empty if either is missing)."""
+    a, b = text.find(start), text.find(stop)
+    return text[a:b] if 0 <= a < b else ""
+
+
+def _broken_links(path: Path, name: str) -> list[str]:
+    """Relative markdown links in `path` whose target file does not exist (code blocks skipped)."""
+    body = re.sub(r"```.*?```", "", path.read_text(encoding="utf-8"), flags=re.S)
+    external = ("http://", "https://", "mailto:")
+    return [
+        f"{name} links to missing {target}"
+        for target in _LINK.findall(body)
+        if not target.startswith(external)
+        and (file := target.split("#", 1)[0])
+        and not (path.parent / file).exists()
+    ]
+
+
+def docs_problems(repo: Path = REPO) -> list[str]:
+    """Problems in the live documentation set (D-47); empty when the docs are complete.
+
+    Checks: every live doc exists and has no broken relative link; the submission checklist maps
+    the 11 official slides in order, quotes both template phrases on their slides and lists every
+    portal field with the Visual Task Factory challenge, and references no uncommitted deck or
+    portal file; README carries the quickstart commands and the verified kernel wording;
+    BLOCKERS.md states a status per entry; DATA_CARD.md has its required sections.
+    """
+    problems = [f"missing {name}" for name in LIVE_DOCS if not (repo / name).is_file()]
+    if problems:
+        return problems
+    for name in LIVE_DOCS:
+        problems += _broken_links(repo / name, name)
+    checklist = (repo / "docs/SUBMISSION_CHECKLIST.md").read_text(encoding="utf-8")
+    slides = _section(checklist, "## C.", "## D.")
+    rows = [r for r in slides.splitlines() if r.startswith("| ") and r[2:4].strip().isdigit()]
+    if len(rows) != len(OFFICIAL_SLIDES):
+        problems.append(f"checklist section C has {len(rows)} slide rows, need 11")
+    for i, (row, title) in enumerate(zip(rows, OFFICIAL_SLIDES, strict=False), start=1):
+        if not row.startswith(f"| {i} |") or title not in row:
+            problems.append(f"checklist slide {i} must be '{title}'")
     for num, phrase in TEMPLATE_PHRASES.items():
-        require(
-            len(bodies) >= num and phrase.lower() in bodies[num - 1].lower(),
-            f"Slide {num} must quote the template phrase '{phrase}'",
-        )
-    require(
-        slides == [str(i) for i in range(1, 12)],
-        f"DECK_COPY.md must have '## Slide 1'..'## Slide 11', got {slides}",
-    )
-    fields = _portal_fields()
-    for key in ("challenge", "prototype_brief", "technology_stack", "github_repo", "demo_video"):
-        require(key in fields, f"PORTAL_SUBMISSION.md missing FIELD:{key}")
-    require(
-        fields["challenge"] == "Visual Task Factory",
-        "challenge field must be exactly 'Visual Task Factory'",
-    )
-    for key in ("prototype_brief", "technology_stack"):
-        n = len(fields[key])
-        require(0 < n <= PORTAL_LIMIT, f"{key} is {n} chars (limit {PORTAL_LIMIT})")
-    readme = (REPO / "README.md").read_text(encoding="utf-8")
+        if len(rows) < num or phrase not in rows[num - 1]:
+            problems.append(f"checklist slide {num} must quote '{phrase}'")
+    portal = _section(checklist, "## D.", "## E.")
+    problems += [f"checklist section D lacks '{f}'" for f in PORTAL_FIELDS if f not in portal]
+    if "Visual Task Factory" not in portal:
+        problems.append("checklist section D must select Visual Task Factory")
+    for stale in ("DECK_COPY.md", "PORTAL_SUBMISSION.md"):
+        if stale in checklist:
+            problems.append(f"checklist references uncommitted {stale}")
+    readme = (repo / "README.md").read_text(encoding="utf-8")
     for needle in (
         "uv sync",
         "knot selftest",
         "knot generate",
         "knot export --format harbor",
         "--offline",
+        KERNEL_CLAIM,
     ):
-        require(needle in readme, f"README.md missing `{needle}`")
+        if needle not in readme:
+            problems.append(f"README.md missing `{needle}`")
+    blockers = (repo / "BLOCKERS.md").read_text(encoding="utf-8")
+    entries = re.findall(r"^## \S+", blockers, flags=re.M)
+    statuses = re.findall(r"^- Status: ", blockers, flags=re.M)
+    if len(statuses) < len(entries):
+        problems.append(f"BLOCKERS.md: {len(entries)} entries but {len(statuses)} status lines")
+    card = (repo / "DATA_CARD.md").read_text(encoding="utf-8")
+    for needle in ("KNOTWORK-CANARY", "Intended use", "Limitations", "License"):
+        if needle not in card:
+            problems.append(f"DATA_CARD.md missing `{needle}`")
+    return problems
+
+
+def gate_docs() -> str:
+    problems = docs_problems()
+    require(not problems, "; ".join(problems[:8]))
     ver = (REPO / "VERIFICATION.md").read_text(encoding="utf-8")
     for ph in range(6):
         require(
@@ -1192,13 +1243,7 @@ def gate_docs() -> str:
         )
         g = load_json(GATES_DIR / f"phase{ph}.json")
         require(g["ok"] is True, f"artifacts/gates/phase{ph}.json is not ok")
-    card = (REPO / "DATA_CARD.md").read_text(encoding="utf-8")
-    for needle in ("KNOTWORK-CANARY", "Intended use", "Limitations", "License"):
-        require(needle in card, f"DATA_CARD.md missing `{needle}`")
-    return (
-        f"deck 11 slides; brief {len(fields['prototype_brief'])}c, stack {len(fields['technology_stack'])}c "
-        "<= 1024; README/VERIFICATION/DATA_CARD complete"
-    )
+    return f"{len(LIVE_DOCS)} live docs complete, links resolve; phase 0-5 gate records ok"
 
 
 def gate_figures() -> str:

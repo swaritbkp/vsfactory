@@ -22,6 +22,20 @@ not committed, so this page records their results.
 | Plugin scaffold | `knot new-plugin` output compiles, passes its 3 tests, kernel hash unchanged | `tests/scaffold` |
 | Bench harness (offline) | mock VLMs: per-crossing error recovered (0.047 / 0.076 / 0.173 vs true 0.04 / 0.08 / 0.15); composition-law CI contains 0; committed fixtures replay with 0 network calls | gate `p5.*`, `tests/bench` |
 
+### Phase gate records (`artifacts/gates/phase<N>.json`, local, not committed)
+
+| Record | `ok` | Failing checks | Note |
+|---|---|---|---|
+| `phase0.json` | true | — | |
+| `phase1.json` | true | — | |
+| `phase2.json` | true | — | |
+| `phase3.json` | false | `core.ruff`, `p3.probes` | v1 record. `core.ruff` is clean on current code (CI); `p3.probes` is still open on one row (`BLOCKERS.md` 3.6) |
+| `phase4.json` | false | `core.pytest`, `p4.scaffold` | the scaffold bug was fixed afterwards (covered by `tests/scaffold`); the Phase 4 gate was not re-run |
+| `phase5.json` | false | `p5.bench_mock` | v1 record; the v2 gate function passes (`BLOCKERS.md` 5.6); the full `--phase 5` run was not repeated |
+
+Gate `p6.docs` validates the live documentation set (D-47) and still requires all six records to be
+`ok`, so it stays red until Phases 3–5 are re-run and Blocker 3.6 is closed.
+
 ## Live benchmark (human-approved, Checkpoint 2)
 
 Three VLMs via OpenRouter. Totals: **$1.12, 943 paid calls (canary calls not counted), 1,069 trials,
