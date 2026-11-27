@@ -81,11 +81,13 @@ def _cert(**kw: object) -> C.Certificate:
 
 
 def test_fault_map_is_complete_and_exact() -> None:
-    assert [f.value for f in C.FaultCode] == [f"M{i}" for i in range(1, 11)]
+    assert [f.value for f in C.FaultCode] == [f"M{i}" for i in range(1, 15)]
     assert set(C.FAULT_EXPECTED) == set(C.FaultCode)
-    assert len(set(C.FAULT_EXPECTED.values())) == 10
+    first_ten = [C.FAULT_EXPECTED[f] for f in list(C.FaultCode)[:10]]
+    assert len(set(first_ten)) == 10
     assert C.FAULT_EXPECTED[C.FaultCode.M10] is C.ErrorCode.E_BEAUTY_MISMATCH
     assert {C.FAULT_PLUGIN[f] for f in (C.FaultCode.M8, C.FaultCode.M9)} == {"gauge"}
+    assert {C.FAULT_PLUGIN[f] for f in list(C.FaultCode)[10:]} == {"panel"}
     assert set(C.FAULT_PLUGIN) == set(C.FaultCode)
 
 

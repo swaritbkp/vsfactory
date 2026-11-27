@@ -27,7 +27,7 @@ import yaml
 from PIL import Image
 
 from knotwork.datasets import dataset_dirs
-from knotwork.knotcore.contracts import SceneIR
+from knotwork.knotcore.contracts import DifficultySpec, SceneIR
 from knotwork.knotcore.seeds import SeedTree, json_digest
 from knotwork.render.canvas import REPO_ROOT
 
@@ -108,10 +108,17 @@ def rebuild_scene(ds: Path, task: dict[str, Any], profile: dict[str, Any]) -> Sc
     root = int(json.loads((ds / "freshness_receipt.json").read_text(encoding="utf-8"))["root_seed"])
     path = parse_path(task["seed_path"])
     at = SeedTree(root, path)
+    stats_path = ds / "stats.json"
+    stats = json.loads(stats_path.read_text(encoding="utf-8")) if stats_path.is_file() else {}
+    spec = DifficultySpec.model_validate(stats["difficulty"]) if stats.get("difficulty") else None
     prof = dict(
-        profile, _family=task["family"], _split=task["split"], _ordinal=slot_ordinal(ds, path)
+        profile | (stats.get("profile_overrides") or {}),
+        _family=task["family"],
+        _split=task["split"],
+        _ordinal=slot_ordinal(ds, path),
+        _balance_seed=root,
     )
-    scene = get_plugin(task["plugin"]).sample_scene(at.child("scene"), prof)
+    scene = get_plugin(task["plugin"]).sample_scene(at.child("scene"), prof, spec)
     if json_digest(scene.model_dump(mode="json")) != task["scene_id"]:
         raise ValueError(f"scene of {task['bundle_id']} does not reproduce from its seed path")
     return scene

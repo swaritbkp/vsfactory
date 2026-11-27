@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_id": "c65b67310edf73e6d1c5fbbff95b438d396b421979f5be58110764b67f02583a",
+  "image_sha256": "4c805752b2567d5fc9db70a74d317f5ce3dcae2a0819bd43629018ac1fd78ec7",
+  "model": "google/gemini-2.5-flash",
+  "prompt": "The image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal C. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+  "seed": 0,
+  "slot": "vlm_b"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: 2",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}

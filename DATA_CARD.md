@@ -1,14 +1,16 @@
 # Data card: Knotwork synthetic visual reasoning tasks
 
-**What it is.** Procedurally generated `(image, question, answer, evidence)` bundles in three families of
-scenes: **tangle** (cables through braided crossings), **gauge** (analog dials) and **panel** (cables
-from sockets to gauges). Eleven question families: trace (T1), count crossings (T2), which cable is on
+**What it is.** Procedurally generated `(image, question, answer, evidence)` bundles in four families of
+scenes: **rack_patch** (a 2U switch / patch-panel loom of 8–14 cables, added in v2), **tangle** (cables
+through braided crossings), **gauge** (analog dials) and **panel** (cables from sockets to gauges). Eleven question families: trace (T1), count crossings (T2), which cable is on
 top (T3), read a gauge (G1), gauge zone (G2), and panel compositions (P1 read-after-trace, P2
 zone-after-trace, P3 argmax, P4 count, P5 true-premise control, T_GASLIGHT false premise).
 
 **How labels are guaranteed.** Each answer is computed twice and independently: symbolically by the
-scene generator (D1), and from the rendered pixels by a small trusted kernel (`knotcore`, 819 / 850
-executable lines) that never reads the generator's internal state (D3). A bundle is emitted only if
+scene generator (D1), and by an import-isolated trusted kernel (`knotcore`) that never reads the
+generator's internal state (D3). The kernel re-derives every answer from renderer object masks,
+cross-checked against the visible image via a beauty-only sanity oracle, colourblindness (CVD) gate,
+and stray-ink witness. A bundle is emitted only if
 D1 = D3, every plugin claim re-checks against the pixels, and every witness and legibility check passes
 (strokes, crossing angles and labels checked at the 768-px consumption resolution). Everything else is
 quarantined with an exact error code.
@@ -48,10 +50,12 @@ safety-critical decisions.
 **Limitations.**
 - Synthetic 2-D scenes with a photographic finish; no perspective, occlusion by real objects or
   real-world clutter. English prompts only.
-- Shortcut audit, open items (`BLOCKERS.md` 3.6): on the 600-item pool, text-only and image-statistics
-  probes still beat chance in tangle T1/T3 and in the premise families, where SPEC's fixed zone layout
-  plus the stated zone leaks information (in a true premise, about the value being asked for). All
-  other probe, balance and duplicate checks pass.
+- Shortcut audit (`BLOCKERS.md` 3.6): the v1 leaks in tangle T1/T3 and in the premise families pass in
+  v2 (randomised zone order, balanced deciles, shuffled slots, D-39). One row still beats chance: panel
+  P1_READ_TRACE image statistics, 0.173 vs a 0.164 limit. All other probe, balance and duplicate
+  checks pass.
+- `rack_patch` was added after the live run, so it has no live VLM results yet (offline mock sessions
+  only).
 - Raster bits are reproducible per platform; across platforms answers and verdicts reproduce but bundle
   ids may differ (SPEC D-35).
 

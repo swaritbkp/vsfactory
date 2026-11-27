@@ -1,0 +1,37 @@
+# Knotwork
+
+> Knotwork is a proof-carrying synthetic visual task factory for vision-language models: it renders seeded 2-D scenes (rack patch-bays, cable tangles, analog gauges, control panels) and emits an item only after an isolated kernel re-derives every answer from renderer object masks, cross-checked against the visible image. It runs fully offline with `uv`; paid model calls are opt-in.
+
+Capabilities: certified task generation and file-only verification; a resumable multi-model Model Arena (offline mock or OpenRouter) with research-grade reports, pass@k / pass^k reliability over k repeats and a sampling temperature control; regression pinning and a `knot gate` CI quality gate; declarative `campaign.yaml` runs; Human QA review states (approve / flag); a post-training engine (grounded vCoT SFT traces, DPO pairs, verl GRPO data, verl and TRL launch scripts, a stateless RLVR verifier); an external plugin SDK via Python entry points; and one Docker image that runs air-gapped and unrestricted by default or as a capped Cloud Run sandbox.
+
+Rules for agents: the trusted kernel `src/knotwork/knotcore/` must never import plugins, network, UI or ML code; tests and gates are offline (`KNOTWORK_NETWORK=deny`); never put an API key in a file.
+
+## Docs
+
+- [README](README.md): overview, quickstart, Studio and Model Arena pages, MLOps and post-training sections
+- [AGENTS.md](AGENTS.md): operating guide for coding agents (layout, commands, import contracts, CLI registry)
+- [VERIFICATION.md](VERIFICATION.md): gate results and how each proof metric is measured
+- [DATA_CARD.md](DATA_CARD.md): what the data is, how it is made, its limits
+- [BLOCKERS.md](BLOCKERS.md): open limitations with status
+- [Plugin SDK](docs/PLUGIN_SDK.md): write and ship a task plugin as an external wheel
+- [Deploy to Cloud Run](docs/DEPLOY_CLOUD_RUN.md): the same Docker image as a capped public sandbox (`KNOTWORK_PUBLIC_DEMO=1`)
+
+## CLI
+
+- `uv run knot selftest --seeds-only`: determinism known-answer test (seconds, offline)
+- `uv run knot arena-run --campaign campaign.yaml --report`: run a declarative Model Arena campaign headlessly and write report.html / report.md / report_metrics.json
+- `uv run knot gate --suite regression_suite.yaml --model <id> --mode mock --json-out gate.json`: CI quality gate; exit 0 pass, 1 below min_accuracy, 2 invalid suite
+- `uv run knot plugins --json`: built-in and external plugins with source, version and status
+- `uv run knot serve-verifier --port 8090`: stateless RLVR verifier (GET /health, GET /llms.txt, POST /score, POST /score_batch)
+- `uv run knot posttrain-pack --results-dir <session>/results [--approved-only]`: SFT / DPO / GRPO pack with provenance attestation
+- `uv run knot bench-throughput --domain rack_patch --n 4`: gen / verify / vCoT ms per item and USD per 1M certified samples
+
+## verl reward interface
+
+- `knotwork.posttrain.reward.compute_score(data_source, solution_str, ground_truth, extra_info=None) -> dict`: native verl custom-reward signature; `score` = 0.60 outcome + 0.25 spatial grounding IoU + 0.15 format and abstention, with `reward_hack_flag` for a right answer without grounding
+- `POST /score` body `{"data_source", "solution_str", "ground_truth", "extra_info"?}`; `POST /score_batch` body `{"items": [...]}`
+
+## Optional
+
+- [SPEC.md](SPEC.md): normative specification and decision log
+- [Submission checklist](docs/SUBMISSION_CHECKLIST.md): hackathon deliverables map

@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_id": "a25df54e4636a4f06e4742508f1ec87fc2717aa5b31c6ee52172e8a63d278cf3",
+  "image_sha256": "a172b7f3d49a7f1901a6b7147357626f2047198a235fbb006b19eef148e61df5",
+  "model": "openai/gpt-5.4",
+  "prompt": "Which gauge (G1-G2) is the cable from socket R plugged into?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+  "seed": 0,
+  "slot": "vlm_a"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: G1",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}

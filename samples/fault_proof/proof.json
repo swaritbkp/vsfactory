@@ -1,0 +1,21 @@
+{
+  "fault": "M3",
+  "seed": 3,
+  "sides": [
+    {
+      "label": "Clean control",
+      "verdict": "CERTIFIED",
+      "codes": [],
+      "image": "0_clean.png"
+    },
+    {
+      "label": "Faulty",
+      "verdict": "QUARANTINED",
+      "codes": [
+        "E_LABEL_MISMATCH",
+        "E_D1_D3_MISMATCH"
+      ],
+      "image": "1_faulty.png"
+    }
+  ]
+}

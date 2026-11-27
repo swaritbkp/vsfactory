@@ -10,11 +10,15 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Callable
+from itertools import combinations
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+from scipy import ndimage
+
 from knotwork.knotcore import contracts as C
-from knotwork.knotcore import gauge, logic, topo
+from knotwork.knotcore import gauge, logic, oracle, topo
 from knotwork.knotcore.io import Bundle, KernelFault, load_bundle
 from knotwork.knotcore.legibility import legibility
 from knotwork.knotcore.witness import witness
@@ -37,7 +41,8 @@ OPS: dict[C.Op, Callable[[Bundle, list[Any], dict[str, Any]], tuple[Any, dict[st
 def kernel_sha256() -> str:
     """Digest of the kernel source (same algorithm as devtools.kernel_audit.kernel_sha256)."""
     root, h = Path(__file__).resolve().parent, hashlib.sha256()
-    for path in sorted(p for p in root.rglob("*.py") if "__pycache__" not in p.parts):
+    files = (p for p in root.rglob("*.py") if "__pycache__" not in p.parts)
+    for path in sorted(files, key=lambda p: p.relative_to(root).as_posix()):
         h.update(path.relative_to(root).as_posix().encode() + b"\0")
         h.update(path.read_bytes().replace(b"\r\n", b"\n") + b"\0")
     return h.hexdigest()
@@ -90,16 +95,61 @@ def execute(
 def check_claims(
     b: Bundle, claims: C.ClaimSet, cfg: dict[str, Any]
 ) -> tuple[int, list[C.ErrorCode]]:
-    """(number of failed claims, codes); a disagreeing claim yields CLAIM_MISMATCH_CODE[op]."""
-    codes: list[C.ErrorCode] = []
+    """(number of unique failed claims, their codes). A claim is identified by op, arguments and
+    expected answer, so a repeated claim counts once. Disagreement yields CLAIM_MISMATCH_CODE[op]."""
+    failed: dict[tuple[str, str], C.ErrorCode] = {}
     for c in claims.claims:
+        key = (repr((c.op.value, c.args)), c.expected.model_dump_json())
+        if key in failed:
+            continue
         try:
             got = to_answer(c.expected.type, OPS[c.op](b, list(c.args), cfg)[0])
             if not agree(c.expected, got, got.tolerance):
-                codes.append(C.CLAIM_MISMATCH_CODE[c.op])
+                failed[key] = C.CLAIM_MISMATCH_CODE[c.op]
         except KernelFault as f:
-            codes.append(f.code)
-    return len(codes), codes
+            failed[key] = f.code
+    return len(failed), list(failed.values())
+
+
+#: path points sampled per strand or needle for the beauty-only oracle
+ORACLE_SAMPLES = 96
+
+
+def oracle_probes(
+    b: Bundle, cfg: dict[str, Any]
+) -> tuple[list[oracle.PathProbe], list[oracle.SpotProbe]]:
+    """The coordinates the kernel claims, handed to the oracle: interior points of every strand and
+    needle, crossing centres, needle tips, and the middle of every label and tick."""
+    paths: list[oracle.PathProbe] = []
+    spots: list[oracle.SpotProbe] = []
+    for kind in ("strand", "needle"):
+        for oid in b.kind(kind):
+            width = max(topo.stroke(b, oid), 2.0)
+            sy, sx = topo.window(b, oid)
+            mask = b.masks[oid][sy, sx]
+            inner = ndimage.binary_erosion(mask, iterations=max(int(width / 2) - 1, 1))
+            ys, xs = np.nonzero(inner if inner.any() else mask)
+            if len(xs):
+                pick = np.linspace(0, len(xs) - 1, min(len(xs), ORACLE_SAMPLES)).astype(np.int64)
+                pts = np.stack([xs[pick] + sx.start, ys[pick] + sy.start], axis=1)
+                paths.append(oracle.PathProbe(oid, kind, pts.astype(np.float64), width / 2 + 5))
+    for a, o in combinations(b.kind("strand"), 2):
+        for x in topo.overlaps(b, a, o):
+            xy = (x["center"][0], x["center"][1])
+            spots.append(oracle.SpotProbe(a, "oracle_crossing", xy, max(topo.stroke(b, a), 6.0)))
+    for g in b.manifest.gauges:
+        try:
+            tip = gauge.needle(b, g, cfg)["tip"]
+        except KernelFault:
+            continue
+        spots.append(oracle.SpotProbe(g.needle_obj, "oracle_tip", (tip[0], tip[1]), 10.0))
+    for oid in b.kind("label") + b.kind("tick"):
+        ys, xs = topo.pixels(b, oid)
+        if len(xs):
+            xy = (float(xs.min() + xs.max()) / 2, float(ys.min() + ys.max()) / 2)
+            reach = max(float(np.ptp(xs)), float(np.ptp(ys))) / 2 + 4
+            spots.append(oracle.SpotProbe(oid, "oracle_object", xy, reach))
+    return paths, spots
 
 
 def certify(
@@ -118,12 +168,14 @@ def certify(
     except KernelFault as f:
         return C.Certificate(**base, verdict=C.Verdict.QUARANTINED, codes=[f.code])
     checks = witness(b, cfg) + legibility(b, cfg)
+    checks += oracle.inspect(b.root, *oracle_probes(b, cfg), cfg)
     codes = [c.code for c in checks if not c.passed]
     n_failed, claim_codes = check_claims(b, b.claims, cfg)
     d3, steps = execute(b, q, cfg)
     step_codes = [c for s in steps for c in s.codes]
-    ok = not step_codes and agree(d1, d3, d3.tolerance)
-    codes += claim_codes + step_codes + ([] if ok or step_codes else [C.ErrorCode.E_D1_D3_MISMATCH])
+    same = agree(d1, d3, d3.tolerance)
+    ok = same and not step_codes
+    codes += claim_codes + step_codes + ([] if same else [C.ErrorCode.E_D1_D3_MISMATCH])
     if d2 is not None and not agree(d2, d1, max(d1.tolerance, d3.tolerance)):
         ok, codes = False, [*codes, C.ErrorCode.E_D1_D2_MISMATCH]
     codes = sorted(set(codes), key=C.CODE_PRIORITY.index)

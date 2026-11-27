@@ -26,7 +26,7 @@ from pydantic import (
 if TYPE_CHECKING:
     from knotwork.knotcore.seeds import SeedTree
 
-SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION = "1.1.0"
 KERNEL_VERSION = "1.0.0"
 CANVAS_PX = 1024
 CONSUMPTION_PX = 768
@@ -50,7 +50,10 @@ class ErrorCode(StrEnum):
     E_LABEL_MISMATCH = "E_LABEL_MISMATCH"
     E_UNEXPLAINED_INK = "E_UNEXPLAINED_INK"
     E_BEAUTY_MISMATCH = "E_BEAUTY_MISMATCH"
+    E_ORACLE_GHOST = "E_ORACLE_GHOST"
+    E_CVD_AMBIGUOUS = "E_CVD_AMBIGUOUS"
     E_OCCLUDED_CROSSING = "E_OCCLUDED_CROSSING"
+    E_WITNESS_OCCLUDED = "E_WITNESS_OCCLUDED"
     E_TANGENT_CROSSING = "E_TANGENT_CROSSING"
     E_ILLEGIBLE_RES = "E_ILLEGIBLE_RES"
     E_NEEDLE_OFFCENTER = "E_NEEDLE_OFFCENTER"
@@ -75,6 +78,7 @@ CODE_PRIORITY: tuple[ErrorCode, ...] = tuple(ErrorCode)
 class FaultCode(StrEnum):
     M1, M2, M3, M4, M5 = "M1", "M2", "M3", "M4", "M5"
     M6, M7, M8, M9, M10 = "M6", "M7", "M8", "M9", "M10"
+    M11, M12, M13, M14 = "M11", "M12", "M13", "M14"  # panel faults
 
 
 _E = ErrorCode
@@ -93,6 +97,10 @@ FAULT_EXPECTED: dict[FaultCode, ErrorCode] = dict(
             _E.E_SCALE_MISMATCH,
             _E.E_NEEDLE_OFFCENTER,
             _E.E_BEAUTY_MISMATCH,
+            _E.E_CLAIM_MISMATCH,  # M11 socket cables swapped between two gauge ports
+            _E.E_OCCLUDED_CROSSING,  # M12 occluded panel crossing
+            _E.E_SCALE_MISMATCH,  # M13 target gauge needle moved
+            _E.E_LABEL_MISMATCH,  # M14 gauge port labels swapped
         ),
         strict=True,
     )
@@ -100,7 +108,9 @@ FAULT_EXPECTED: dict[FaultCode, ErrorCode] = dict(
 
 #: Which plugin each fault is injected into by `knot mutate`.
 FAULT_PLUGIN: dict[FaultCode, str] = {
-    f: ("gauge" if f in (FaultCode.M8, FaultCode.M9) else "tangle") for f in FaultCode
+    **dict.fromkeys(FaultCode, "tangle"),
+    **dict.fromkeys((FaultCode.M8, FaultCode.M9), "gauge"),
+    **dict.fromkeys((FaultCode.M11, FaultCode.M12, FaultCode.M13, FaultCode.M14), "panel"),
 }
 
 
@@ -184,6 +194,7 @@ class Split(StrEnum):
     DEV = "dev"
     TEST = "test"
     SEALED = "sealed"
+    OOD = "ood"
 
 
 class PixelBox(_Model):
@@ -242,7 +253,7 @@ class GaugeEntry(_Model):
 
 
 class RenderManifest(_Model):
-    schema_version: Literal["1.0.0"] = "1.0.0"
+    schema_version: Literal["1.0.0", "1.1.0"] = "1.1.0"
     plugin: str
     canvas: tuple[int, int] = (CANVAS_PX, CANVAS_PX)
     supersample: int = SUPERSAMPLE
@@ -321,6 +332,20 @@ class Premise(_Model):
     holds: bool
 
 
+class DifficultySpec(_Model):
+    """Independent difficulty dials in [0, 1]; None keeps the generation profile's own ranges."""
+
+    reasoning_load: float | None = Field(default=None, ge=0.0, le=1.0)
+    visual_stress: float | None = Field(default=None, ge=0.0, le=1.0)
+    occlusion_level: float | None = Field(default=None, ge=0.0, le=1.0)
+    stroke_px: float | None = Field(default=None, ge=4.0, le=16.0)
+    jitter_px: float | None = Field(default=None, ge=0.0, le=24.0)
+    realism: float | None = Field(default=None, ge=0.0, le=1.0)
+    noise: float | None = Field(default=None, ge=0.0, le=1.0)
+    dpi_scale: float | None = Field(default=None, ge=0.5, le=1.0)
+    color_regime: Literal["unique", "partial", "mono"] | None = None
+
+
 class QuestionProgram(_Model):
     program_id: str
     family: Family
@@ -330,6 +355,7 @@ class QuestionProgram(_Model):
     options: list[str] | None = None
     premise: Premise | None = None
     difficulty: dict[str, float] = Field(default_factory=dict)
+    difficulty_spec: DifficultySpec | None = None
 
     @model_validator(mode="after")
     def _refs_resolve(self) -> QuestionProgram:
@@ -436,7 +462,7 @@ class TwinRefs(_Model):
 
 
 class TaskBundle(_Model):
-    schema_version: Literal["1.0.0"] = "1.0.0"
+    schema_version: Literal["1.0.0", "1.1.0"] = "1.1.0"
     bundle_id: str = Field(pattern=BUNDLE_ID)
     plugin: str
     family: Family
@@ -492,7 +518,9 @@ class TaskPlugin(Protocol):
     version: str
     families: tuple[Family, ...]
 
-    def sample_scene(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR: ...
+    def sample_scene(
+        self, seeds: SeedTree, profile: dict[str, Any], difficulty: DifficultySpec | None = None
+    ) -> SceneIR: ...
 
     def render(
         self, scene: SceneIR, out_dir: Path, fault: FaultCode | None = None

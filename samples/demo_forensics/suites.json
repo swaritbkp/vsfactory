@@ -1,0 +1,142 @@
+{
+ "missing_bundles": [],
+ "sample": true,
+ "suites": [
+  {
+   "answer": {
+    "canonical": "3",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "3"
+   },
+   "bundle_id": "kw-23492215e11a48759f83",
+   "family": "T1_TRACE",
+   "image": "samples/demo_forensics/images/kw-23492215e11a48759f83_original.jpg",
+   "plugin": "tangle",
+   "question": "The image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal F. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+   "replies": {
+    "sample-model (written for this demo, not a model output)": "4"
+   },
+   "sample": true,
+   "sample_title": "Sample 1",
+   "twins": {
+    "palette_swap": {
+     "answer": {
+      "canonical": "3",
+      "tolerance": 0.0,
+      "type": "label",
+      "value": "3"
+     },
+     "codes": [],
+     "image": "samples/demo_forensics/images/kw-23492215e11a48759f83_palette_swap.jpg",
+     "question": "The image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal F. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+     "status": "certified"
+    },
+    "perceptual_clean": {
+     "answer": {
+      "canonical": "3",
+      "tolerance": 0.0,
+      "type": "label",
+      "value": "3"
+     },
+     "codes": [],
+     "image": "samples/demo_forensics/images/kw-23492215e11a48759f83_perceptual_clean.jpg",
+     "question": "The image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal F. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+     "status": "certified"
+    },
+    "reasoning_step_down": {
+     "answer": {
+      "canonical": "2",
+      "tolerance": 0.0,
+      "type": "label",
+      "value": "2"
+     },
+     "codes": [],
+     "image": "samples/demo_forensics/images/kw-23492215e11a48759f83_reasoning_step_down.jpg",
+     "question": "The image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal F. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+     "removed_crossing": 9,
+     "status": "certified"
+    },
+    "text_ir_twin": {
+     "answer": {
+      "canonical": "3",
+      "tolerance": 0.0,
+      "type": "label",
+      "value": "3"
+     },
+     "prompt": "This is a text description of a diagram. Answer from the description alone.\n\n6 cables run from left to right in rows 1 (top) to 6.\nLeft ends -- row 1: F, row 2: D, row 3: U, row 4: M, row 5: E, row 6: P.\n\nAlong the way, from left to right:\n1. The cables in rows 5 and 6 exchange rows; the one arriving in the lower row passes over.\n2. The cables in rows 4 and 5 exchange rows; the one arriving in the upper row passes over.\n3. The cables in rows 2 and 3 exchange rows; the one arriving in the upper row passes over.\n4. The cables in rows 5 and 6 exchange rows; the one arriving in the lower row passes over.\n5. The cables in rows 3 and 4 exchange rows; the one arriving in the lower row passes over.\n6. The cables in rows 1 and 2 exchange rows; the one arriving in the upper row passes over.\n7. The cables in rows 4 and 5 exchange rows; the one arriving in the lower row passes over.\n8. The cables in rows 2 and 3 exchange rows; the one arriving in the upper row passes over.\n9. The cables in rows 5 and 6 exchange rows; the one arriving in the upper row passes over.\n\nRight ends -- row 1: 1, row 2: 2, row 3: 3, row 4: 4, row 5: 5, row 6: 6.\n\nThe image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal F. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+     "source": "scene",
+     "status": "text"
+    }
+   }
+  },
+  {
+   "answer": {
+    "canonical": "6",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "6"
+   },
+   "bundle_id": "kw-5e65957775e517fde4ca",
+   "family": "T1_TRACE",
+   "image": "samples/demo_forensics/images/kw-5e65957775e517fde4ca_original.jpg",
+   "plugin": "tangle",
+   "question": "The image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal G. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+   "replies": {
+    "sample-model (written for this demo, not a model output)": "1"
+   },
+   "sample": true,
+   "sample_title": "Sample 2",
+   "twins": {
+    "palette_swap": {
+     "answer": {
+      "canonical": "6",
+      "tolerance": 0.0,
+      "type": "label",
+      "value": "6"
+     },
+     "codes": [],
+     "image": "samples/demo_forensics/images/kw-5e65957775e517fde4ca_palette_swap.jpg",
+     "question": "The image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal G. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+     "status": "certified"
+    },
+    "perceptual_clean": {
+     "answer": {
+      "canonical": "6",
+      "tolerance": 0.0,
+      "type": "label",
+      "value": "6"
+     },
+     "codes": [],
+     "image": "samples/demo_forensics/images/kw-5e65957775e517fde4ca_perceptual_clean.jpg",
+     "question": "The image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal G. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+     "status": "certified"
+    },
+    "reasoning_step_down": {
+     "answer": {
+      "canonical": "3",
+      "tolerance": 0.0,
+      "type": "label",
+      "value": "3"
+     },
+     "codes": [],
+     "image": "samples/demo_forensics/images/kw-5e65957775e517fde4ca_reasoning_step_down.jpg",
+     "question": "The image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal G. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+     "removed_crossing": 10,
+     "status": "certified"
+    },
+    "text_ir_twin": {
+     "answer": {
+      "canonical": "6",
+      "tolerance": 0.0,
+      "type": "label",
+      "value": "6"
+     },
+     "prompt": "This is a text description of a diagram. Answer from the description alone.\n\n6 cables run from left to right in rows 1 (top) to 6.\nLeft ends -- row 1: G, row 2: E, row 3: T, row 4: Y, row 5: K, row 6: H.\n\nAlong the way, from left to right:\n1. The cables in rows 2 and 3 exchange rows; the one arriving in the lower row passes over.\n2. The cables in rows 5 and 6 exchange rows; the one arriving in the upper row passes over.\n3. The cables in rows 3 and 4 exchange rows; the one arriving in the lower row passes over.\n4. The cables in rows 1 and 2 exchange rows; the one arriving in the upper row passes over.\n5. The cables in rows 4 and 5 exchange rows; the one arriving in the upper row passes over.\n6. The cables in rows 2 and 3 exchange rows; the one arriving in the upper row passes over.\n7. The cables in rows 5 and 6 exchange rows; the one arriving in the upper row passes over.\n8. The cables in rows 3 and 4 exchange rows; the one arriving in the lower row passes over.\n9. The cables in rows 1 and 2 exchange rows; the one arriving in the lower row passes over.\n10. The cables in rows 4 and 5 exchange rows; the one arriving in the upper row passes over.\n11. The cables in rows 2 and 3 exchange rows; the one arriving in the lower row passes over.\n12. The cables in rows 5 and 6 exchange rows; the one arriving in the lower row passes over.\n13. The cables in rows 3 and 4 exchange rows; the one arriving in the upper row passes over.\n14. The cables in rows 1 and 2 exchange rows; the one arriving in the upper row passes over.\n\nRight ends -- row 1: 1, row 2: 2, row 3: 3, row 4: 4, row 5: 5, row 6: 6.\n\nThe image shows cables running from lettered terminals to numbered terminals. Follow the cable that starts at terminal G. At which numbered terminal does it end?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+     "source": "scene",
+     "status": "text"
+    }
+   }
+  }
+ ]
+}

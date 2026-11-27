@@ -1,4 +1,4 @@
-"""Task 2.11: `knot mutate` M1-M10 conformance matrix (SPEC 9.1, 10)."""
+"""Task 2.11: `knot mutate` M1-M14 conformance matrix (SPEC 9.1, 10)."""
 
 from __future__ import annotations
 
@@ -20,4 +20,4 @@ def test_report_schema_and_exact_catch(mutate_run: dict[str, Any]) -> None:
     assert rep["exact_catch_rate"] == 1.0 and rep["catch_rate"] == 1.0
     clean = rep["clean"]
     assert set(clean) >= {"n", "quarantined", "false_quarantine_rate"}
-    assert clean["n"] == 10 and clean["false_quarantine_rate"] <= 0.10
+    assert clean["n"] == len(FAULT_EXPECTED) and clean["false_quarantine_rate"] <= 0.10

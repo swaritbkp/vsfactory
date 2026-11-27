@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_id": "e7b8ace798242ead2fc89e678fbd06341403c7f1914d774afe5818cc463be7ec",
+  "image_sha256": "4b84ec5cb575b81879a8430b1df79b0012a15b842d5720d980ebe2421c3da4a2",
+  "model": "qwen/qwen3-vl-235b-a22b-instruct",
+  "prompt": "Which gauge (G1-G4) is the cable from socket N plugged into?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+  "seed": 0,
+  "slot": "vlm_c"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: G1",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}

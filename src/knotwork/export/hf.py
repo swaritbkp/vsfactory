@@ -1,10 +1,13 @@
-"""HuggingFace parquet exporter (SPEC 13.2): `OUT/hf/data/<split>-00000-of-00001.parquet` (zstd) plus a
-dataset card `OUT/hf/README.md`. Sealed answers (SPEC 11.1) are replaced by `answer_commitment`."""
+"""HuggingFace parquet exporter (SPEC 13.2): `OUT/hf/data/<split>-NNNNN-of-MMMMM.parquet` (zstd) with
+the PNG bytes embedded in the `image` column, plus a dataset card `OUT/hf/README.md`. Shards are
+closed when they reach `max_shard_mb` of row data, so memory stays bounded by one shard. Sealed
+answers (SPEC 11.1) are replaced by `answer_commitment`."""
 
 from __future__ import annotations
 
 import io
 import json
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -67,10 +70,35 @@ def schema() -> Any:
     ])  # fmt: skip
 
 
-def card(splits: dict[str, int], canaries: list[str]) -> str:
+def hf_metadata() -> dict[bytes, bytes]:
+    """Parquet schema metadata that makes `datasets` decode `image` as a picture."""
+    value = {"dtype": "string", "_type": "Value"}
+    features: dict[str, Any] = {name: dict(value) for name in COLUMNS}
+    features["image"] = {"_type": "Image"}
+    features["options"] = {"feature": dict(value), "_type": "Sequence"}
+    features["tolerance"] = {"dtype": "float64", "_type": "Value"}
+    return {b"huggingface": json.dumps({"info": {"features": features}}, sort_keys=True).encode()}
+
+
+def row_bytes(r: dict[str, Any]) -> int:
+    """Approximate stored size of a row: the PNG plus its text columns."""
+    text = sum(len(v) for v in r.values() if isinstance(v, str))
+    return len(r["image"]["bytes"]) + text
+
+
+def card(
+    splits: dict[str, int],
+    canaries: list[str],
+    shards: dict[str, int] | None = None,
+    families: dict[str, int] | None = None,
+) -> str:
     configs = "\n".join(f"  - split: {s}\n    path: data/{s}-*.parquet" for s in sorted(splits))
     counts = "\n".join(f"| {s} | {n} |" for s, n in sorted(splits.items()))
     canary_lines = "\n".join(f"- `{c}`" for c in sorted(set(canaries)))
+    total = sum(splits.values())
+    size = "n<1K" if total < 1000 else ("1K<n<10K" if total < 10000 else "10K<n<100K")
+    family_lines = "\n".join(f"| {f} | {n} |" for f, n in sorted((families or {}).items()))
+    shard_note = ", ".join(f"{s}: {n}" for s, n in sorted((shards or {}).items())) or "1 per split"
     return f"""---
 license: apache-2.0
 task_categories:
@@ -80,6 +108,11 @@ tags:
 - visual-reasoning
 - synthetic
 - proof-carrying
+language:
+- en
+pretty_name: Knotwork visual reasoning tasks
+size_categories:
+- {size}
 configs:
 - config_name: default
   data_files:
@@ -95,6 +128,19 @@ consumption resolution.
 | split | rows |
 |---|---|
 {counts}
+
+| family | rows |
+|---|---|
+{family_lines}
+
+## Loading
+```python
+from datasets import load_dataset
+
+data = load_dataset("path/to/this/folder")
+```
+`image` holds the PNG bytes inside the parquet shards ({shard_note}). `../dataset_manifest.json`
+records the git commit, kernel hash, font hash and the SHA-256 of every exported file.
 
 ## Intended use
 Evaluation and RLVR training of vision-language models on cable tracing, crossing counting, z-order,
@@ -114,23 +160,50 @@ Synthetic 2-D scenes (photographic finish, no 3-D perspective); English prompts 
 """
 
 
-def write_hf(items: list[ExportItem], out: Path) -> dict[str, int]:
+def _write_part(
+    data: Path, split: str, index: int, rows: list[dict[str, Any]], target: Any
+) -> Path:
+    """One shard under a temporary name (its final name needs the shard count)."""
     import pyarrow as pa
     import pyarrow.parquet as pq
 
+    part = data / f"{split}-{index:05d}.partial"
+    pq.write_table(pa.Table.from_pylist(rows, schema=target), part, compression="zstd")
+    return part
+
+
+def write_hf(
+    items: list[ExportItem], out: Path, max_shard_mb: float | None = None
+) -> dict[str, int]:
+    """Write the shards and the card; returns rows per split."""
     data = out / "hf" / "data"
     data.mkdir(parents=True, exist_ok=True)
-    by_split: dict[str, list[dict[str, Any]]] = {}
-    for it in items:
-        by_split.setdefault(it.task["split"], []).append(row(it))
-    for split, rows in by_split.items():
-        table = pa.Table.from_pylist(rows, schema=schema())
-        pq.write_table(table, data / f"{split}-00000-of-00001.parquet", compression="zstd")
-    counts = {s: len(r) for s, r in by_split.items()}
-    (out / "hf" / "README.md").write_text(
-        card(counts, [it.task["canary"] for it in items]), encoding="utf-8", newline="\n"
-    )
-    return counts
+    limit = None if max_shard_mb is None else max_shard_mb * 1024 * 1024
+    target = schema().with_metadata(hf_metadata())
+    counts: Counter[str] = Counter()
+    shards: dict[str, int] = {}
+    for split in sorted({it.task["split"] for it in items}):
+        rows: list[dict[str, Any]] = []
+        size = 0
+        parts: list[Path] = []
+
+        for it in (i for i in items if i.task["split"] == split):
+            r = row(it)
+            n = row_bytes(r)
+            if rows and limit is not None and size + n > limit:
+                parts.append(_write_part(data, split, len(parts), rows, target))
+                rows, size = [], 0
+            rows.append(r)
+            size += n
+            counts[split] += 1
+        parts.append(_write_part(data, split, len(parts), rows, target))
+        for i, part in enumerate(parts):
+            part.replace(data / f"{split}-{i:05d}-of-{len(parts):05d}.parquet")
+        shards[split] = len(parts)
+    families = Counter(it.task["family"] for it in items)
+    text = card(dict(counts), [it.task["canary"] for it in items], shards, dict(families))
+    (out / "hf" / "README.md").write_text(text, encoding="utf-8", newline="\n")
+    return dict(counts)
 
 
-__all__ = ["COLUMNS", "card", "row", "schema", "write_hf"]
+__all__ = ["COLUMNS", "card", "hf_metadata", "row", "schema", "write_hf"]

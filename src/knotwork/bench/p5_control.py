@@ -64,7 +64,7 @@ def control_job(job: dict[str, Any]) -> dict[str, Any]:
     from knotwork.diversity import rebuild_scene
     from knotwork.pipeline.certify import run_candidate
     from knotwork.pipeline.verify import verify_bundle
-    from knotwork.plugins.gauge.scale import zone_of
+    from knotwork.plugins.gauge.scale import dial_zone
     from knotwork.plugins.panel.plugin import PLUGIN, target_gauge
     from knotwork.plugins.registry import get_plugin
 
@@ -79,7 +79,7 @@ def control_job(job: dict[str, Any]) -> dict[str, Any]:
     original = rebuild_scene(ds, task, profile)
     pay = copy.deepcopy(original.payload)
     gauge = target_gauge(pay)
-    zone, false_zone = zone_of(gauge["value"], tuple(gauge["zones"])), str(pay["claimed"])
+    zone, false_zone = dial_zone(gauge), str(pay["claimed"])
     pay["claimed"] = zone
     scene = original.model_copy(update={"payload": pay})
     base = QuestionProgram.model_validate(task["question"])

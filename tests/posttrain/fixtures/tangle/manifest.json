@@ -1,0 +1,621 @@
+{
+ "background_rgb": [
+  218,
+  222,
+  218
+ ],
+ "beauty": "beauty.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "font_sha256": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
+ "gauges": [],
+ "id_buffer": "id_buffer.png",
+ "objects": [
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    156
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00001.png",
+   "name": "tangle/decor:screw0",
+   "obj_id": 1,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    156
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00002.png",
+   "name": "tangle/decor:screw1",
+   "obj_id": 2,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    156
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00003.png",
+   "name": "tangle/decor:screw2",
+   "obj_id": 3,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    156
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00004.png",
+   "name": "tangle/decor:screw3",
+   "obj_id": 4,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    0,
+    158,
+    115
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00005.png",
+   "name": "tangle/strand:s0",
+   "obj_id": 5,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    51,
+    34,
+    136
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00006.png",
+   "name": "tangle/strand:s1",
+   "obj_id": 6,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    204,
+    121,
+    167
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00007.png",
+   "name": "tangle/strand:s2",
+   "obj_id": 7,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    17,
+    17,
+    255
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00008.png",
+   "name": "tangle/strand:s3",
+   "obj_id": 8,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    17,
+    119,
+    51
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00009.png",
+   "name": "tangle/strand:s4",
+   "obj_id": 9,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    140,
+    81,
+    10
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00010.png",
+   "name": "tangle/strand:s5",
+   "obj_id": 10,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    0,
+    114,
+    178
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00011.png",
+   "name": "tangle/strand:s6",
+   "obj_id": 11,
+   "parent": null
+  },
+  {
+   "box": {
+    "x0": 135,
+    "x1": 159,
+    "y0": 770,
+    "y1": 797
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "P",
+   "mask": "masks/obj_00012.png",
+   "name": "tangle/label:start_P",
+   "obj_id": 12,
+   "parent": "tangle/labels:start"
+  },
+  {
+   "box": {
+    "x0": 170,
+    "x1": 195,
+    "y0": 752,
+    "y1": 779
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "K",
+   "mask": "masks/obj_00013.png",
+   "name": "tangle/label:start_K",
+   "obj_id": 13,
+   "parent": "tangle/labels:start"
+  },
+  {
+   "box": {
+    "x0": 206,
+    "x1": 231,
+    "y0": 734,
+    "y1": 761
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "T",
+   "mask": "masks/obj_00014.png",
+   "name": "tangle/label:start_T",
+   "obj_id": 14,
+   "parent": "tangle/labels:start"
+  },
+  {
+   "box": {
+    "x0": 242,
+    "x1": 266,
+    "y0": 716,
+    "y1": 743
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "E",
+   "mask": "masks/obj_00015.png",
+   "name": "tangle/label:start_E",
+   "obj_id": 15,
+   "parent": "tangle/labels:start"
+  },
+  {
+   "box": {
+    "x0": 276,
+    "x1": 303,
+    "y0": 698,
+    "y1": 725
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "U",
+   "mask": "masks/obj_00016.png",
+   "name": "tangle/label:start_U",
+   "obj_id": 16,
+   "parent": "tangle/labels:start"
+  },
+  {
+   "box": {
+    "x0": 308,
+    "x1": 342,
+    "y0": 679,
+    "y1": 706
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "W",
+   "mask": "masks/obj_00017.png",
+   "name": "tangle/label:start_W",
+   "obj_id": 17,
+   "parent": "tangle/labels:start"
+  },
+  {
+   "box": {
+    "x0": 347,
+    "x1": 375,
+    "y0": 661,
+    "y1": 688
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "D",
+   "mask": "masks/obj_00018.png",
+   "name": "tangle/label:start_D",
+   "obj_id": 18,
+   "parent": "tangle/labels:start"
+  },
+  {
+   "box": {
+    "x0": 864,
+    "x1": 889,
+    "y0": 770,
+    "y1": 797
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "1",
+   "mask": "masks/obj_00019.png",
+   "name": "tangle/label:end_1",
+   "obj_id": 19,
+   "parent": "tangle/labels:end"
+  },
+  {
+   "box": {
+    "x0": 828,
+    "x1": 853,
+    "y0": 752,
+    "y1": 779
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "2",
+   "mask": "masks/obj_00020.png",
+   "name": "tangle/label:end_2",
+   "obj_id": 20,
+   "parent": "tangle/labels:end"
+  },
+  {
+   "box": {
+    "x0": 793,
+    "x1": 818,
+    "y0": 734,
+    "y1": 761
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "3",
+   "mask": "masks/obj_00021.png",
+   "name": "tangle/label:end_3",
+   "obj_id": 21,
+   "parent": "tangle/labels:end"
+  },
+  {
+   "box": {
+    "x0": 757,
+    "x1": 782,
+    "y0": 716,
+    "y1": 743
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "4",
+   "mask": "masks/obj_00022.png",
+   "name": "tangle/label:end_4",
+   "obj_id": 22,
+   "parent": "tangle/labels:end"
+  },
+  {
+   "box": {
+    "x0": 721,
+    "x1": 746,
+    "y0": 698,
+    "y1": 725
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "5",
+   "mask": "masks/obj_00023.png",
+   "name": "tangle/label:end_5",
+   "obj_id": 23,
+   "parent": "tangle/labels:end"
+  },
+  {
+   "box": {
+    "x0": 686,
+    "x1": 711,
+    "y0": 679,
+    "y1": 706
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "6",
+   "mask": "masks/obj_00024.png",
+   "name": "tangle/label:end_6",
+   "obj_id": 24,
+   "parent": "tangle/labels:end"
+  },
+  {
+   "box": {
+    "x0": 650,
+    "x1": 675,
+    "y0": 661,
+    "y1": 688
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "7",
+   "mask": "masks/obj_00025.png",
+   "name": "tangle/label:end_7",
+   "obj_id": 25,
+   "parent": "tangle/labels:end"
+  }
+ ],
+ "plugin": "tangle",
+ "schema_version": "1.1.0",
+ "supersample": 2,
+ "terminals": [
+  {
+   "box": {
+    "x0": 123,
+    "x1": 143,
+    "y0": 743,
+    "y1": 763
+   },
+   "label_obj": 12,
+   "role": "start",
+   "terminal_id": "tangle/terminal:start_P"
+  },
+  {
+   "box": {
+    "x0": 159,
+    "x1": 179,
+    "y0": 725,
+    "y1": 745
+   },
+   "label_obj": 13,
+   "role": "start",
+   "terminal_id": "tangle/terminal:start_K"
+  },
+  {
+   "box": {
+    "x0": 195,
+    "x1": 215,
+    "y0": 707,
+    "y1": 727
+   },
+   "label_obj": 14,
+   "role": "start",
+   "terminal_id": "tangle/terminal:start_T"
+  },
+  {
+   "box": {
+    "x0": 230,
+    "x1": 250,
+    "y0": 689,
+    "y1": 709
+   },
+   "label_obj": 15,
+   "role": "start",
+   "terminal_id": "tangle/terminal:start_E"
+  },
+  {
+   "box": {
+    "x0": 266,
+    "x1": 286,
+    "y0": 670,
+    "y1": 690
+   },
+   "label_obj": 16,
+   "role": "start",
+   "terminal_id": "tangle/terminal:start_U"
+  },
+  {
+   "box": {
+    "x0": 302,
+    "x1": 322,
+    "y0": 652,
+    "y1": 672
+   },
+   "label_obj": 17,
+   "role": "start",
+   "terminal_id": "tangle/terminal:start_W"
+  },
+  {
+   "box": {
+    "x0": 337,
+    "x1": 357,
+    "y0": 634,
+    "y1": 654
+   },
+   "label_obj": 18,
+   "role": "start",
+   "terminal_id": "tangle/terminal:start_D"
+  },
+  {
+   "box": {
+    "x0": 881,
+    "x1": 901,
+    "y0": 743,
+    "y1": 763
+   },
+   "label_obj": 19,
+   "role": "end",
+   "terminal_id": "tangle/terminal:end_1"
+  },
+  {
+   "box": {
+    "x0": 845,
+    "x1": 865,
+    "y0": 725,
+    "y1": 745
+   },
+   "label_obj": 20,
+   "role": "end",
+   "terminal_id": "tangle/terminal:end_2"
+  },
+  {
+   "box": {
+    "x0": 809,
+    "x1": 829,
+    "y0": 707,
+    "y1": 727
+   },
+   "label_obj": 21,
+   "role": "end",
+   "terminal_id": "tangle/terminal:end_3"
+  },
+  {
+   "box": {
+    "x0": 774,
+    "x1": 794,
+    "y0": 689,
+    "y1": 709
+   },
+   "label_obj": 22,
+   "role": "end",
+   "terminal_id": "tangle/terminal:end_4"
+  },
+  {
+   "box": {
+    "x0": 738,
+    "x1": 758,
+    "y0": 670,
+    "y1": 690
+   },
+   "label_obj": 23,
+   "role": "end",
+   "terminal_id": "tangle/terminal:end_5"
+  },
+  {
+   "box": {
+    "x0": 702,
+    "x1": 722,
+    "y0": 652,
+    "y1": 672
+   },
+   "label_obj": 24,
+   "role": "end",
+   "terminal_id": "tangle/terminal:end_6"
+  },
+  {
+   "box": {
+    "x0": 667,
+    "x1": 687,
+    "y0": 634,
+    "y1": 654
+   },
+   "label_obj": 25,
+   "role": "end",
+   "terminal_id": "tangle/terminal:end_7"
+  }
+ ]
+}

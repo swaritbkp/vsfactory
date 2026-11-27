@@ -19,6 +19,10 @@ from knotwork.knotcore.ocr import label_text
 from knotwork.knotcore.topo import label_of, trace
 
 DEG = 180.0 / math.pi
+#: degrees of CW progress kept negative before the scale start, so the wrap point sits mid dead-zone
+PHI_LEAD = 45.0
+#: a port belongs to a dial whose mask comes within this many 4-connected dilation steps
+PORT_REACH_PX = 8
 
 
 def gauge(b: Bundle, gid: str) -> GaugeEntry:
@@ -28,14 +32,20 @@ def gauge(b: Bundle, gid: str) -> GaugeEntry:
     raise KernelFault(ErrorCode.E_TRACE_NO_TERMINAL, f"unknown gauge {gid}")
 
 
+def _wrap(deg: Any) -> Any:
+    """Degrees in [0, 360). `x % 360` rounds to 360.0 for tiny negative x; that is mapped to 0."""
+    r = np.mod(deg, 360.0)
+    return np.where(r >= 360.0, 0.0, r)
+
+
 def _angle(cx: float, cy: float, xs: Any, ys: Any) -> Any:
-    return np.degrees(np.arctan2(-(np.asarray(ys) - cy), np.asarray(xs) - cx)) % 360.0
+    return _wrap(np.degrees(np.arctan2(-(np.asarray(ys) - cy), np.asarray(xs) - cx)))
 
 
 def _phi(ref: float, theta: Any) -> Any:
     """CW progress from `ref`, wrapped to [-45, 315) so pixels just before the scale start stay
     near 0 instead of 360 (SPEC 3 convention; D-11)."""
-    return (ref - theta + 45.0) % 360.0 - 45.0
+    return _wrap(ref - np.asarray(theta, dtype=np.float64) + PHI_LEAD) - PHI_LEAD
 
 
 def needle(b: Bundle, g: GaugeEntry, cfg: dict[str, Any]) -> dict[str, Any]:
@@ -122,12 +132,18 @@ def gauge_of(b: Bundle, port: str, cfg: dict[str, Any]) -> tuple[str, dict[str, 
     ]
     if len(ports) != 1:
         raise KernelFault(ErrorCode.E_TRACE_NO_TERMINAL, f"{len(ports)} ports named {port}")
-    box, hits = ports[0].box, []
+    hits: list[str] = []
+    rows, cols = sl(ports[0].box)  # the box clipped to the canvas
+    around = sl(ports[0].box, PORT_REACH_PX + 1)
+    y0, x0 = rows.start - around[0].start, cols.start - around[1].start
+    y1 = max(rows.stop - around[0].start, 0)
+    x1 = max(cols.stop - around[1].start, 0)
     for g in b.manifest.gauges:
-        win = b.masks[g.dial_obj][sl(box, 9)]
-        grown = ndimage.binary_dilation(win, iterations=8)
-        inner = grown[min(box.y0, 9) :, min(box.x0, 9) :][: box.y1 - box.y0, : box.x1 - box.x0]
-        if inner.any():
+        dial = b.masks[g.dial_obj][around]
+        if (
+            dial.any()
+            and ndimage.binary_dilation(dial, iterations=PORT_REACH_PX)[y0:y1, x0:x1].any()
+        ):
             hits.append(g.gauge_id)
     if len(hits) != 1:
         code = ErrorCode.E_TRACE_AMBIGUOUS if hits else ErrorCode.E_TRACE_NO_TERMINAL

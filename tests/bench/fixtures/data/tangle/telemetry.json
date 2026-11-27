@@ -1,0 +1,50 @@
+{
+ "aggregate": {
+  "candidates": 6,
+  "certified": 6,
+  "false_quarantine_rate": 0.0,
+  "quarantined": 0,
+  "sampling_skips": 0,
+  "slot_yield": 1.0,
+  "slots": 6,
+  "yield_rate": 1.0
+ },
+ "difficulty": null,
+ "families": {
+  "T1_TRACE": {
+   "candidates": 6,
+   "certified": 6,
+   "class_balance": {
+    "counts": {
+     "2": 1,
+     "3": 2,
+     "4": 1,
+     "6": 1,
+     "7": 1
+    },
+    "majority_share": 0.333333,
+    "n": 6,
+    "n_classes": 5
+   },
+   "false_quarantine_rate": 0.0,
+   "quarantined": 0,
+   "sampling_skips": 0,
+   "slot_yield": 1.0,
+   "slots": 6,
+   "yield_rate": 1.0
+  }
+ },
+ "holdout": {},
+ "n_requested": 6,
+ "plugin": "tangle",
+ "rejection_pareto": [],
+ "schema": "knotwork.telemetry/1",
+ "seed": 3,
+ "split": "test",
+ "throughput": {
+  "bundles_per_sec": 0.072084,
+  "items_per_sec": 0.072084,
+  "seconds": 83.236
+ },
+ "workers": 6
+}

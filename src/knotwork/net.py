@@ -26,30 +26,45 @@ def policy() -> str:
     return os.environ.get("KNOTWORK_NETWORK", "deny")
 
 
-def check(url: str) -> None:
+def check(url: str, policy_override: str | None = None) -> None:
+    """Refuse ``url`` unless the policy allows its host. ``policy_override`` is passed only by a call
+    a person started with an explicit click (Model Arena: refresh catalog, AI brief); it still only
+    reaches the hosts of that policy."""
+    active = policy_override or policy()
     host = urlparse(url).hostname or ""
-    allowed = ALLOWED_HOSTS.get(policy(), set())
+    allowed = ALLOWED_HOSTS.get(active, set())
     if host not in allowed:
-        raise NetworkPolicyError(f"KNOTWORK_NETWORK={policy()!r} forbids a request to {host!r}")
+        raise NetworkPolicyError(f"KNOTWORK_NETWORK={active!r} forbids a request to {host!r}")
 
 
-def get_json(url: str, timeout: float = 10.0, transport: Any = None) -> Any:
+def get_json(
+    url: str,
+    timeout: float = 10.0,
+    transport: Any = None,
+    headers: dict[str, str] | None = None,
+    policy_override: str | None = None,
+) -> Any:
     """GET ``url`` and decode JSON, after the policy check. ``transport`` lets tests inject
     ``httpx.MockTransport``."""
-    check(url)
+    check(url, policy_override)
     import httpx
 
     with httpx.Client(timeout=timeout, transport=transport) as client:
-        resp = client.get(url)
+        resp = client.get(url, headers=headers)
         resp.raise_for_status()
         return resp.json()
 
 
 def post_json(
-    url: str, body: Any, headers: dict[str, str], timeout: float = 90.0, transport: Any = None
+    url: str,
+    body: Any,
+    headers: dict[str, str],
+    timeout: float = 90.0,
+    transport: Any = None,
+    policy_override: str | None = None,
 ) -> Any:
     """POST JSON after the policy check; returns the decoded JSON response (raises on HTTP errors)."""
-    check(url)
+    check(url, policy_override)
     import httpx
 
     with httpx.Client(timeout=timeout, transport=transport) as client:

@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_id": "e7b8ace798242ead2fc89e678fbd06341403c7f1914d774afe5818cc463be7ec",
+  "image_sha256": "4b84ec5cb575b81879a8430b1df79b0012a15b842d5720d980ebe2421c3da4a2",
+  "model": "openai/gpt-5.4",
+  "prompt": "Follow the cable from socket N to the gauge it is plugged into. What value does that gauge read?\nEnd your reply with a final line of the form 'ANSWER: <number>'.",
+  "seed": 0,
+  "slot": "vlm_a"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: 27.1",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}

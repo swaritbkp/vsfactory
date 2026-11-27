@@ -1074,3 +1074,69 @@ spec leaves open. Never silently change a threshold.
   pairs), Fisher's exact test next to it. A live run is this module with `--live --budget-usd` at
   most $0.50, behind the same triple lock as `knot bench --live`; it is a second command allowed to
   spend, beside the one in TASKS 5.7, and needs the owner's explicit go-ahead.
+* D-38: v2 build (owner direction, branch `feat/vtf-v2`). (a) The 850 / 1350 kernel LOC caps are now
+  informational telemetry; `core.loc` warns and never fails, while `core.ast_isolation` enforces the
+  TCB contract (`kernel_audit.tcb_report`: allow-listed imports, no network / process / dynamic-code
+  modules, no `SceneIR.payload` access, deterministic `kernel_sha256`). (b) CI is tiered: `ci.yml`
+  runs tier0 then tier1 with pytest-xdist, `nightly.yml` runs tier2 and the phase gates; gate
+  `p4.ci` checks both files. (c) ONTOP is decided by the majority of non-halo id pixels in a core
+  disk (`topo.core_vote`) with a ring-continuity check for close votes; `E_WITNESS_OCCLUDED` reports a
+  background or foreign object where a strand or needle must be on top; `claims_failed` counts unique
+  claims and `E_D1_D3_MISMATCH` is recorded even when a program step faults; `grade_prediction`
+  rejects replies that commit to different answers unless `strict_single_answer=False`.
+* D-39: v2 trust gaps (owner direction). (a) Panel render faults M11 (two socket cables exchange
+  gauge ports -> `E_CLAIM_MISMATCH`), M12 (occluded panel crossing -> `E_OCCLUDED_CROSSING`), M13
+  (target needle moved -> `E_SCALE_MISMATCH`), M14 (port labels exchanged -> `E_LABEL_MISMATCH`).
+  (b) `knotcore.oracle` re-reads `beauty.png` alone along kernel-claimed coordinates
+  (`E_ORACLE_GHOST`). (c) `knotcore.cvd` requires distinct strand colours and gauge zone colours to
+  stay >= 8 CIELAB units apart under simulated protanopia and deuteranopia (`E_CVD_AMBIGUOUS`);
+  palette entry #01665E (5.0 units from #882255) became #1111FF. (d) Premise scenes randomise each
+  dial's zone colour order and balance the target value's decile, so the claimed zone carries no
+  numeric information; probes score both premise families as one yes/no task (chance 1/2) and
+  `probes.baselines` requires majority-class, mean-luminance, option-position and text-length
+  baselines <= chance + 0.02. (e) T1 / T3 answer slots are balanced within blocks but shuffled by a
+  run-seeded permutation. (f) The staircase steps by 2 until the third reversal, then 1, runs up to
+  75 trials or 20 reversals, and reports a logistic maximum-likelihood `k*` over all trials; the
+  mean of the last 6 reversals stays as `reversal_level`.
+* D-40: v2 control plane (owner direction). `SCHEMA_VERSION` 1.1.0 (1.0.0 bundles still load):
+  `QuestionProgram.difficulty_spec`, `Split.OOD`, and `sample_scene(seeds, profile,
+  difficulty=None)`; `plugins.payloads` validates each plugin's payload at that boundary while
+  `SceneIR.payload` stays opaque to the kernel; `plugins.difficulty` maps the three dials to
+  sampling ranges. `generate` streams results with a bounded number of slots in flight, can shard
+  `bundles/`, and writes `telemetry.json` and `lineage.jsonl`. Holdouts (`pipeline.ood`): `ood`
+  samples only held-out families / parameter ranges, other splits given the same holdout sample the
+  complement; `stats.json` records the overrides so scenes still rebuild from seed paths. Contract
+  and profile changes move the protocol commit, so regenerate the golden
+  (`knot selftest --update-golden`) and the bench fixtures.
+* D-41: `knot counterfactual` (`pipeline.counterfactual`) builds, per failed item, certified
+  `perceptual_clean`, `palette_swap` and `reasoning_step_down` twins by re-sampling the scene from
+  its seed path and editing the plugin payload, plus a `text_ir_twin`. Bundles whose scene the
+  running version cannot re-sample get no visual twin (stated per item); gauge reading questions
+  still get a text twin from kernel evidence. Gauges have no semantic cable palette, so their
+  palette swap rotates housing tones and keeps zone colours.\n* D-42: Data product. Every export writes `dataset_manifest.json` (schema version, git commit,\n  `kernel_sha256`, font hashes, per-family / per-split cardinality, sealed fraction, canaries and\n  the SHA-256 of every exported file; no timestamps). Parquet embeds the 768-px PNG bytes, carries\n  the HuggingFace image feature metadata and is sharded by `--max-shard-mb`.\n\n* D-43: The inspector is now the Visual Task Factory Studio (supersedes the SPEC 15 tab list):\n  Factory Studio, Forensics & Counterfactuals, Human Calibration Lab, Export & Lineage, over the\n  pure functions in `knotwork.studio`. Batch builds run `knot generate` in a child process. The\n  registry also loads scaffolded plugin packages that export `PLUGIN`. SPEC 15's human staircase\n  pilot is replaced by blind calibration over a chosen dataset.\n* D-44: Studio UX redesign (owner direction). `apps/inspector.py` is the entry point with top
+  navigation over `apps/app_pages/` (Studio, Forensics, Human Eval, Export); the theme is
+  `.streamlit/config.toml` (no custom CSS, no remote fonts, usage statistics off, localhost only).
+  View models live in `knotwork.studio.present`. A certified single item is written as a complete
+  bundle; twin diagnoses come only from replies the user enters or a `results.jsonl`.
+* D-45: v2 proof polish. (a) Panel renderer: after all halos, each crossing that a neighbour's
+  halo can reach is layered again on half the distance to that neighbour, so no top cable is left
+  broken at its own crossing (4 of 120 clean panels had failed `crossing_color` for this real
+  defect; 0 of 400 after). Tangle rendering is unchanged. (b) Exhaustive multi-scene and process-
+  pool tests moved to tier2; `tests/pipeline/test_tier1_representative.py` keeps one real path
+  through generate, verify, export, certification and faults in tier1. (c) The Forensics page
+  opens `samples/demo_forensics/` (real certified twins; replies written by
+  `scripts/build_demo_forensics.py` and labelled as not model output).
+* D-46: Staircase trials never repeat an item: a temperature-0 model returns the same reply to the
+  same request, so repeats are not independent evidence (one mock tangle staircase had asked 18
+  items in 75 trials). Each trial takes an unused item from the nearest level that has one, the
+  history records the level shown, the staircase ends when the pool is exhausted, and
+  `per_crossing` counts each distinct (image, prompt) once.
+
+* D-47: Gate `p6.docs` validates the live documentation set instead of `docs/DECK_COPY.md` and
+  `docs/PORTAL_SUBMISSION.md`, which are written at submission time and not committed (owner
+  direction, 2026-11-27). The slide-order, template-phrase and portal-field checks moved to
+  `docs/SUBMISSION_CHECKLIST.md` sections C and D with the same official titles and phrases; new
+  checks: no broken relative link in README / checklist / VERIFICATION / DATA_CARD / BLOCKERS, README
+  carries the verified kernel wording, BLOCKERS.md states a status per entry. The per-field
+  1,024-character portal limit is no longer checked because the portal text is not in the repo.
+  The requirement that `artifacts/gates/phase0..5.json` are all `ok` is unchanged.

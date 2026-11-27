@@ -34,7 +34,7 @@ from knotwork.bench.client_base import BudgetExhausted, ReplayMiss, Reply, VLMCl
 from knotwork.bench.client_mock import MockClient
 from knotwork.bench.client_replay import ReplayClient, ReplayRecorder, replay_key
 from knotwork.bench.prompts import image_id, image_png, read_only, trace_only
-from knotwork.bench.staircase import Staircase, expected_level
+from knotwork.bench.staircase import Staircase, expected_level, mle_threshold
 from knotwork.datasets import dataset_dirs
 from knotwork.knotcore.grading import ANSWER_RE, YESNO_RE, extract, grade_prediction
 from knotwork.knotcore.seeds import SeedTree
@@ -169,7 +169,8 @@ def load_pool(data: Path) -> Pool:
 
 # ------------------------------------------------------------------ plan
 def block_sizes(cfg: dict[str, Any], max_trials: int) -> dict[str, int]:
-    plan, scale = cfg["plan"], max_trials / BASE_TRIALS
+    # diagnostic blocks keep their planned size when the staircases get more than BASE_TRIALS
+    plan, scale = cfg["plan"], min(1.0, max_trials / BASE_TRIALS)
     return {k: max(1, math.ceil(int(plan[f"{k}_trials"]) * scale))
             for k in ("ablation", "twin", "gaslight", "composition")}  # fmt: skip
 
@@ -381,9 +382,15 @@ def run_staircase(runner: Runner, items: list[Item], track: str, max_trials: int
     rng = SeedTree(seed).child("bench", runner.slot, track).rng()
     queues: dict[int, list[Item]] = {}
 
-    def draw(level: int) -> Item:
-        lv = min(by_level, key=lambda x: (abs(x - level), x))
-        if not queues.get(lv):
+    def draw(level: int) -> Item | None:
+        """An item nobody has asked yet, from the level nearest to `level` that still has one.
+        A temperature-0 model repeats its reply to a repeated request, so a re-asked item is not
+        a new observation."""
+        left = [lv for lv in by_level if lv not in queues or queues[lv]]
+        if not left:
+            return None
+        lv = min(left, key=lambda x: (abs(x - level), x))
+        if lv not in queues:
             queues[lv] = [by_level[lv][int(i)] for i in rng.permutation(len(by_level[lv]))]
         return queues[lv].pop()
 
@@ -392,22 +399,26 @@ def run_staircase(runner: Runner, items: list[Item], track: str, max_trials: int
     attempts = 0
     while not st.done and attempts < 3 * max_trials:
         attempts += 1
-        it = draw(st.level)
-        out = runner.ask(it, f"staircase:{track}")
+        item = draw(st.level)
+        if item is None:  # every item has been asked once
+            break
+        out = runner.ask(item, f"staircase:{track}")
         if out.missing:
             continue
-        st.update(out.correct)
-        done.append((it, out))
+        st.update(out.correct, item.k)
+        done.append((item, out))
+
+    def m_bar(k: float) -> float:
+        lv = min(by_level, key=lambda x: (abs(x - k), x))
+        return float(np.mean([i.m for i in by_level[lv]]))
+
     exp = None
     if p_true is not None:
-
-        def m_bar(k: float) -> float:
-            lv = min(by_level, key=lambda x: (abs(x - k), x))
-            return float(np.mean([i.m for i in by_level[lv]]))
-
         exp = round(expected_level(p_true, m_bar, lo, hi), 4)
-    return {"threshold_level": round(st.threshold(), 4), "expected_level": exp, "reversals": st.reversals,
-            "trials": len(st.history), "levels": [lo, hi]}, done  # fmt: skip
+    threshold = mle_threshold(st.history, lo, hi, lambda k: 1.0 / m_bar(k))
+    return {"threshold_level": round(threshold, 4), "reversal_level": round(st.threshold(), 4),
+            "expected_level": exp, "reversals": st.reversals, "trials": len(st.history),
+            "levels": [lo, hi]}, done  # fmt: skip
 
 
 def single_switch(item: Item, profile: dict[str, Any], cache: dict[str, set[str]]) -> set[str]:
@@ -472,7 +483,13 @@ def run_model(runner: Runner, pool: Pool, chosen: dict[str, list[Any]], derived:
                 )
                 t1_trials += [(b, ob), (c, oc), (n, on)]
         row["twins"] = stats.twins(trip)
-        valid = [(it, o) for it, o in t1_trials if it.m > 0]
+        # one observation per distinct request: the staircase and the twin blocks can both
+        # ask the same image the same question
+        once: dict[tuple[str, str], tuple[Item, Outcome]] = {}
+        for it, o in t1_trials:
+            if it.m > 0:
+                once.setdefault((runner.iid(it.beauty), it.prompt), (it, o))
+        valid = list(once.values())
         row["per_crossing"] = stats.per_crossing(
             [{"k": it.k, "m": it.m, "correct": o.correct} for it, o in valid], rng
         )

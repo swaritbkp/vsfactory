@@ -1,0 +1,245 @@
+{
+ "claims": [
+  {
+   "args": [
+    "tangle/terminal:start_T"
+   ],
+   "claim_id": "trace_T",
+   "expected": {
+    "canonical": "1",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "1"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_T",
+    "*"
+   ],
+   "claim_id": "cross_T",
+   "expected": {
+    "canonical": "2",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 2
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_M"
+   ],
+   "claim_id": "trace_M",
+   "expected": {
+    "canonical": "3",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "3"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_M",
+    "*"
+   ],
+   "claim_id": "cross_M",
+   "expected": {
+    "canonical": "3",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 3
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_V"
+   ],
+   "claim_id": "trace_V",
+   "expected": {
+    "canonical": "2",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "2"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_V",
+    "*"
+   ],
+   "claim_id": "cross_V",
+   "expected": {
+    "canonical": "7",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 7
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_K"
+   ],
+   "claim_id": "trace_K",
+   "expected": {
+    "canonical": "4",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "4"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_K",
+    "*"
+   ],
+   "claim_id": "cross_K",
+   "expected": {
+    "canonical": "2",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 2
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_W"
+   ],
+   "claim_id": "trace_W",
+   "expected": {
+    "canonical": "5",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "5"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_W",
+    "*"
+   ],
+   "claim_id": "cross_W",
+   "expected": {
+    "canonical": "0",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 0
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_T",
+    "tangle/terminal:start_V",
+    0
+   ],
+   "claim_id": "ontop_TV_0",
+   "expected": {
+    "canonical": "V",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "V"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_T",
+    "tangle/terminal:start_V",
+    1
+   ],
+   "claim_id": "ontop_TV_1",
+   "expected": {
+    "canonical": "T",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "T"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_M",
+    "tangle/terminal:start_V",
+    0
+   ],
+   "claim_id": "ontop_MV_0",
+   "expected": {
+    "canonical": "V",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "V"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_M",
+    "tangle/terminal:start_V",
+    1
+   ],
+   "claim_id": "ontop_MV_1",
+   "expected": {
+    "canonical": "V",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "V"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_M",
+    "tangle/terminal:start_V",
+    2
+   ],
+   "claim_id": "ontop_MV_2",
+   "expected": {
+    "canonical": "M",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "M"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_V",
+    "tangle/terminal:start_K",
+    0
+   ],
+   "claim_id": "ontop_VK_0",
+   "expected": {
+    "canonical": "K",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "K"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_V",
+    "tangle/terminal:start_K",
+    1
+   ],
+   "claim_id": "ontop_VK_1",
+   "expected": {
+    "canonical": "V",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "V"
+   },
+   "op": "ONTOP"
+  }
+ ],
+ "plugin": "tangle"
+}

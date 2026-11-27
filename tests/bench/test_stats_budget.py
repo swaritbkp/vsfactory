@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -11,6 +12,7 @@ import yaml
 from knotwork.bench import stats
 from knotwork.bench.budget import Budget, actual_cost, est_call_usd, preflight
 from knotwork.bench.client_base import BudgetExhausted
+from knotwork.bench.run import Item, run_staircase
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -95,3 +97,24 @@ def test_preflight_and_budget() -> None:
     assert actual_cost(cfg["slots"][0], {"cost": 0.003}) == 0.003
     assert actual_cost(cfg["slots"][0], {"prompt_tokens": 1000, "completion_tokens": 100}) == pytest.approx(
         (1000 * 2.5 + 100 * 15.0) / 1e6)  # fmt: skip
+
+
+def test_staircase_asks_every_item_at_most_once_and_records_the_level_shown() -> None:
+    class AlwaysRight:
+        slot = "fake"
+
+        def ask(self, item: Item, block: str) -> SimpleNamespace:
+            return SimpleNamespace(missing=False, correct=True)
+
+    # a thin top level: two items at k = 12, so a flawless observer exhausts it at once
+    levels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] * 3 + [11, 12, 12]
+    pool = [
+        Item(key=f"i{n}", beauty=Path(f"i{n}.png"), prompt="p", answer={}, meta={},
+             bundle_id=f"b{n}", scene_id=f"s{n}", k=k, m=6.0)
+        for n, k in enumerate(levels)
+    ]  # fmt: skip
+    result, done = run_staircase(AlwaysRight(), pool, "tangle", 75, 0, None)  # type: ignore[arg-type]
+    keys = [item.key for item, _ in done]
+    assert len(keys) == len(set(keys)) == result["trials"] == len(pool)
+    shown = [item.k for item, _ in done]
+    assert shown.count(12) == 2 and shown[0] == 3

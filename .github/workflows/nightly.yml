@@ -1,0 +1,72 @@
+name: nightly
+
+# Heavy checks: tier2 tests (bulk generation, probes, bootstrap, benchmarks), the golden self test
+# and the phase gates. Runs on a schedule and on demand.
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  KNOTWORK_NETWORK: deny
+  PYTHONHASHSEED: "0"
+
+jobs:
+  tier2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: uv sync (locked)
+        run: uv sync --locked
+
+      - name: pytest tier2 (offline, no API keys)
+        run: uv run pytest -n auto -m tier2 -q --durations=15
+
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: uv sync (locked)
+        run: uv sync --locked
+
+      - name: Phase gates (CI subset driven by .ci_phase)
+        run: |
+          PHASE=$(cat .ci_phase 2>/dev/null || echo 0)
+          echo "highest completed phase: $PHASE"
+          uv run python scripts/verify_phase.py --phase 0
+          if [ "$PHASE" -ge 2 ]; then uv run knot mutate --fault all --n 2 --out artifacts/ci/mutate.json; fi
+          if [ "$PHASE" -ge 3 ]; then uv run knot selftest; fi
+          if [ "$PHASE" -ge 4 ]; then uv run python scripts/verify_phase.py --phase 4; fi
+
+      - name: Upload gate reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-reports
+          path: |
+            artifacts/gates/
+            artifacts/ci/
+            artifacts/selftest/report.json
+          if-no-files-found: ignore

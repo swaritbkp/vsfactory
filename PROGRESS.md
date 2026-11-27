@@ -4,6 +4,11 @@ Repository: https://github.com/swaritbkp/vsfactory (public). Environment: Window
 Python 3.11.15 (`.venv`), offline only (no `OPENROUTER_API_KEY` set; paid runs capped at $5 by the owner
 until the Phase 5 budget review).
 
+> v2 note (2026-11-27): this is a historical build log. Since SPEC D-38 the 850 / 1350 knotcore LOC
+> budgets are informational telemetry and the trust boundary is enforced by the TCB contract; the
+> fault matrix is now M1–M14 (56 / 56 caught, 0 / 56 clean rejected). Current results live in
+> `README.md`, `VERIFICATION.md` and `BLOCKERS.md`.
+
 | Phase | Scope | Gate | Commit |
 |---|---|---|---|
 | 0 | bootstrap, layered renderer, contracts, isolation, seeds | PASSED | `28991f3` |
@@ -69,7 +74,7 @@ Gate re-run: PASSED, knotcore untouched (819 / 850 executable LOC).
 * Plan: `--max-trials 40`, three slots (gpt-5.4 with reasoning off after the canary, gemini-2.5-flash,
   qwen3-vl-235b). Two canaries $0.0501 + full run $0.9992 = **$1.0493** of the $5.00 cap; 871 paid calls,
   997 trials, 0 HTTP errors, 2 parse failures. Offline replay reproduces every per-model result exactly
-  with 0 network calls. Summary: `README.md` "Live benchmark results"; figures `docs/figures/fig01-06`.
+  with 0 network calls. Summary: `README.md` ("Full live results table and caveats"); figures `docs/figures/fig01-06`.
 
 ## True-premise control (additive, SPEC D-37; run by the owner)
 * 24 matched `P5` pairs of the live `T_GASLIGHT` items, 24/24 certified; 72 paid calls, $0.0756 (project

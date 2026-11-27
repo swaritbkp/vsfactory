@@ -10,9 +10,10 @@ import numpy as np
 from scipy import ndimage
 
 from knotwork.knotcore.contracts import CANVAS_PX, ErrorCode, WitnessCheck
+from knotwork.knotcore.cvd import cvd_checks
 from knotwork.knotcore.gauge import needle
 from knotwork.knotcore.io import BoolArr, Bundle, KernelFault
-from knotwork.knotcore.topo import STRUCT, crossings
+from knotwork.knotcore.topo import STRUCT, core_vote, crossings, strand_of
 
 E = ErrorCode
 
@@ -27,9 +28,22 @@ def _dil(m: BoolArr, n: int) -> BoolArr:
     return np.asarray(ndimage.binary_dilation(m, STRUCT, iterations=n), dtype=np.bool_)
 
 
-def _patch(b: Bundle, xy: list[float]) -> float:
+def _patch(b: Bundle, xy: list[float], top: int) -> float:
+    """Mean luminance of the top object's pixels in the 5x5 patch at xy (the whole patch when it has
+    fewer than 4), so the background halo of a neighbouring crossing does not dilute the colour."""
     x, y = round(xy[0]), round(xy[1])
-    return float(b.lum[max(y - 2, 0) : y + 3, max(x - 2, 0) : x + 3].mean())
+    win = (slice(max(y - 2, 0), y + 3), slice(max(x - 2, 0), x + 3))
+    own = b.ids[win] == top
+    lum = b.lum[win]
+    return float(lum[own].mean() if int(own.sum()) >= 4 else lum.mean())
+
+
+def _owner(b: Bundle, xy: list[float]) -> int:
+    """Majority non-background object id of the 5x5 patch around xy (0 when all background)."""
+    x, y = round(xy[0]), round(xy[1])
+    patch = b.ids[max(y - 2, 0) : y + 3, max(x - 2, 0) : x + 3]
+    found, counts = np.unique(patch[patch > 0], return_counts=True)
+    return int(found[counts.argmax()]) if found.size else 0
 
 
 def witness(b: Bundle, cfg: dict[str, Any]) -> list[WitnessCheck]:
@@ -51,7 +65,7 @@ def witness(b: Bundle, cfg: dict[str, Any]) -> list[WitnessCheck]:
         inner[oid] = float(lum[core if core.any() else v].mean())
         c = abs(inner[oid] - float(lum[ring].mean())) if ring.any() else 0.0
         out.append(_chk("contrast", oid, c >= thr, c, thr, E.E_BEAUTY_MISMATCH))
-    points: list[tuple[str, list[float]]] = []
+    points: list[tuple[str, list[float], int]] = []
     for cl in b.claims.claims:
         if cl.op.value == "ONTOP" and len(cl.args) == 3:
             try:
@@ -59,16 +73,22 @@ def witness(b: Bundle, cfg: dict[str, Any]) -> list[WitnessCheck]:
             except KernelFault:
                 continue
             if isinstance(cl.args[2], int) and 0 <= cl.args[2] < len(cs):
-                points.append(("crossing_color", cs[cl.args[2]]["center"]))
+                x = cs[cl.args[2]]
+                pair = strand_of(b, str(cl.args[0])), strand_of(b, str(cl.args[1]))
+                top = core_vote(b, x, *pair)["top_obj"]
+                points.append(("crossing_color", x["center"], top))
     for g in b.manifest.gauges:
         try:
-            points.append(("needle_tip_color", needle(b, g, cfg)["tip"]))
+            tip = needle(b, g, cfg)["tip"]
         except KernelFault:
             continue
-    for name, xy in points:
-        top = int(b.ids[round(xy[1]), round(xy[0])])
-        d = abs(_patch(b, xy) - inner[top]) if top in inner else 1.0
-        out.append(_chk(name, top or None, d <= 0.10, d, 0.10, E.E_BEAUTY_MISMATCH))
+        points.append(("needle_tip_color", tip, _owner(b, tip)))
+    for name, xy, top in points:
+        if top in inner:
+            d = abs(_patch(b, xy, top) - inner[top])
+            out.append(_chk(name, top, d <= 0.10, d, 0.10, E.E_BEAUTY_MISMATCH))
+        else:  # background or another object lies where a strand or needle must be on top
+            out.append(_chk(name, top or None, False, top, 0.0, E.E_WITNESS_OCCLUDED))
     bg = np.asarray(b.manifest.background_rgb, dtype=np.int16)
     ink = np.abs(b.beauty.astype(np.int16) - bg).max(axis=2) > int(w["ink_delta"])
     stray = ink & ~_dil(b.ids > 0, int(w["ink_dilate_px"]))
@@ -85,4 +105,4 @@ def witness(b: Bundle, cfg: dict[str, Any]) -> list[WitnessCheck]:
         not (x.x0 >= 0 and x.y0 >= 0 and x.x1 <= CANVAS_PX and x.y1 <= CANVAS_PX) for x in boxes
     )
     out.append(_chk("oob_box", None, bad == 0, bad, 0.0, E.E_OOB))
-    return out
+    return out + cvd_checks(b, cfg)

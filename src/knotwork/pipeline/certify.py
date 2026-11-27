@@ -32,6 +32,12 @@ WITNESS_CHECKS = {
     "unexplained_ink",
     "oob_mask",
     "oob_box",
+    "cvd_strands",
+    "cvd_zones",
+    "oracle_path",
+    "oracle_crossing",
+    "oracle_tip",
+    "oracle_object",
 }
 LEGIBILITY_CHECKS = {
     "stroke_768",

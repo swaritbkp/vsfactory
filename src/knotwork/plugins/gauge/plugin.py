@@ -14,6 +14,7 @@ from knotwork.knotcore.contracts import (
     AnswerType,
     Claim,
     ClaimSet,
+    DifficultySpec,
     Family,
     FaultCode,
     Op,
@@ -22,9 +23,10 @@ from knotwork.knotcore.contracts import (
     SceneIR,
 )
 from knotwork.knotcore.seeds import SeedTree
+from knotwork.plugins.difficulty import adjust_profile, finalize_scene, restress, with_difficulty
 from knotwork.plugins.gauge import geom
 from knotwork.plugins.gauge.render import M8_SWEEP, M9_SHIFT, bezel_width, draw_dial
-from knotwork.plugins.gauge.scale import ZONES, admissible, sample_zones, zone_of
+from knotwork.plugins.gauge.scale import ZONES, admissible, dial_zone, sample_zones
 from knotwork.plugins.gauge.stem import draw_plate, draw_stem, sample_plate, sample_stem
 from knotwork.render import realism
 from knotwork.render.canvas import make_canvas, render_cfg
@@ -69,9 +71,7 @@ def values_for(d: dict[str, Any], tol_units: float) -> list[int]:
 def pick_value(rng: np.random.Generator, d: dict[str, Any], tol_units: float, zone: str | None = None,
                away_from: float | None = None, min_move: float = 0.0) -> int | None:  # fmt: skip
     """Admissible integer value (optionally in ``zone``, and >= min_move from ``away_from``)."""
-    vals = [
-        v for v in values_for(d, tol_units) if zone is None or zone_of(v, tuple(d["zones"])) == zone
-    ]
+    vals = [v for v in values_for(d, tol_units) if zone is None or dial_zone(d, v) == zone]
     if away_from is not None:
         vals = [v for v in vals if abs(v - away_from) >= min_move]
     return int(vals[int(rng.integers(len(vals)))]) if vals else None
@@ -161,7 +161,14 @@ class GaugePlugin:
     version = "1.0.0"
     families = (Family.G1_READ, Family.G2_ZONE)
 
-    def sample_scene(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR:
+    def sample_scene(
+        self, seeds: SeedTree, profile: dict[str, Any], difficulty: DifficultySpec | None = None
+    ) -> SceneIR:
+        if difficulty is not None:
+            profile = adjust_profile(self.name, profile, difficulty)
+        return finalize_scene(self._sample(seeds, profile), difficulty)
+
+    def _sample(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR:
         """``profile["_family"] == "G2_ZONE"`` samples the needle zone uniformly (balanced answers)."""
         prof, rng = profile["gauge"], seeds.rng()
         draw = int(rng.integers(3))
@@ -200,11 +207,12 @@ class GaugePlugin:
         self, scene: SceneIR, out_dir: Path, fault: FaultCode | None = None
     ) -> RenderManifest:
         c = make_canvas(scene.payload["render"])
-        realism.draw_relief(c, scene.payload.get("relief", []))
-        draw_plate(c, "gauge", scene.payload.get("plate"))
-        realism.corner_screws(c, "gauge")
-        if "stem" in scene.payload:
-            draw_stem(c, "gauge", scene.payload["stem"])
+        if not scene.payload.get("plain"):
+            realism.draw_relief(c, scene.payload.get("relief", []))
+            draw_plate(c, "gauge", scene.payload.get("plate"))
+            realism.corner_screws(c, "gauge")
+            if "stem" in scene.payload:
+                draw_stem(c, "gauge", scene.payload["stem"])
         g = draw_dial(c, "gauge", scene.payload["dial"], fault)
         realism.add_surface(c, scene.payload["surface"])
         return c.finish(out_dir, self.name, gauges=[g])
@@ -213,7 +221,7 @@ class GaugePlugin:
         d = scene.payload["dial"]
         return ClaimSet(plugin=self.name, claims=[
             Claim(claim_id="read_g1", op=Op.READ, args=[GID], expected=float_answer(d["value"])),
-            Claim(claim_id="zone_g1", op=Op.ZONE, args=[GID], expected=zone_answer(zone_of(d["value"], tuple(d["zones"])))),
+            Claim(claim_id="zone_g1", op=Op.ZONE, args=[GID], expected=zone_answer(dial_zone(d))),
         ])  # fmt: skip
 
     def questions(self, scene: SceneIR, seeds: SeedTree, family: Family) -> QuestionProgram:
@@ -222,16 +230,17 @@ class GaugePlugin:
         op = "READ" if family is Family.G1_READ else "ZONE"
         text = f"{PROMPTS[family]}\nEnd your reply with a final line of the form '{FORMAT[at]}'."
         span = float(d["vmax"]) - float(d["vmin"])
-        return QuestionProgram(program_id=f"gauge/{family.value}/{seeds.digest()[:16]}", family=family,
+        question = QuestionProgram(program_id=f"gauge/{family.value}/{seeds.digest()[:16]}", family=family,
                                steps=[{"step_id": "s0", "op": op, "args": [GID]}], text=text, answer_type=at,  # type: ignore[list-item]
                                options=list(ZONES) if at is AnswerType.ZONE else None,
                                difficulty={"span": span, "radius": float(d["radius"])})  # fmt: skip
+        return with_difficulty(question, scene.payload)
 
     def symbolic_answer(self, scene: SceneIR, program: QuestionProgram) -> Answer:
         d = scene.payload["dial"]
         if program.family is Family.G1_READ:
             return float_answer(d["value"])
-        return zone_answer(zone_of(d["value"], tuple(d["zones"])))
+        return zone_answer(dial_zone(d))
 
     def geometric_answer(self, scene: SceneIR, program: QuestionProgram) -> Answer | None:
         d = scene.payload["dial"]
@@ -248,7 +257,7 @@ class GaugePlugin:
         if program.family is Family.G1_READ:
             v = pick_value(rng, d, tol, away_from=old, min_move=5 * tol)
         else:
-            here = zone_of(old, tuple(d["zones"]))
+            here = dial_zone(d, old)
             other = [z for z in ZONES if z != here][int(rng.integers(2))]
             v = pick_value(rng, d, tol, zone=other)
         if v is None:
@@ -265,6 +274,7 @@ class GaugePlugin:
         pay["render"]["background_rgb"] = list(tints[int(rng.integers(len(tints)))])
         pay["surface"] = realism.sample_surface(rng, "brushed")
         pay["dial"]["band_inner"] = [0.90, 0.94][int(rng.integers(2))]
+        restress(self.name, pay)
         return _scene(scene, pay)
 
 

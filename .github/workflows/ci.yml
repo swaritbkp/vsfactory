@@ -1,8 +1,13 @@
 name: ci
 
+# Fast feedback on every push and pull request, under 2 minutes wall time: tier0 (lint, types,
+# import isolation, seed KAT, pure kernel and contract checks) reports in about 40 s, while tier1
+# (plugins, pipeline, faults on shared fixtures) runs in parallel. tier2 and the phase gates run in
+# nightly.yml (scheduled or manual).
+
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/**"]
   pull_request:
 
 permissions:
@@ -12,13 +17,14 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  KNOTWORK_NETWORK: deny
+  PYTHONHASHSEED: "0"
+
 jobs:
-  gates:
+  tier0:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
-    env:
-      KNOTWORK_NETWORK: deny
-      PYTHONHASHSEED: "0"
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -42,28 +48,25 @@ jobs:
       - name: mypy (strict kernel)
         run: uv run mypy
 
-      - name: pytest (offline, no API keys)
-        run: uv run pytest -q
-
       - name: knot selftest --seeds-only (determinism KAT)
         run: uv run knot selftest --seeds-only
 
-      - name: Phase gates (CI subset driven by .ci_phase)
-        run: |
-          PHASE=$(cat .ci_phase 2>/dev/null || echo 0)
-          echo "highest completed phase: $PHASE"
-          uv run python scripts/verify_phase.py --phase 0
-          if [ "$PHASE" -ge 2 ]; then uv run knot mutate --fault all --n 2 --out artifacts/ci/mutate.json; fi
-          if [ "$PHASE" -ge 3 ]; then uv run knot selftest; fi
-          if [ "$PHASE" -ge 4 ]; then uv run python scripts/verify_phase.py --phase 4; fi
+      - name: pytest tier0 (offline, no API keys)
+        run: uv run pytest -n auto -m tier0 -q
 
-      - name: Upload gate reports
-        if: always()
-        uses: actions/upload-artifact@v4
+  tier1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          name: gate-reports
-          path: |
-            artifacts/gates/
-            artifacts/ci/
-            artifacts/selftest/report.json
-          if-no-files-found: ignore
+          enable-cache: true
+
+      - name: uv sync (locked)
+        run: uv sync --locked
+
+      - name: pytest tier1 (offline, no API keys)
+        run: uv run pytest -n auto -m tier1 -q --durations=15

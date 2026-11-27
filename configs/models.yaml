@@ -60,7 +60,7 @@ slots:
 
 plan:
   tracks: [tangle, panel]
-  staircase_max_trials_per_track: 50
+  staircase_max_trials_per_track: 75
   ablation_trials: 40            # color unique vs mono matched pairs
   twin_trials: 30                # base + causal + nuisance triples
   gaslight_trials: 30

@@ -3,6 +3,10 @@
 STDLIB ONLY (json, math, re, unicodedata, typing): this file is copied verbatim into every exported
 Harbor task as its verifier. `answer` is an Answer model or its JSON dict; `pred` is free text (the
 last `ANSWER:` line wins, else the whole text) or a native value. Never raises.
+
+With `strict_single_answer` (the v2 default) a reply that commits to two or more different answers
+after `ANSWER:` markers is hedging and scores 0; repeating one answer is allowed. Passing False
+restores the v1 rule (the last line wins).
 """
 
 from __future__ import annotations
@@ -18,11 +22,29 @@ NUM_RE = re.compile(r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?")
 INT_RE = re.compile(r"[-+]?\d+")
 ZONE_RE = re.compile(r"\b(green|amber|red)\b", re.IGNORECASE)
 YESNO_RE = re.compile(r"\b(yes|no)\b", re.IGNORECASE)
+MARKER_RE = re.compile(r"\bANSWER:", re.IGNORECASE)
+TRIM = " .,;:!*_`'\""
 
 
 def extract(pred: str) -> str:
     hits = ANSWER_RE.findall(pred)
     return str(hits[-1]).strip() if hits else pred
+
+
+def committed_answers(pred: str) -> list[str]:
+    """Distinct answers a reply commits to: every payload of an `ANSWER:` line, split at further
+    markers on that line, compared ignoring case and surrounding punctuation."""
+    seen: dict[str, None] = {}
+    for line in ANSWER_RE.findall(pred):
+        for part in MARKER_RE.split(str(line)):
+            norm = " ".join(unicodedata.normalize("NFKC", part).casefold().split()).strip(TRIM)
+            if norm:
+                seen[norm] = None
+    return list(seen)
+
+
+def is_hedged(pred: Any) -> bool:
+    return isinstance(pred, str) and len(committed_answers(pred)) > 1
 
 
 def _num(x: Any, pattern: re.Pattern[str]) -> float | None:
@@ -64,8 +86,10 @@ def _grade(pred: Any, a: dict[str, Any]) -> bool:
     return False
 
 
-def grade_prediction(pred: Any, answer: Any) -> float:
+def grade_prediction(pred: Any, answer: Any, strict_single_answer: bool = True) -> float:
     try:
+        if strict_single_answer and is_hedged(pred):
+            return 0.0
         a = answer.model_dump(mode="json") if hasattr(answer, "model_dump") else answer
         a = json.loads(a) if isinstance(a, str) else dict(a)
         return 1.0 if _grade(pred, a) else 0.0

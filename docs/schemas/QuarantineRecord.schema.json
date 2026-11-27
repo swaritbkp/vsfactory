@@ -10,7 +10,10 @@
         "E_LABEL_MISMATCH",
         "E_UNEXPLAINED_INK",
         "E_BEAUTY_MISMATCH",
+        "E_ORACLE_GHOST",
+        "E_CVD_AMBIGUOUS",
         "E_OCCLUDED_CROSSING",
+        "E_WITNESS_OCCLUDED",
         "E_TANGENT_CROSSING",
         "E_ILLEGIBLE_RES",
         "E_NEEDLE_OFFCENTER",
@@ -59,7 +62,11 @@
         "M7",
         "M8",
         "M9",
-        "M10"
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14"
       ],
       "title": "FaultCode",
       "type": "string"

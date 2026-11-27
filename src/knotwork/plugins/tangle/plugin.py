@@ -15,6 +15,7 @@ from knotwork.knotcore.contracts import (
     AnswerType,
     Claim,
     ClaimSet,
+    DifficultySpec,
     Family,
     FaultCode,
     Op,
@@ -23,13 +24,14 @@ from knotwork.knotcore.contracts import (
     SceneIR,
 )
 from knotwork.knotcore.seeds import SeedTree
+from knotwork.plugins.difficulty import adjust_profile, finalize_scene, restress, with_difficulty
 from knotwork.plugins.tangle import braid, geom, layout
 from knotwork.plugins.tangle.render import halo_mask, hex_rgb, render_tangle
 from knotwork.render import realism
 from knotwork.render.canvas import make_canvas, render_cfg
 
 PALETTE = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#882255",
-           "#117733", "#332288", "#000000", "#8C510A", "#01665E"]  # fmt: skip
+           "#117733", "#332288", "#000000", "#8C510A", "#1111FF"]  # fmt: skip
 MONO = "#2F2F2F"
 #: matte industrial backplates (light enough that every palette colour keeps >= 0.2 luminance contrast)
 PLATES = [(226, 226, 220), (222, 224, 226), (230, 226, 216), (218, 222, 218)]
@@ -78,6 +80,16 @@ def sample_geometry(rng: np.random.Generator, n: int, word: list[braid.Letter], 
     return params
 
 
+def shuffled_slot(salt: int | None, key: str, index: int, m: int) -> int:
+    """``index mod m`` seen through a run-seeded permutation of each block of ``m`` consecutive
+    indices: every block still uses every slot exactly once, but which item gets which slot no
+    longer follows the generation order (SPEC D-39)."""
+    if salt is None:
+        return index % m
+    block, r = divmod(index, m)
+    return int(SeedTree(int(salt)).child("balance", key, m, block).rng().permutation(m)[r])
+
+
 def _pick(rng: np.random.Generator, weights: dict[str, float]) -> str:
     keys = sorted(weights)
     p = np.array([weights[k] for k in keys], dtype=np.float64)
@@ -90,7 +102,14 @@ class TanglePlugin:
     families = (Family.T1_TRACE, Family.T2_CROSS, Family.T3_ONTOP)
 
     # ------------------------------------------------------------------ scene
-    def sample_scene(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR:
+    def sample_scene(
+        self, seeds: SeedTree, profile: dict[str, Any], difficulty: DifficultySpec | None = None
+    ) -> SceneIR:
+        if difficulty is not None:
+            profile = adjust_profile(self.name, profile, difficulty)
+        return finalize_scene(self._sample(seeds, profile), difficulty)
+
+    def _sample(self, seeds: SeedTree, profile: dict[str, Any]) -> SceneIR:
         """Sample a braid scene. ``profile["_family"]`` (optional) conditions T2 on a target count."""
         prof, rng = profile["tangle"], seeds.rng()
         family = profile.get("_family")
@@ -140,9 +159,11 @@ class TanglePlugin:
             pay["colors"], pay["color_regime"] = [list(hex_rgb(h)) for h in cols], regime
             pay["relief"] = realism.relief_panels(rng)
             if o is not None:
-                pay["answer_slot"] = (
-                    (int(o) // span_n) % n if family == Family.T1_TRACE.value else int(o) % 2
-                )
+                salt = profile.get("_balance_seed")
+                if family == Family.T1_TRACE.value:
+                    pay["answer_slot"] = shuffled_slot(salt, f"T1n{n}", int(o) // span_n, n)
+                else:
+                    pay["answer_slot"] = shuffled_slot(salt, str(family), int(o), 2)
             return SceneIR(plugin=self.name, plugin_version=self.version, seed_path=seeds.path_str,
                            params={"n_strands": n, "layout": params["kind"], "style": pay["style"],
                                    "color_regime": regime}, payload=pay)  # fmt: skip
@@ -159,8 +180,9 @@ class TanglePlugin:
         if fault is FaultCode.M4:
             weights = m4_weights(pay)
         lay = lay_of(pay, weights)
-        realism.draw_relief(c, pay.get("relief", []))
-        realism.corner_screws(c, "tangle")
+        if not pay.get("plain"):
+            realism.draw_relief(c, pay.get("relief", []))
+            realism.corner_screws(c, "tangle")
         terms = render_tangle(c, pay, lay.paths, lay.crossings, fault)
         crossings = lay.crossings
         realism.add_surface(c, pay["surface"], ("label",), lambda cv: halo_mask(crossings, cv.size))
@@ -194,6 +216,9 @@ class TanglePlugin:
         return ClaimSet(plugin=self.name, claims=out)
 
     def questions(self, scene: SceneIR, seeds: SeedTree, family: Family) -> QuestionProgram:
+        return with_difficulty(self._question(scene, seeds, family), scene.payload)
+
+    def _question(self, scene: SceneIR, seeds: SeedTree, family: Family) -> QuestionProgram:
         pay, rng = scene.payload, seeds.rng()
         n, word, labels = pay["n"], word_of(pay), pay["start_labels"]
         pid = f"tangle/{family.value}/{seeds.digest()[:16]}"
@@ -322,6 +347,7 @@ class TanglePlugin:
                     k, i = slots[0]
                     trial["word"] = _fill(trial["word"], k, i, int(rng.choice([1, -1])))
             if geom.validate(lay_of(trial), n, float(pay["stroke"])) is None:
+                restress(self.name, trial)
                 return _scene(scene, trial)
         raise TwinUnavailable("no valid nuisance layout")
 

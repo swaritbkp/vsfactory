@@ -1,0 +1,19 @@
+{
+ "cost_usd": 0.0,
+ "request": {
+  "image_id": "19873f15eefbc04d1574e1d266dd011f15f998f612d09daae7cd21c5822c3deb",
+  "image_sha256": "9dd764324ecdc44ad59250e2156d371c877d93c7bed77b6d7bf57984858a506e",
+  "model": "google/gemini-2.5-flash",
+  "prompt": "Which gauge (G1-G4) is the cable from socket W plugged into?\nEnd your reply with a final line of the form 'ANSWER: <label>'.",
+  "seed": 0,
+  "slot": "vlm_b"
+ },
+ "response": {
+  "source": "recorded from mock client"
+ },
+ "text": "Simulated reasoning.\nANSWER: G1",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0
+ }
+}

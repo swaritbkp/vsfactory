@@ -67,12 +67,14 @@ def runs(tmp_path_factory: pytest.TempPathFactory) -> dict[str, list[dict[str, A
     return run_all(jobs)
 
 
+@pytest.mark.tier2
 def test_95pct_of_40_clean_scenes_certify(runs: dict[str, list[dict[str, Any]]]) -> None:
     res = runs["clean"]
     ok = sum(r["verdict"] == "CERTIFIED" for r in res)
     assert ok >= 38, [r["codes"] for r in res if r["verdict"] != "CERTIFIED"]
 
 
+@pytest.mark.tier2
 @pytest.mark.parametrize("fault", TANGLE_FAULTS)
 def test_fault_hooks_raise_expected_code(
     runs: dict[str, list[dict[str, Any]]], fault: FaultCode

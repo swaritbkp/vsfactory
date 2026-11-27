@@ -3,16 +3,19 @@
  "by_family": {
   "T1_TRACE": 6
  },
+ "difficulty": null,
  "false_quarantine_rate": 0.0,
  "families_expected": [
   "T1_TRACE"
  ],
+ "holdout": {},
  "n_base_certified": 6,
  "n_bundles": 6,
  "n_candidates": 6,
  "n_quarantined": 0,
  "n_requested": 6,
  "plugin": "tangle",
+ "profile_overrides": null,
  "schedule": [
   "T1_TRACE",
   "T1_TRACE",
@@ -21,6 +24,8 @@
   "T1_TRACE",
   "T1_TRACE"
  ],
- "seconds": 8.6,
+ "seconds": 83.2,
+ "shard_size": 0,
+ "split": "test",
  "workers": 0
 }

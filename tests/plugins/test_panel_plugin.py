@@ -59,6 +59,7 @@ def test_programs_and_premise_steps(profile: dict[str, Any], tmp_path: Path) -> 
             assert vals[0] - vals[1] >= 3 * scene.payload["grade_tol"]
 
 
+@pytest.mark.tier2
 def test_90pct_certify(runs: dict[str, list[dict[str, Any]]]) -> None:
     res = runs["clean"]
     ok = sum(r["verdict"] == "CERTIFIED" for r in res)

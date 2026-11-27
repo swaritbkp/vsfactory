@@ -13,6 +13,7 @@ import os
 import socket
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -20,6 +21,106 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC = REPO_ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
+sys.path.insert(0, str(REPO_ROOT / "tests"))
+
+from shared_builds import shared_build  # noqa: E402
+
+PROFILE_PATH = REPO_ROOT / "configs" / "default_profile.yaml"
+#: more xdist workers than this only slows the OCR-bound tests down
+MAX_AUTO_WORKERS = 12
+#: test tiers by path prefix, first match wins; everything else is tier1
+TIERS: tuple[tuple[str, str], ...] = (
+    ("tests/pipeline/test_selftest.py", "tier2"),
+    # exhaustive multi-scene and process-pool checks: nightly. `test_tier1_representative.py`
+    # keeps one real path through each of these stages in tier1.
+    ("tests/pipeline/test_contact_sheet.py", "tier2"),
+    ("tests/pipeline/test_mutate.py", "tier2"),
+    ("tests/pipeline/test_twins.py", "tier2"),
+    ("tests/pipeline/test_determinism.py", "tier2"),
+    ("tests/pipeline/test_generate.py", "tier2"),
+    ("tests/pipeline/test_verify.py", "tier2"),
+    ("tests/export/test_harbor_oracle.py", "tier2"),
+    ("tests/export/test_hf_rlvr.py", "tier2"),
+    ("tests/probes/", "tier2"),
+    # 10-render yield gate + Forensics loop: nightly; `test_rack_patch_fast.py` stays in tier1.
+    ("tests/arena/test_rack_patch.py", "tier2"),
+    ("tests/bench/test_stats_budget.py", "tier0"),
+    ("tests/bench/", "tier2"),
+    ("tests/conformance/test_contracts.py", "tier0"),
+    ("tests/conformance/test_seeds.py", "tier0"),
+    ("tests/conformance/test_kernel_isolation.py", "tier0"),
+    ("tests/conformance/test_offline_guard.py", "tier0"),
+    ("tests/conformance/test_schemas_in_sync.py", "tier0"),
+    ("tests/kernel/test_grading.py", "tier0"),
+    ("tests/kernel/test_io.py", "tier0"),
+    ("tests/kernel/test_hardening.py", "tier0"),
+    ("tests/plugins/test_braid.py", "tier0"),
+    ("tests/freshness/", "tier0"),
+)
+
+
+def tier_of(relpath: str) -> str:
+    return next((tier for prefix, tier in TIERS if relpath.startswith(prefix)), "tier1")
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """One native thread per test process and no nested-pool oversubscription under xdist."""
+    workers = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "0") or 0)
+    if workers:
+        share = max(1, (os.cpu_count() or 2) // workers)
+        os.environ.setdefault("KNOTWORK_AUTO_WORKERS", str(share))
+        os.environ.setdefault("OMP_NUM_THREADS", "1")
+        os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+
+
+@pytest.hookimpl(optionalhook=True)
+def pytest_xdist_auto_num_workers(config: pytest.Config) -> int:
+    return min(os.cpu_count() or 1, MAX_AUTO_WORKERS)
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    for item in items:
+        if any(item.get_closest_marker(t) for t in ("tier0", "tier1", "tier2")):
+            continue
+        rel = Path(item.path).resolve().relative_to(REPO_ROOT).as_posix()
+        item.add_marker(getattr(pytest.mark, tier_of(rel)))
+
+
+@pytest.fixture(scope="session")
+def datasets(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """data_tangle (n=3), data_gauge (n=2), data_panel (n=6, every family), all with twins;
+    rendered once per session across all workers. Read-only for tests."""
+
+    def build(root: Path) -> None:
+        from knotwork.pipeline.generate import run_generate
+
+        for plugin, n in (("tangle", 3), ("gauge", 2), ("panel", 6)):
+            out = root / f"data_{plugin}"
+            rc = run_generate(plugin, n, out, 5, "offline", PROFILE_PATH, "dev", True, None, 0)
+            assert rc == 0, plugin
+
+    return shared_build(tmp_path_factory, "datasets", build)
+
+
+@pytest.fixture(scope="session")
+def mutate_run(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
+    """`knot mutate --fault all --n 1` with the faulty bundles kept on disk, shared by workers."""
+
+    def build(root: Path) -> None:
+        from knotwork.pipeline.io import write_json
+        from knotwork.pipeline.mutate import run_mutate
+
+        rc = run_mutate("all", 1, 0, root / "report.json", PROFILE_PATH, keep_dir=root / "kept")
+        write_json(root / "rc.json", {"rc": rc})
+
+    root = shared_build(tmp_path_factory, "mutate", build)
+    from knotwork.pipeline.io import read_json
+
+    return {
+        "rc": read_json(root / "rc.json")["rc"],
+        "report": read_json(root / "report.json"),
+        "path": root / "report.json",
+    }
 
 
 class NetworkBlocked(RuntimeError):

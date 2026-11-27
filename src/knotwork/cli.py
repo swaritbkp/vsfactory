@@ -39,7 +39,7 @@ DISPATCH_TARGETS: dict[str, tuple[str, str, str]] = {
 }
 
 PLUGINS = ("tangle", "gauge", "panel")
-FAULTS = tuple(f"M{i}" for i in range(1, 11)) + ("all",)
+FAULTS = tuple(f"M{i}" for i in range(1, 15)) + ("all",)
 CHECKPOINT_DIR = Path(".checkpoints")
 
 
@@ -136,10 +136,21 @@ def cli() -> None:
     type=click.Path(path_type=Path, exists=True, dir_okay=False),
     default=Path("configs/default_profile.yaml"),
 )
-@click.option("--split", type=click.Choice(["dev", "test", "sealed"]), default="dev")
+@click.option("--split", type=click.Choice(["dev", "test", "sealed", "ood"]), default="dev")
 @click.option("--twins/--no-twins", default=True, help="Emit causal + nuisance twins.")
 @click.option("--families", type=str, default=None, help="Comma list; default = profile mix.")
 @click.option("--workers", type=click.IntRange(min=0), default=1, help="0 = cpu_count - 1.")
+@click.option(
+    "--holdout-family", multiple=True, help="Family held out for the ood split (repeatable)."
+)
+@click.option(
+    "--holdout-param", multiple=True, help="Held-out parameter, e.g. strands=9:10 (repeatable)."
+)
+@click.option("--shard-size", type=click.IntRange(min=0), default=0, help="Slots per bundle shard.")
+@click.option("--reasoning-load", type=click.FloatRange(0, 1), default=None)
+@click.option("--visual-stress", type=click.FloatRange(0, 1), default=None)
+@click.option("--occlusion-level", type=click.FloatRange(0, 1), default=None)
+@click.option("--color-regime", type=click.Choice(["unique", "partial", "mono"]), default=None)
 def generate(
     plugin: str,
     n: int,
@@ -151,14 +162,29 @@ def generate(
     twins: bool,
     families: str | None,
     workers: int,
+    holdout_family: tuple[str, ...],
+    holdout_param: tuple[str, ...],
+    shard_size: int,
+    reasoning_load: float | None,
+    visual_stress: float | None,
+    occlusion_level: float | None,
+    color_regime: str | None,
 ) -> None:
     """Generate certified (image, question, answer, evidence) bundles."""
     if beacon != "offline" and seed is not None:
         raise click.UsageError("--seed is only valid with --beacon offline.")
     _set_network("deny" if beacon == "offline" else "beacon")
     fams = [f.strip() for f in families.split(",") if f.strip()] if families else None
+    if split == "ood" and not (holdout_family or holdout_param):
+        raise click.UsageError("--split ood needs --holdout-family and/or --holdout-param.")
+    dials = {"reasoning_load": reasoning_load, "visual_stress": visual_stress,
+             "occlusion_level": occlusion_level, "color_regime": color_regime}  # fmt: skip
     _dispatch(
         "generate",
+        holdout_families=list(holdout_family) or None,
+        holdout_params=list(holdout_param) or None,
+        shard_size=shard_size,
+        difficulty={k: v for k, v in dials.items() if v is not None} or None,
         plugin=plugin,
         n=n,
         out=out,
@@ -194,7 +220,7 @@ def verify(path: Path, out: Path | None) -> None:
     default=Path("configs/default_profile.yaml"),
 )
 def mutate(fault: str, n: int, seed: int, out: Path, profile: Path) -> None:
-    """Run the M1-M10 fault-injection conformance matrix."""
+    """Run the M1-M14 fault-injection conformance matrix."""
     _set_network("deny")
     _dispatch("mutate", fault=fault, n=n, seed=seed, out=out, profile=profile)
 
@@ -233,13 +259,21 @@ def diversity(data: Path, out: Path, n: int, seed: int) -> None:
 @click.option(
     "--data", type=click.Path(path_type=Path, exists=True, file_okay=False), required=True
 )
-@click.option("--format", "fmt", type=click.Choice(["harbor", "hf", "rlvr", "all"]), default="all")
+@click.option(
+    "--format", "fmt", type=click.Choice(["harbor", "hf", "rlvr", "manifest", "all"]), default="all"
+)
 @click.option("--out", type=click.Path(path_type=Path), required=True)
 @click.option("--limit", type=click.IntRange(min=1), default=None)
-def export(data: Path, fmt: str, out: Path, limit: int | None) -> None:
-    """Export certified bundles to Harbor task folders, HF parquet and/or RLVR jsonl."""
+@click.option(
+    "--max-shard-mb",
+    type=click.FloatRange(min=0.001),
+    default=None,
+    help="Close a parquet shard at this size.",
+)
+def export(data: Path, fmt: str, out: Path, limit: int | None, max_shard_mb: float | None) -> None:
+    """Export certified bundles (Harbor, HF parquet, RLVR) and write dataset_manifest.json."""
     _set_network("deny")
-    _dispatch("export", data=data, fmt=fmt, out=out, limit=limit)
+    _dispatch("export", data=data, fmt=fmt, out=out, limit=limit, max_shard_mb=max_shard_mb)
 
 
 @cli.command()
@@ -257,7 +291,7 @@ def export(data: Path, fmt: str, out: Path, limit: int | None) -> None:
 @click.option("--replay-dir", type=click.Path(path_type=Path), default=Path("bench_replay"))
 @click.option("--budget-usd", type=float, default=None)
 @click.option("--track", type=click.Choice(["tangle", "panel", "all"]), default="all")
-@click.option("--max-trials", type=click.IntRange(min=10), default=50)
+@click.option("--max-trials", type=click.IntRange(min=10), default=75)
 @click.option("--seed", type=click.IntRange(min=0), default=0)
 @click.option("--dry-run", is_flag=True, help="Estimate cost only; never touches the network.")
 def bench(
@@ -318,6 +352,201 @@ def report(artifacts: Path, out: Path) -> None:
     """Build the self-contained report.html from artifacts/."""
     _set_network("deny")
     _dispatch("report", artifacts=artifacts, out=out)
+
+
+@cli.command(name="telemetry")
+@click.option(
+    "--compare",
+    nargs=2,
+    type=click.Path(path_type=Path, exists=True),
+    default=None,
+    help="Two telemetry.json files (or dataset directories); exit 1 on a regression.",
+)
+@click.argument("path", type=click.Path(path_type=Path, exists=True), required=False)
+def telemetry_cmd(compare: tuple[Path, Path] | None, path: Path | None) -> None:
+    """Show one run's factory telemetry, or compare two runs."""
+    _set_network("deny")
+    from knotwork.pipeline import telemetry
+
+    if compare:
+        sys.exit(telemetry.run_compare(*compare))
+    if path is None:
+        raise click.UsageError("give a telemetry.json / dataset directory, or --compare A B.")
+    click.echo(json.dumps(telemetry.load(path), indent=1, sort_keys=True))
+
+
+@cli.command()
+@click.option(
+    "--data",
+    type=click.Path(path_type=Path, exists=True, file_okay=False),
+    required=True,
+    help="Dataset (or folder of bundles) that holds the failed items.",
+)
+@click.option(
+    "--failures",
+    type=click.Path(path_type=Path, exists=True),
+    required=True,
+    help="failures.jsonl, bench trials.jsonl, or a folder of failure.json files.",
+)
+@click.option("--out", type=click.Path(path_type=Path), required=True)
+@click.option(
+    "--profile",
+    type=click.Path(path_type=Path, exists=True, dir_okay=False),
+    default=Path("configs/default_profile.yaml"),
+)
+@click.option("--limit", type=click.IntRange(min=1), default=None, help="At most this many items.")
+def counterfactual(data: Path, failures: Path, out: Path, profile: Path, limit: int | None) -> None:
+    """Build certified diagnostic twin suites for failed items."""
+    _set_network("deny")
+    from knotwork.pipeline.counterfactual import run_counterfactual
+
+    try:
+        sys.exit(run_counterfactual(data, failures, out, profile, limit))
+    except ValueError as exc:
+        raise click.UsageError(str(exc)) from None
+
+
+@cli.command(name="serve-verifier")
+@click.option("--host", default="127.0.0.1", show_default=True, help="Bind address (loopback).")
+@click.option("--port", type=click.IntRange(0, 65535), default=8090, show_default=True)
+def serve_verifier(host: str, port: int) -> None:
+    """Stateless RLVR verifier: GET /health, GET /llms.txt, POST /score, POST /score_batch (offline)."""
+    _set_network("deny")
+    from knotwork.posttrain.server import run
+
+    sys.exit(run(host, port))
+
+
+@cli.command(name="bench-throughput")
+@click.option("--domain", type=click.Choice(["rack_patch", "tangle", "gauge", "panel"]),
+              default="rack_patch", show_default=True)  # fmt: skip
+@click.option("--n", "n", type=click.IntRange(min=1), default=4, show_default=True)
+@click.option("--preset", type=click.Choice(["Clean", "Hard logic", "High stress", "CVD"]),
+              default="Clean", show_default=True)  # fmt: skip
+@click.option("--vcpu-usd-hr", type=click.FloatRange(min=0.0), default=0.04, show_default=True,
+              help="Hourly price of one vCPU (spot-cloud baseline).")  # fmt: skip
+@click.option("--out", type=click.Path(path_type=Path), default=None,
+              help="Keep the generated bundles here (default: a temporary folder).")  # fmt: skip
+@click.option("--json", "json_out", type=click.Path(path_type=Path), default=None)
+def bench_throughput(
+    domain: str, n: int, preset: str, vcpu_usd_hr: float, out: Path | None, json_out: Path | None
+) -> None:
+    """Measure gen / verify / vCoT ms per item and project USD per 1M certified samples."""
+    _set_network("deny")
+    from knotwork.posttrain.throughput import run
+
+    sys.exit(run(domain, n, out, json_out, vcpu_usd_hr, preset))
+
+
+@cli.command(name="posttrain-pack")
+@click.option("--results-dir", type=click.Path(path_type=Path, exists=True, file_okay=False),
+              required=True, help="A Model Arena session's results folder.")  # fmt: skip
+@click.option("--train-budget", type=click.IntRange(min=1), default=None)
+@click.option("--approved-only", is_flag=True,
+              help="Only items whose latest Human QA review is 'approved'.")  # fmt: skip
+def posttrain_pack(results_dir: Path, train_budget: int | None, approved_only: bool) -> None:
+    """Export SFT / DPO / GRPO records, curriculum spec, RLVR kit and provenance for a session."""
+    _set_network("deny")
+    from knotwork.posttrain.curriculum import export_pack
+
+    try:
+        done = export_pack(results_dir, train_budget=train_budget, approved_only=approved_only)
+    except ValueError as exc:
+        raise click.UsageError(str(exc)) from None
+    click.echo(json.dumps({k: str(v) for k, v in done.items()}, indent=1, sort_keys=True))
+
+
+@cli.command(name="posttrain-generate")
+@click.option("--spec", type=click.Path(path_type=Path, exists=True, dir_okay=False),
+              required=True, help="curriculum_spec.json from posttrain-pack.")  # fmt: skip
+@click.option("--split", type=click.Choice(["train", "ood"]), default="train", show_default=True)
+@click.option("--out", type=click.Path(path_type=Path), required=True)
+@click.option("--workers", type=click.IntRange(min=1), default=1)
+@click.option("--limit", type=click.IntRange(min=1), default=None, help="Items per block cap.")
+def posttrain_generate(spec: Path, split: str, out: Path, workers: int, limit: int | None) -> None:
+    """Render seed-disjoint training (or fresh OOD eval) items from a curriculum spec."""
+    _set_network("deny")
+    from knotwork.posttrain.curriculum import generate_from_spec
+
+    sys.exit(generate_from_spec(spec, out, split, workers, limit))
+
+
+@cli.command(name="gate")
+@click.option("--suite", type=click.Path(path_type=Path), required=True,
+              help="regression_suite.yaml (pinned from Model Arena).")  # fmt: skip
+@click.option("--model", "model", required=True, help="Model id to gate, e.g. openai/gpt-5.4.")
+@click.option("--mode", type=click.Choice(["mock", "live"]), default="mock", show_default=True,
+              help="mock is offline; live calls OpenRouter with OPENROUTER_API_KEY.")  # fmt: skip
+@click.option("--min-accuracy", type=click.FloatRange(0.0, 1.0), default=None,
+              help="Override the suite's min_accuracy.")  # fmt: skip
+@click.option("--json-out", type=click.Path(path_type=Path), default=None)
+def gate(
+    suite: Path, model: str, mode: str, min_accuracy: float | None, json_out: Path | None
+) -> None:
+    """CI quality gate over pinned regression cases: exit 0 pass, 1 below threshold, 2 invalid."""
+    if mode == "live":
+        if not os.environ.get("OPENROUTER_API_KEY"):
+            raise SafetyRefusal("E_API_KEY_MISSING: --mode live needs OPENROUTER_API_KEY.")
+        _set_network("openrouter")
+    else:
+        _set_network("deny")
+    from knotwork.arena.regression import main_gate
+
+    rc, text = main_gate(suite, model, mode, min_accuracy, json_out)  # type: ignore[arg-type]
+    click.echo(text, err=rc == EXIT_USAGE)
+    sys.exit(rc)
+
+
+@cli.command(name="arena-run")
+@click.option("--campaign", type=click.Path(path_type=Path, exists=True, dir_okay=False),
+              required=True, help="A campaign.yaml exported from Model Arena.")  # fmt: skip
+@click.option("--results-dir", type=click.Path(path_type=Path, file_okay=False), default=None,
+              help="Override the campaign's results folder.")  # fmt: skip
+@click.option("--data-dir", type=click.Path(path_type=Path, file_okay=False), default=None,
+              help="Override the campaign's dataset folder.")  # fmt: skip
+@click.option("--report", "make_report", is_flag=True,
+              help="Also write report.html, report.md and report_metrics.json.")  # fmt: skip
+@click.option("--gen-workers", type=click.IntRange(min=1), default=1, show_default=True)
+def arena_run(
+    campaign: Path, results_dir: Path | None, data_dir: Path | None, make_report: bool,
+    gen_workers: int,
+) -> None:  # fmt: skip
+    """Run (or resume) a declarative Model Arena campaign headlessly."""
+    from knotwork.arena.campaign_yaml import load_campaign_yaml, run_campaign
+
+    try:
+        cfg = load_campaign_yaml(campaign)
+    except ValueError as exc:
+        raise click.UsageError(f"invalid campaign: {exc}") from None
+    if cfg.mode == "live":
+        if not os.environ.get("OPENROUTER_API_KEY"):
+            raise SafetyRefusal("E_API_KEY_MISSING: a live campaign needs OPENROUTER_API_KEY.")
+        _set_network("openrouter")
+    else:
+        _set_network("deny")
+    rc, text = run_campaign(cfg, results_dir, data_dir, make_report, gen_workers)
+    click.echo(text)
+    sys.exit(rc)
+
+
+@cli.command(name="plugins")
+@click.option("--json", "as_json", is_flag=True, help="Machine-readable output.")
+def plugins_cmd(as_json: bool) -> None:
+    """List built-in and external (entry point) task plugins with source, version and status."""
+    _set_network("deny")
+    from knotwork.arena.regression import ascii_table
+    from knotwork.plugins.registry import list_plugins
+
+    rows = list_plugins()
+    if as_json:
+        click.echo(json.dumps([r.as_dict() for r in rows], indent=1))
+    else:
+        click.echo(ascii_table(["name", "source", "version", "status", "origin", "detail"],
+                               [[r.name, r.source, r.version, r.status, r.origin, r.detail[:60]]
+                                for r in rows]))  # fmt: skip
+    sys.exit(
+        EXIT_OK if all(r.status == "ok" for r in rows if r.source != "external") else EXIT_FAIL
+    )
 
 
 @cli.command(name="new-plugin")

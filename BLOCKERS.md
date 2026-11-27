@@ -1,14 +1,14 @@
 # BLOCKERS and documented limitations
 
 **Summary.** No blocker stops the factory. Generation, certification, verification, export, CI and the
-live benchmark all work. The three entries below are documented engineering limitations: each names
+live benchmark all work. The entries below are documented engineering limitations: each names
 the check affected, what was tried, the root cause, and the decision it needs. No gate threshold was
 relaxed to hide any of them (CLAUDE.md law 8).
 
 | # | Limitation | Affects | Status |
 |---|---|---|---|
-| 3.6 | Shortcut-probe residuals (tangle T1/T3; premise families) | gate `p3.probes` only | open: SPEC decision needed for premise families |
-| 5.6 | Mock staircase tolerance for shallow curves | gate `p5.bench_mock` (2 of 6 staircases) | open: tolerance or trial budget decision |
+| 3.6 | Shortcut-probe residuals | gate `p3.probes` only | v1 residuals pass in v2; open on one new row (panel P1 image stats) |
+| 5.6 | Mock staircase and error recovery | gate `p5.bench_mock` | passes in v2; one panel staircase sits at the 1.5-level limit |
 | L-1 | Live staircases at the floor | interpretation of live thresholds | documented in README, not a gate |
 
 Claude Code appends here when a task fails verification 3 times (see CLAUDE.md section 4).
@@ -53,8 +53,20 @@ Format per entry:
   1/2 x 1/(deciles spanned by the claimed zone) (D-29 amendment); (iii) relax SPEC 8.2 zone ranges to equal
   thirds (still leaves a text hint for true premises). For (b), may I spend one more ~35-min split regeneration
   investigating the tangle residual after Checkpoint 2?
-- Status: OPEN, documented limitation (DATA_CARD "Limitations"). Deferred by the owner after Checkpoint 2;
-  the probe thresholds are unchanged.
+- v2 change (D-39, 2026-11-26): (a) premise scenes now randomise zone colour order and balance value
+  deciles; premise families are scored as one yes/no task; trivial baselines added. (b) T1 / T3 slot
+  order is now shuffled by a run-seeded permutation.
+- v2 measurement (2026-11-26, gate function `gate_probes` on a fresh 600-per-plugin `test` split,
+  seed 101, artifacts under `artifacts/v2_gates/`): the residuals listed above now pass.
+  tangle/T1 text_only 0.176 vs chance 0.180 (limit 0.232); tangle/T3 gbdt_image_stats 0.495 vs 0.500
+  (limit 0.570); premise yes/no text_only 0.444 and gbdt_image_stats 0.494 vs 0.500 (limit 0.573;
+  the premise target and chance changed in D-39, so these do not compare with the v1 numbers);
+  pooled Wilson upper bounds: tangle text_only 0.293 <= 0.323, panel text_only 0.316 <= 0.370;
+  all 9 balance tests pass (premise bins p = 0.9999 / 0.9945); trivial baselines: no violation;
+  dedup rates tangle 0.0017, gauge 0.0033, panel 0.0100 (the limit is 0.01).
+- v2 remaining failure: panel/P1_READ_TRACE gbdt_image_stats 0.173 (26 of 150) > chance 0.113 + 0.051.
+  This family was not part of the v1 blocker. Not diagnosed.
+- Status: OPEN. Gate `p3.probes` FAILS on that single row. Probe thresholds are unchanged.
 
 ## 5.6 Mock staircase tolerance (gate `p5.bench_mock`)
 - Verification command: `uv run python scripts/verify_phase.py --phase 5 --keep-going`
@@ -73,14 +85,35 @@ Format per entry:
 - Proposed human decision: pick one: (i) more staircase trials for mocks (e.g. `max_trials` 150 / 20 reversals);
   (ii) widen `STAIRCASE_LEVEL_TOL` for the tangle track; (iii) steeper mock `p_cross` (e.g. 0.10 / 0.15 / 0.25);
   (iv) accept the staircase as a reported (not gated) diagnostic for mocks.
-- Status: OPEN, documented limitation. The harness itself is verified (MLE recovery, composition law,
-  replay, budget guard); only this tolerance on two shallow mock curves fails.
+- v2 change (D-39, 2026-11-26): coarse-then-fine steps, up to 75 trials, logistic maximum-likelihood
+  `k*`. Replay fixtures rebuilt.
+- v2 measurement (2026-11-26, gate function `gate_bench_mock` on the same split, seed 5): all 6 mock
+  staircases are within 1.5 levels (estimate vs expected): mock_a tangle 12.00 / 11.58, panel
+  5.68 / 7.00; mock_b tangle 4.92 / 4.92, panel 5.65 / 6.94; mock_c tangle 3.09 / 2.56, panel
+  2.45 / 3.41 (v1 failed 2 of 6).
+- v2 remaining failure: mock_a per-crossing error estimate 0.013, 95 % CI 0.007-0.020, true 0.04.
+  Cause: items are re-asked when a level has few of them. mock_a's tangle staircase spent 75 trials
+  on 18 distinct items (one 16 times, at level 12), and repeats of a deterministic model are counted
+  as independent trials. The mock_a tangle staircase pass is therefore weak evidence (it sat at the
+  top level).
+- v2 fix (D-46, 2026-11-26): every staircase trial asks an item not asked before (nearest level with
+  an unused item; the level shown is what the fit uses) and the per-crossing estimate counts each
+  distinct request once.
+- v2 re-measurement (same split, gate function `gate_bench_mock`): PASS. All staircase trials are
+  distinct. Per-crossing estimates: mock_a 0.034 (CI 0.022-0.047, true 0.04), mock_b 0.071
+  (0.050-0.098, true 0.08), mock_c 0.155 (0.123-0.192, true 0.15). Staircase estimate / expected:
+  mock_a tangle 12.00 / 11.58, panel 5.50 / 7.00; mock_b tangle 4.92 / 4.92, panel 5.50 / 6.94;
+  mock_c tangle 3.11 / 2.56, panel 2.45 / 3.41.
+- Caveat: mock_a panel passes exactly at the 1.5-level limit (mock_b panel at 1.44). The split holds
+  only 3 panel items with 6 crossings and 1 with 7, so shallow panel curves are data-limited.
+- Status: RESOLVED for gate `p5.bench_mock` (the full `--phase 5` run was not repeated).
+  `STAIRCASE_LEVEL_TOL` is unchanged.
 
 ## L-1 Live staircases sit at the floor (not a gate)
 - Observation: on the live run every model fails at 1-2 crossings; Gemini and Qwen dropped from the start
   level (3) to level 1 on the tangle track and never climbed back (no reversals), so thresholds of 1.1-1.7 crossings bound rather than measure ability.
   The per-crossing error MLE (0.80 to ~1.0) and the composition product law are uninformative at this
   floor. Per-model twin drops are directional (n = 24, exact McNemar p = 0.125 / 0.25 / 0.375).
-- Handling: stated as caveats in README "Live benchmark results", VERIFICATION.md and the figure subtitles.
+- Handling: stated as caveats in README ("Full live results table and caveats"), VERIFICATION.md and the figure subtitles.
   An easier level ladder (0-crossing items) would be needed to place thresholds for current models.
 - Status: documented; no code change.

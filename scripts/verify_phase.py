@@ -63,7 +63,6 @@ HARBOR_ORACLE_SAMPLE = 20
 MOCK_P_ABS_TOL = 0.03
 MOCK_CI_SLACK = 0.015
 STAIRCASE_LEVEL_TOL = 1.5
-PORTAL_LIMIT = 1024
 #: Official Innodata 11-slide template order (docs/SUBMISSION_CHECKLIST.md section C).
 OFFICIAL_SLIDES = [
     "Cover",
@@ -302,24 +301,21 @@ def round_half_up(x: float) -> int:
 
 # ===================================================================== core gates
 def gate_loc() -> str:
-    from knotwork.devtools.kernel_audit import EXECUTABLE_LOC_CAP, TOTAL_LOC_CAP, loc_report
+    """Informational LOC telemetry (SPEC D-38): over-budget counts warn and never fail."""
+    from knotwork.devtools.kernel_audit import loc_report
 
     rep = loc_report()
     table = ", ".join(f"{k}={v}" for k, v in sorted(rep.per_file.items()))
-    require(
-        rep.executable <= EXECUTABLE_LOC_CAP,
-        f"executable LOC {rep.executable} > {EXECUTABLE_LOC_CAP}: {table}",
-    )
-    require(rep.total <= TOTAL_LOC_CAP, f"total LOC {rep.total} > {TOTAL_LOC_CAP}: {table}")
-    return f"{rep.summary()}; {table}"
+    warned = "".join(f" WARNING: {w};" for w in rep.warnings())
+    return f"{rep.summary()};{warned} {table}"
 
 
 def gate_ast_isolation() -> str:
-    from knotwork.devtools.kernel_audit import scan_forbidden_imports
+    from knotwork.devtools.kernel_audit import tcb_report
 
-    v = scan_forbidden_imports()
-    require(not v, "; ".join(f"{x.file}:{x.line} {x.module} ({x.reason})" for x in v))
-    return "no forbidden imports in knotcore (AST scan)"
+    rep = tcb_report()
+    require(rep.ok, rep.summary())
+    return rep.summary()
 
 
 def gate_kernel_placeholders() -> str:
@@ -362,7 +358,9 @@ def gate_pytest(phases: list[int]) -> Callable[[], str]:
     def _gate() -> str:
         dirs = [d for ph in sorted(set(range(0, max(phases) + 1))) for d in PHASE_TESTS[ph]]
         require(all((REPO / d).is_dir() for d in dirs), f"missing test dirs among {dirs}")
-        cp = run([*tool("pytest"), "-q", "-p", "no:cacheprovider", *dirs], timeout=5400)
+        cp = run(
+            [*tool("pytest"), "-q", "-n", "auto", "-p", "no:cacheprovider", *dirs], timeout=5400
+        )
         summary = _tail(cp.stdout, 1)
         require("failed" not in summary and "error" not in summary, summary)
         return f"pytest {' '.join(dirs)} -> {summary}"
@@ -604,7 +602,7 @@ def gate_mutate() -> str:
     require(rep["exact_catch_rate"] == 1.0, f"exact_catch_rate {rep['exact_catch_rate']}")
     fq = rep["clean"]["false_quarantine_rate"]
     require(fq <= MAX_FALSE_QUARANTINE, f"clean false-quarantine {fq} > {MAX_FALSE_QUARANTINE}")
-    return f"M1-M10: 100% caught with exact code ({MUTATE_N} each); clean false-quarantine {fq:.3f}"
+    return f"M1-M14: 100% caught with exact code ({MUTATE_N} each); clean false-quarantine {fq:.3f}"
 
 
 CONTACT_SHEET_MIN = (2048, 1536)
@@ -660,8 +658,8 @@ def gate_contact_sheet() -> str:
     )
     faults = {f["fault"] for f in meta["faults"]}
     require(
-        faults == {f"M{i}" for i in range(1, 11)},
-        f"contact sheet must caption M1-M10, got {sorted(faults)}",
+        faults == {f"M{i}" for i in range(1, 15)},
+        f"contact sheet must caption M1-M14, got {sorted(faults)}",
     )
     marker = ART / "phase2" / "CHECKPOINT_1_READY.md"
     marker.write_text(
@@ -779,6 +777,11 @@ def gate_probes() -> str:
         f"dedup {k}: {v['dup_rate']:.4f}"
         for k, v in rep["dedup"].items()
         if v["dup_rate"] > MAX_DUP_RATE
+    ]
+    bad += [
+        f"{plugin}/baseline {name}: above chance+{prow['baselines']['margin']}"
+        for plugin, prow in rep["plugins"].items()
+        for name in prow["baselines"]["violations"]
     ]
     require(not bad, "; ".join(bad))
     return (
@@ -990,21 +993,28 @@ def gate_scaffold() -> str:
 
 
 def gate_ci_yaml() -> str:
+    """ci.yml runs the tiered fast checks; nightly.yml runs tier2 and the phase gates (D-38)."""
     import yaml
 
-    doc = yaml.safe_load((REPO / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
-    text = json.dumps(doc)
+    def text_of(name: str) -> str:
+        path = REPO / ".github/workflows" / name
+        require(path.is_file(), f"missing workflow {name}")
+        return json.dumps(yaml.safe_load(path.read_text(encoding="utf-8")))
+
+    ci, nightly = text_of("ci.yml"), text_of("nightly.yml")
     for needle in (
         "uv sync",
         "ruff check",
         "lint-imports",
-        "pytest",
+        "pytest -n auto -m tier0",
+        "pytest -n auto -m tier1",
         "knot selftest",
-        "verify_phase.py",
     ):
-        require(needle in text, f"ci.yml missing step containing `{needle}`")
-    require("ubuntu" in text, "ci.yml must run on ubuntu")
-    return "ci.yml has uv sync, ruff, lint-imports, pytest, selftest, verify_phase"
+        require(needle in ci, f"ci.yml missing step containing `{needle}`")
+    for needle in ("verify_phase.py", "pytest -n auto -m tier2", "schedule", "workflow_dispatch"):
+        require(needle in nightly, f"nightly.yml missing `{needle}`")
+    require("ubuntu" in ci and "ubuntu" in nightly, "workflows must run on ubuntu")
+    return "ci.yml: uv sync, ruff, lint-imports, tier0, tier1, selftest; nightly.yml: tier2, gates"
 
 
 # ===================================================================== phase 5
@@ -1128,52 +1138,104 @@ def gate_cp2() -> str:
     return "CP2 skipped (offline-only submission; mock + replay results used)"
 
 
-def _portal_fields() -> dict[str, str]:
-    text = (REPO / "docs/PORTAL_SUBMISSION.md").read_text(encoding="utf-8")
-    return {
-        m.group(1): m.group(2).strip()
-        for m in re.finditer(r"<!-- FIELD:(\w+) -->\n(.*?)\n<!-- /FIELD -->", text, flags=re.S)
-    }
+#: the live submission documentation set validated by gate p6.docs (D-47)
+LIVE_DOCS = (
+    "README.md",
+    "docs/SUBMISSION_CHECKLIST.md",
+    "VERIFICATION.md",
+    "DATA_CARD.md",
+    "BLOCKERS.md",
+)
+#: verified kernel wording every reader-facing doc set must carry (README)
+KERNEL_CLAIM = "re-derives every answer from renderer object masks"
+PORTAL_FIELDS = (
+    "Challenges",
+    "Prototype Brief",
+    "Technology Stack",
+    "GitHub Public Repo Link",
+    "Demo Video Link",
+    "Solution Deck (PDF)",
+)
+_LINK = re.compile(r"\]\(([^)\s]+)\)")
 
 
-def gate_docs() -> str:
-    deck = (REPO / "docs/DECK_COPY.md").read_text(encoding="utf-8")
-    slides = re.findall(r"^## Slide (\d+)\b", deck, flags=re.M)
-    lines = re.findall(r"^(## Slide \d+\b[^\n]*)", deck, flags=re.M)
-    for i, (title, line) in enumerate(zip(OFFICIAL_SLIDES, lines, strict=False), start=1):
-        require(
-            title.lower() in line.lower(),
-            f"Slide {i} heading must contain official title '{title}': {line!r}",
-        )
-    bodies = re.split(r"^## Slide \d+\b[^\n]*$", deck, flags=re.M)[1:]
+def _section(text: str, start: str, stop: str) -> str:
+    """Text between the headings starting with `start` and `stop` (empty if either is missing)."""
+    a, b = text.find(start), text.find(stop)
+    return text[a:b] if 0 <= a < b else ""
+
+
+def _broken_links(path: Path, name: str) -> list[str]:
+    """Relative markdown links in `path` whose target file does not exist (code blocks skipped)."""
+    body = re.sub(r"```.*?```", "", path.read_text(encoding="utf-8"), flags=re.S)
+    external = ("http://", "https://", "mailto:")
+    return [
+        f"{name} links to missing {target}"
+        for target in _LINK.findall(body)
+        if not target.startswith(external)
+        and (file := target.split("#", 1)[0])
+        and not (path.parent / file).exists()
+    ]
+
+
+def docs_problems(repo: Path = REPO) -> list[str]:
+    """Problems in the live documentation set (D-47); empty when the docs are complete.
+
+    Checks: every live doc exists and has no broken relative link; the submission checklist maps
+    the 11 official slides in order, quotes both template phrases on their slides and lists every
+    portal field with the Visual Task Factory challenge, and references no uncommitted deck or
+    portal file; README carries the quickstart commands and the verified kernel wording;
+    BLOCKERS.md states a status per entry; DATA_CARD.md has its required sections.
+    """
+    problems = [f"missing {name}" for name in LIVE_DOCS if not (repo / name).is_file()]
+    if problems:
+        return problems
+    for name in LIVE_DOCS:
+        problems += _broken_links(repo / name, name)
+    checklist = (repo / "docs/SUBMISSION_CHECKLIST.md").read_text(encoding="utf-8")
+    slides = _section(checklist, "## C.", "## D.")
+    rows = [r for r in slides.splitlines() if r.startswith("| ") and r[2:4].strip().isdigit()]
+    if len(rows) != len(OFFICIAL_SLIDES):
+        problems.append(f"checklist section C has {len(rows)} slide rows, need 11")
+    for i, (row, title) in enumerate(zip(rows, OFFICIAL_SLIDES, strict=False), start=1):
+        if not row.startswith(f"| {i} |") or title not in row:
+            problems.append(f"checklist slide {i} must be '{title}'")
     for num, phrase in TEMPLATE_PHRASES.items():
-        require(
-            len(bodies) >= num and phrase.lower() in bodies[num - 1].lower(),
-            f"Slide {num} must quote the template phrase '{phrase}'",
-        )
-    require(
-        slides == [str(i) for i in range(1, 12)],
-        f"DECK_COPY.md must have '## Slide 1'..'## Slide 11', got {slides}",
-    )
-    fields = _portal_fields()
-    for key in ("challenge", "prototype_brief", "technology_stack", "github_repo", "demo_video"):
-        require(key in fields, f"PORTAL_SUBMISSION.md missing FIELD:{key}")
-    require(
-        fields["challenge"] == "Visual Task Factory",
-        "challenge field must be exactly 'Visual Task Factory'",
-    )
-    for key in ("prototype_brief", "technology_stack"):
-        n = len(fields[key])
-        require(0 < n <= PORTAL_LIMIT, f"{key} is {n} chars (limit {PORTAL_LIMIT})")
-    readme = (REPO / "README.md").read_text(encoding="utf-8")
+        if len(rows) < num or phrase not in rows[num - 1]:
+            problems.append(f"checklist slide {num} must quote '{phrase}'")
+    portal = _section(checklist, "## D.", "## E.")
+    problems += [f"checklist section D lacks '{f}'" for f in PORTAL_FIELDS if f not in portal]
+    if "Visual Task Factory" not in portal:
+        problems.append("checklist section D must select Visual Task Factory")
+    for stale in ("DECK_COPY.md", "PORTAL_SUBMISSION.md"):
+        if stale in checklist:
+            problems.append(f"checklist references uncommitted {stale}")
+    readme = (repo / "README.md").read_text(encoding="utf-8")
     for needle in (
         "uv sync",
         "knot selftest",
         "knot generate",
         "knot export --format harbor",
         "--offline",
+        KERNEL_CLAIM,
     ):
-        require(needle in readme, f"README.md missing `{needle}`")
+        if needle not in readme:
+            problems.append(f"README.md missing `{needle}`")
+    blockers = (repo / "BLOCKERS.md").read_text(encoding="utf-8")
+    entries = re.findall(r"^## \S+", blockers, flags=re.M)
+    statuses = re.findall(r"^- Status: ", blockers, flags=re.M)
+    if len(statuses) < len(entries):
+        problems.append(f"BLOCKERS.md: {len(entries)} entries but {len(statuses)} status lines")
+    card = (repo / "DATA_CARD.md").read_text(encoding="utf-8")
+    for needle in ("KNOTWORK-CANARY", "Intended use", "Limitations", "License"):
+        if needle not in card:
+            problems.append(f"DATA_CARD.md missing `{needle}`")
+    return problems
+
+
+def gate_docs() -> str:
+    problems = docs_problems()
+    require(not problems, "; ".join(problems[:8]))
     ver = (REPO / "VERIFICATION.md").read_text(encoding="utf-8")
     for ph in range(6):
         require(
@@ -1181,13 +1243,7 @@ def gate_docs() -> str:
         )
         g = load_json(GATES_DIR / f"phase{ph}.json")
         require(g["ok"] is True, f"artifacts/gates/phase{ph}.json is not ok")
-    card = (REPO / "DATA_CARD.md").read_text(encoding="utf-8")
-    for needle in ("KNOTWORK-CANARY", "Intended use", "Limitations", "License"):
-        require(needle in card, f"DATA_CARD.md missing `{needle}`")
-    return (
-        f"deck 11 slides; brief {len(fields['prototype_brief'])}c, stack {len(fields['technology_stack'])}c "
-        "<= 1024; README/VERIFICATION/DATA_CARD complete"
-    )
+    return f"{len(LIVE_DOCS)} live docs complete, links resolve; phase 0-5 gate records ok"
 
 
 def gate_figures() -> str:

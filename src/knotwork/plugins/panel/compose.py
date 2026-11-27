@@ -127,15 +127,20 @@ def route(
 
 
 def build_paths(
-    pay: dict[str, Any],
+    pay: dict[str, Any], swap: tuple[int, int] | None = None
 ) -> tuple[list[np.ndarray], list[dict[str, Any]], list[tuple[float, float]]]:
-    """(cable paths, braid crossings, destinations sorted by y) for a panel payload."""
+    """(cable paths, braid crossings, destinations sorted by y) for a panel payload. ``swap``
+    (fault M11) routes the cables of two final positions to each other's destinations."""
     n = pay["n"]
     word = [None if x is None else tuple(int(v) for v in x) for x in pay["word"]]
     lay = layout.build(n, word, pay["braid"])
     exits, _ = braid.compose(n, word)
     dests = [tuple(d) for d in pay["dests"]]
-    paths, crossings = route(lay.paths, exits, dests), lay.crossings
+    routed = list(dests)
+    if swap is not None:
+        j, k = swap
+        routed[j], routed[k] = routed[k], routed[j]
+    paths, crossings = route(lay.paths, exits, routed), lay.crossings
     if pay.get("mirror"):  # whole composition mirrored left <-> right (D-27)
         paths = [np.column_stack([CANVAS - p[:, 0], p[:, 1]]) for p in paths]
         crossings = [dict(c, center=[mirror_x(c["center"][0]), c["center"][1]]) for c in crossings]

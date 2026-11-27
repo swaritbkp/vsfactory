@@ -41,6 +41,8 @@ def family_counts(n: int, weights: dict[str, float]) -> dict[str, int]:
         str(f): round_half_up(0.15 * n) for f in (x.value for x in PREMISE) if f in weights
     }
     rest = {f: w for f, w in weights.items() if f not in fixed}
+    if not rest:  # a premise-only run (e.g. a held-out family): share all n between them
+        fixed, rest = {}, dict(weights)
     left = n - sum(fixed.values())
     total = sum(rest.values())
     quota = {f: left * w / total for f, w in rest.items()}

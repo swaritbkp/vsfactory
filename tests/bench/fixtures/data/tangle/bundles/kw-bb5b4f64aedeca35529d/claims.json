@@ -1,0 +1,278 @@
+{
+ "claims": [
+  {
+   "args": [
+    "tangle/terminal:start_M"
+   ],
+   "claim_id": "trace_M",
+   "expected": {
+    "canonical": "4",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "4"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_M",
+    "*"
+   ],
+   "claim_id": "cross_M",
+   "expected": {
+    "canonical": "5",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 5
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_E"
+   ],
+   "claim_id": "trace_E",
+   "expected": {
+    "canonical": "3",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "3"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_E",
+    "*"
+   ],
+   "claim_id": "cross_E",
+   "expected": {
+    "canonical": "5",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 5
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_C"
+   ],
+   "claim_id": "trace_C",
+   "expected": {
+    "canonical": "1",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "1"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_C",
+    "*"
+   ],
+   "claim_id": "cross_C",
+   "expected": {
+    "canonical": "6",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 6
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_U"
+   ],
+   "claim_id": "trace_U",
+   "expected": {
+    "canonical": "2",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "2"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_U",
+    "*"
+   ],
+   "claim_id": "cross_U",
+   "expected": {
+    "canonical": "6",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 6
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_M",
+    "tangle/terminal:start_E",
+    0
+   ],
+   "claim_id": "ontop_ME_0",
+   "expected": {
+    "canonical": "M",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "M"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_M",
+    "tangle/terminal:start_E",
+    1
+   ],
+   "claim_id": "ontop_ME_1",
+   "expected": {
+    "canonical": "M",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "M"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_M",
+    "tangle/terminal:start_E",
+    2
+   ],
+   "claim_id": "ontop_ME_2",
+   "expected": {
+    "canonical": "E",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "E"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_M",
+    "tangle/terminal:start_C",
+    0
+   ],
+   "claim_id": "ontop_MC_0",
+   "expected": {
+    "canonical": "M",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "M"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_M",
+    "tangle/terminal:start_U",
+    0
+   ],
+   "claim_id": "ontop_MU_0",
+   "expected": {
+    "canonical": "M",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "M"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_E",
+    "tangle/terminal:start_C",
+    0
+   ],
+   "claim_id": "ontop_EC_0",
+   "expected": {
+    "canonical": "E",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "E"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_E",
+    "tangle/terminal:start_U",
+    0
+   ],
+   "claim_id": "ontop_EU_0",
+   "expected": {
+    "canonical": "U",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "U"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_C",
+    "tangle/terminal:start_U",
+    0
+   ],
+   "claim_id": "ontop_CU_0",
+   "expected": {
+    "canonical": "U",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "U"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_C",
+    "tangle/terminal:start_U",
+    1
+   ],
+   "claim_id": "ontop_CU_1",
+   "expected": {
+    "canonical": "U",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "U"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_C",
+    "tangle/terminal:start_U",
+    2
+   ],
+   "claim_id": "ontop_CU_2",
+   "expected": {
+    "canonical": "C",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "C"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_C",
+    "tangle/terminal:start_U",
+    3
+   ],
+   "claim_id": "ontop_CU_3",
+   "expected": {
+    "canonical": "C",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "C"
+   },
+   "op": "ONTOP"
+  }
+ ],
+ "plugin": "tangle"
+}

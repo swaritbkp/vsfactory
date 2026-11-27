@@ -7,7 +7,7 @@ from typing import Any
 
 from shapely.geometry import Point, Polygon
 
-from knotwork.plugins.gauge.scale import zone_of
+from knotwork.plugins.gauge.scale import dial_zone
 
 
 def needle_polygon(d: dict[str, Any]) -> Polygon:
@@ -34,4 +34,4 @@ def geometric_reading(d: dict[str, Any]) -> float:
 
 
 def geometric_zone(d: dict[str, Any]) -> str:
-    return zone_of(geometric_reading(d), tuple(d["zones"]))
+    return dial_zone(d, geometric_reading(d))

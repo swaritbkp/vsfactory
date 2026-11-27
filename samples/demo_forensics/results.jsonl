@@ -1,0 +1,8 @@
+{"bundle_id": "kw-23492215e11a48759f83", "kind": "perceptual_clean", "model": "sample-model (written for this demo, not a model output)", "reply": "3", "sample": true}
+{"bundle_id": "kw-23492215e11a48759f83", "kind": "palette_swap", "model": "sample-model (written for this demo, not a model output)", "reply": "4", "sample": true}
+{"bundle_id": "kw-23492215e11a48759f83", "kind": "reasoning_step_down", "model": "sample-model (written for this demo, not a model output)", "reply": "3", "sample": true}
+{"bundle_id": "kw-23492215e11a48759f83", "kind": "text_ir_twin", "model": "sample-model (written for this demo, not a model output)", "reply": "3", "sample": true}
+{"bundle_id": "kw-5e65957775e517fde4ca", "kind": "perceptual_clean", "model": "sample-model (written for this demo, not a model output)", "reply": "1", "sample": true}
+{"bundle_id": "kw-5e65957775e517fde4ca", "kind": "palette_swap", "model": "sample-model (written for this demo, not a model output)", "reply": "1", "sample": true}
+{"bundle_id": "kw-5e65957775e517fde4ca", "kind": "reasoning_step_down", "model": "sample-model (written for this demo, not a model output)", "reply": "3", "sample": true}
+{"bundle_id": "kw-5e65957775e517fde4ca", "kind": "text_ir_twin", "model": "sample-model (written for this demo, not a model output)", "reply": "1", "sample": true}

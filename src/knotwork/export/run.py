@@ -1,4 +1,4 @@
-"""`knot export` (SPEC 13): Harbor task folders, HF parquet and RLVR jsonl from certified bundles."""
+"""`knot export` (SPEC 13): Harbor task folders, HF parquet, RLVR jsonl and the dataset manifest."""
 
 from __future__ import annotations
 
@@ -10,6 +10,8 @@ import yaml
 
 from knotwork.export.harbor import difficulty_label, difficulty_score, export_task, tertiles
 from knotwork.export.hf import write_hf
+from knotwork.export.manifest import FILENAME as MANIFEST
+from knotwork.export.manifest import write_manifest
 from knotwork.export.records import load_items
 from knotwork.export.rlvr import write_rlvr
 from knotwork.render.canvas import REPO_ROOT
@@ -17,15 +19,36 @@ from knotwork.render.canvas import REPO_ROOT
 PROFILE = REPO_ROOT / "configs" / "default_profile.yaml"
 
 
-def run_export(data: Path, fmt: str, out: Path, limit: int | None) -> int:
+def run_export(
+    data: Path,
+    fmt: str,
+    out: Path,
+    limit: int | None,
+    max_shard_mb: float | None = None,
+    only_ids: set[str] | None = None,
+) -> int:
+    """Export a dataset. `only_ids` (the Human QA *Approved items only* filter) keeps just those
+    bundle ids and records `qa_filter` / `approved_count` in the summary and the manifest."""
     profile = yaml.safe_load(PROFILE.read_text(encoding="utf-8"))
-    items = load_items(Path(data), profile, limit)
+    items = load_items(Path(data), profile, None if only_ids is not None else limit)
+    qa: dict[str, object] | None = None
+    if only_ids is not None:
+        total = len(items)
+        items = [i for i in items if i.task["bundle_id"] in only_ids][: limit or None]
+        qa = {"qa_filter": "approved_only", "approved_count": len(items), "candidate_count": total}
+        if not items:
+            print(f"export: 0 of {total} bundles under {data} are approved; nothing to export")
+            return 1
     if not items:
         print(f"export: no bundles under {data}")
         return 1
+    chosen = set(fmt.split(","))  # "all", one format, or a comma separated list
+    if "all" in chosen:
+        chosen = {"harbor", "hf", "rlvr"}
     out = Path(out)
     summary: dict[str, object] = {"n_bundles": len(items), "sealed": sum(i.sealed for i in items)}
-    if fmt in ("harbor", "all"):
+    summary.update(qa or {})
+    if "harbor" in chosen:
         harbor = out / "harbor"
         shutil.rmtree(harbor, ignore_errors=True)
         harbor.mkdir(parents=True)
@@ -46,13 +69,15 @@ def run_export(data: Path, fmt: str, out: Path, limit: int | None) -> int:
             newline="\n",
         )
         summary["harbor"] = len(records)
-    if fmt in ("hf", "all"):
+    if "hf" in chosen:
         shutil.rmtree(out / "hf", ignore_errors=True)
-        summary["hf"] = write_hf(items, out)
-    if fmt in ("rlvr", "all"):
+        summary["hf"] = write_hf(items, out, max_shard_mb)
+    if "rlvr" in chosen:
         shutil.rmtree(out / "rlvr", ignore_errors=True)
         summary["rlvr"] = write_rlvr(items, out)
     out.mkdir(parents=True, exist_ok=True)
+    write_manifest(items, out, profile, qa)  # last data file written: it hashes all the others
+    summary["manifest"] = MANIFEST
     (out / "export_summary.json").write_text(
         json.dumps(summary, indent=1, sort_keys=True), encoding="utf-8"
     )
