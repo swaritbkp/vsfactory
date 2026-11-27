@@ -60,7 +60,7 @@ Throughput depends on the machine. The two runs bracket the figure quoted in `RE
 
 | Workflow | Scope | Latest result on `main` |
 |---|---|---|
-| `ci.yml` (every push and PR; Ubuntu, offline, no keys, `PYTHONHASHSEED=0`) | `tier0`: ruff, ruff format, import-linter, mypy, seed known-answer test, 186 tier0 tests. `tier1`: 270 tests (plugins, pipeline, faults, Studio and Model Arena on shared fixtures). The two jobs run in parallel. | Green on `b92915e`: `tier0` 42 s, `tier1` 85 s, 1 min 29 s wall time |
+| `ci.yml` (every push and PR; Ubuntu, offline, no keys, `PYTHONHASHSEED=0`) | `tier0`: ruff, ruff format, import-linter, mypy, seed known-answer test, 186 tier0 tests. `tier1`: 270 tests (plugins, pipeline, faults, Studio and Model Arena on shared fixtures). The two jobs run in parallel. | Green on `44e9619` (first attempt, run 45972784164): `tier0` 42 s, `tier1` 89 s, 1 min 33 s wall time |
 | `nightly.yml` (scheduled on `main`, or manual) | `tier2`: 104 tests (bulk generation, probes, bench, 10-render `rack_patch` yield gate, background-runner resume), plus the Phase 0 gate, `knot mutate`, `knot selftest` and the Phase 4 gate | Green on `b92915e` (14 min 4 s) |
 
 The full suite is 560 tests. The suite blocks every non-loopback socket and DNS lookup.
