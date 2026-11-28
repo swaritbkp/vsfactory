@@ -4,19 +4,70 @@ review with tags) and the small status strips every page reuses. Layout only; th
 
 from __future__ import annotations
 
+import contextlib
+import shutil
+import uuid
 from pathlib import Path
 
 import streamlit as st
 
-from knotwork.studio import guide, review
+from knotwork.studio import demo_guard, guide, review
 from knotwork.studio.working_set import LABEL, WorkingSet
 
 QA_CHOICES = {"Approve": "approved", "Flag": "flagged"}
 QA_ICONS = {"Approve": ":material/verified:", "Flag": ":material/flag:"}
 WS_ICON = ":material/stacks:"
+_KEEP_SESSION_KEYS = frozenset(
+    {"_knotwork_demo_sid", "_knotwork_demo_pruned", "_knotwork_pages", "guided_mode"}
+)
 
 
-@st.cache_resource(show_spinner=False)
+def sync_demo_session() -> str | None:
+    """Bind the ContextVar demo session id to this Streamlit browser session."""
+    if not demo_guard.is_public_demo():
+        demo_guard.set_demo_session_id(None)
+        return None
+    ss = st.session_state
+    sid = ss.get("_knotwork_demo_sid")
+    if not isinstance(sid, str) or not demo_guard.SESSION_ID_RE.match(sid):
+        sid = f"s_{uuid.uuid4().hex[:8]}"
+        ss["_knotwork_demo_sid"] = sid
+        ss["_knotwork_demo_pruned"] = False
+    demo_guard.set_demo_session_id(sid)
+    if not ss.get("_knotwork_demo_pruned"):
+        demo_guard.prune_old_sessions(max_sessions=15, keep_sid=sid)
+        ss["_knotwork_demo_pruned"] = True
+    return sid
+
+
+def reset_demo_sandbox() -> None:
+    """Rotate to a fresh isolated sandbox directory and clear visitor session state."""
+    if not demo_guard.is_public_demo():
+        return
+    ss = st.session_state
+    procs: list[object] = []
+    batch = ss.get("batch")
+    if isinstance(batch, dict):
+        procs.append(batch.get("process"))
+    ar_procs = ss.get("ar_procs")
+    if isinstance(ar_procs, dict):
+        procs.extend(ar_procs.values())
+    for proc in procs:
+        if proc is not None and hasattr(proc, "poll") and proc.poll() is None:
+            with contextlib.suppress(OSError):
+                proc.terminate()
+    old_sid = ss.get("_knotwork_demo_sid")
+    if isinstance(old_sid, str) and demo_guard.SESSION_ID_RE.match(old_sid):
+        shutil.rmtree(demo_guard.base_sandbox_root() / old_sid, ignore_errors=True)
+    new_sid = f"s_{uuid.uuid4().hex[:8]}"
+    ss["_knotwork_demo_sid"] = new_sid
+    ss["_knotwork_demo_pruned"] = False
+    for key in [k for k in ss if k not in _KEEP_SESSION_KEYS]:
+        del ss[key]
+    sync_demo_session()
+
+
+@st.cache_resource(show_spinner=False, max_entries=64)
 def _bootstrap(root: str) -> bool:
     """Seed the Working Set from the committed starter once per server and folder."""
     return WorkingSet(Path(root)).ensure()
@@ -24,6 +75,7 @@ def _bootstrap(root: str) -> bool:
 
 def working_set() -> WorkingSet:
     """The active Working Set, seeded on first use (a file copy, well under a second)."""
+    sync_demo_session()
     ws = WorkingSet()
     _bootstrap(str(ws.root))
     if not ws.valid():  # the folder was removed while the server ran
@@ -42,7 +94,7 @@ def is_working_set(dataset: Path | None) -> bool:
 
 def review_log_for(dataset: Path | None) -> Path:
     """The QA log that belongs to a dataset: the Working Set's own, else the Studio log."""
-    return working_set().review_log if is_working_set(dataset) else review.STUDIO_LOG
+    return working_set().review_log if is_working_set(dataset) else review.active_studio_log()
 
 
 def switch_factory_page(page_key: str) -> None:
@@ -100,6 +152,11 @@ def qa_review(ws: WorkingSet, item_id: str, key: str, bundle: Path | None = None
 
 def _qa_review_body(root: Path, item_id: str, key: str, bundle: Path | None, seed: int | None,
                     attempts: int) -> None:  # fmt: skip
+    sync_demo_session()
+    ss = st.session_state
+    pending_toast = ss.pop(f"_qa_toast_{key}", None)
+    if pending_toast is not None:
+        st.toast(pending_toast[0], icon=pending_toast[1])
     ws = WorkingSet(root)
     states = review.load_review_states(ws.review_log)
     rec = states.get(item_id)
@@ -111,7 +168,6 @@ def _qa_review_body(root: Path, item_id: str, key: str, bundle: Path | None, see
     dec_key = f"studio_qa_decision_{key}"
     tags_key = f"studio_qa_tags_{key}"
     note_key = f"studio_qa_note_{key}"
-    ss = st.session_state
     ss.setdefault(dec_key, _choice_of(status))
     ss.setdefault(tags_key, list(saved_tags))
     ss.setdefault(note_key, saved_note)
@@ -146,23 +202,33 @@ def _qa_review_body(root: Path, item_id: str, key: str, bundle: Path | None, see
 def _save(root: Path, item_id: str, key: str, bundle: Path | None, seed: int | None,
           attempts: int) -> None:  # fmt: skip
     """Auto-save callback: runs before redraw so status, tags and note persist immediately."""
+    sync_demo_session()
     ss = st.session_state
     decision = ss.get(f"studio_qa_decision_{key}")
     chosen = QA_CHOICES[str(decision)] if decision in QA_CHOICES else "unreviewed"
     ws = WorkingSet(root)
+    prev = review.status_of(review.load_review_states(ws.review_log), item_id)
     if item_id not in ws.ids() and bundle is not None:
         ss[f"qa_added_{key}"] = ws.add(bundle, "studio", seed, attempts).added
     ws.review(item_id, chosen, list(ss.get(f"studio_qa_tags_{key}") or []),
               str(ss.get(f"studio_qa_note_{key}") or ""))  # fmt: skip
-    st.toast(f"QA saved · {review.BADGES[chosen][0]}", icon=review.BADGES[chosen][2])
+    if chosen == "unreviewed" and prev != "unreviewed":
+        ss[f"_qa_toast_{key}"] = ("QA cleared · Unreviewed", review.BADGES[chosen][2])
+    else:
+        ss[f"_qa_toast_{key}"] = (
+            f"QA saved · {review.BADGES[chosen][0]}",
+            review.BADGES[chosen][2],
+        )
 
 
 __all__ = [
     "is_working_set",
     "qa_review",
     "qa_strip",
+    "reset_demo_sandbox",
     "review_log_for",
     "switch_factory_page",
+    "sync_demo_session",
     "working_set",
     "ws_pill",
 ]

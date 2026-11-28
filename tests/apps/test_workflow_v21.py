@@ -291,3 +291,117 @@ def test_studio_cold_start_and_domain_mismatch_cue(
     assert not fresh.exception, fresh.exception
     assert fresh.session_state["item"]["plugin"] == "rack_patch"
     assert not any("currently previewing" in i.value for i in fresh.info)
+
+
+def test_batch_factory_all_domains_and_no_mismatch_cue(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from knotwork.pipeline.generate import run_generate
+    from knotwork.studio import factory
+
+    monkeypatch.setenv(W.ENV, str(tmp_path / "working_set"))
+    monkeypatch.setenv(storage.ROOT_ENV, str(tmp_path / "arena"))
+    monkeypatch.setenv("KNOTWORK_NETWORK", "deny")
+
+    fresh = AppTest.from_file(str(REPO / "apps" / "inspector.py"), default_timeout=120).run()
+    fresh.button_group(key="studio_mode").set_value("Batch Factory").run()
+    assert not fresh.exception, fresh.exception
+
+    for plugin in ("tangle", "gauge", "panel", "rack_patch"):
+        fresh.button_group(key="plugin").set_value(plugin).run()
+        assert not fresh.exception, fresh.exception
+        assert any(b.label == "Launch batch build" for b in fresh.button), plugin
+        assert not any("Press **Generate & Certify Task**" in i.value for i in fresh.info), plugin
+
+    # Real batch generation on rack_patch certifies base + twins cleanly
+    out = tmp_path / "rack_batch"
+    rc = run_generate(
+        "rack_patch", 1, out, 7, "offline", REPO / "configs" / "default_profile.yaml",
+        "dev", True, None, 1,
+    )  # fmt: skip
+    assert rc == 0
+    rows = [json.loads(line) for line in (out / "index.jsonl").read_text("utf-8").splitlines()]
+    assert {r["role"] for r in rows} == {"base", "causal", "nuisance"}
+
+    # Defensive fallback guard when a custom/future plugin lacks a profile section
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(factory, "batch_ready", lambda _p: False)
+        fresh.run()
+        assert not fresh.exception, fresh.exception
+        next(b for b in fresh.button if b.label == "Switch to Single Task").click().run()
+        assert not fresh.exception, fresh.exception
+        assert fresh.session_state["studio_mode"] == "Single Task"
+
+
+def test_arena_session_view_escape_and_back_home(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from arena_fixtures import config, make_dataset
+    from knotwork.arena import runner
+    from knotwork.arena.schemas import BlockSpec
+
+    root = tmp_path / "arena"
+    monkeypatch.setenv(W.ENV, str(tmp_path / "working_set"))
+    monkeypatch.setenv(storage.ROOT_ENV, str(root))
+    monkeypatch.setenv("KNOTWORK_NETWORK", "deny")
+    make_dataset(root / "data", {"b1": ("tangle", "Clean", 2)})
+    cfg = config(root, blocks=[BlockSpec(block_id="b1", domain="tangle", preset="Clean", n=2,
+                                         seed=0)])  # fmt: skip
+    storage.write_session(cfg)
+    runner.Runner(cfg, storage.resolve(cfg.results_dir), sleep=lambda _s: None).run()
+    storage.Workspace().register(cfg)
+
+    fresh = AppTest.from_file(str(REPO / "apps" / "inspector.py"), default_timeout=120).run()
+    fresh.switch_page("app_pages/arena.py").run()
+    next(b for b in fresh.sidebar.button if b.label == cfg.session_name).click().run()
+    assert fresh.session_state["ar_selected"] == cfg.slug
+    next(b for b in fresh.main.button if b.label == "Back to Arena home").click().run()
+    assert not fresh.exception, fresh.exception
+    assert fresh.session_state["ar_selected"] is None
+    assert fresh.session_state["arena_home_view"] == "Showcase · 531-Call Audit"
+
+    # Re-enter session view, then escape via Hero Stepper "2 · Arena"
+    next(b for b in fresh.sidebar.button if b.label == cfg.session_name).click().run()
+    assert fresh.session_state["ar_selected"] == cfg.slug
+    fresh.button(key="hero_nav_model_arena").click().run()
+    assert not fresh.exception, fresh.exception
+    assert fresh.session_state["ar_selected"] is None
+    assert fresh.session_state["arena_home_view"] == "Showcase · 531-Call Audit"
+
+
+def test_public_demo_renders_zero_tmp_strings(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from knotwork.studio import demo_guard as G
+
+    monkeypatch.setenv(G.ENV, "1")
+    monkeypatch.delenv(G.BYOK_ENV, raising=False)
+    monkeypatch.setenv("KNOTWORK_NETWORK", "deny")
+    monkeypatch.delenv(W.ENV, raising=False)
+    monkeypatch.delenv(storage.ROOT_ENV, raising=False)
+    monkeypatch.setattr(G, "SANDBOX_ROOT", tmp_path / "knotwork_demo")
+
+    try:
+        fresh = AppTest.from_file(str(REPO / "apps" / "inspector.py"), default_timeout=120).run()
+        assert not fresh.exception, fresh.exception
+        assert "Offline Mock Sandbox · 10-item cap · Ephemeral" in _text(fresh)
+        assert any(b.label == "Reset my sandbox" for b in fresh.button)
+        assert "/tmp" not in _text(fresh)
+
+        fresh.button_group(key="studio_mode").set_value("Batch Factory").run()
+        assert "/tmp" not in _text(fresh)
+        assert not any(t.label == "Output folder" for t in fresh.text_input)
+
+        fresh.switch_page("app_pages/arena.py").run()
+        fresh.button_group(key="arena_home_view").set_value("New Session").run()
+        assert "/tmp" not in _text(fresh)
+        assert not any("data_dir" in t.label or "results_dir" in t.label for t in fresh.text_input)
+        assert all("/tmp" not in str(t.value or "") for t in fresh.text_input)
+
+        for page in ("forensics", "human_eval", "export"):
+            fresh.switch_page(f"app_pages/{page}.py").run()
+            assert not fresh.exception, fresh.exception
+            assert "/tmp" not in _text(fresh)
+            assert all("/tmp" not in str(t.value or "") for t in fresh.text_input)
+    finally:
+        G.set_demo_session_id(None)

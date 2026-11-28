@@ -289,3 +289,78 @@ def test_working_set_env_override_is_confined_in_public_demo(
     monkeypatch.setenv(W.ENV, "../escape_ws")
     with pytest.raises(G.SandboxViolation):
         W.default_root()
+
+
+def test_per_session_isolation_working_set_and_arena(
+    demo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from knotwork.studio import working_set as W
+
+    with pytest.raises(ValueError):
+        G.set_demo_session_id("not-a-session")
+
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    monkeypatch.delenv("PYTEST_XDIST_WORKER", raising=False)
+    monkeypatch.delenv(W.ENV, raising=False)
+    try:
+        G.set_demo_session_id("s_11111111")
+        assert G.sandbox_root() == demo / "s_11111111"
+        ws_a = W.WorkingSet()
+        assert ws_a.root == demo / "s_11111111" / "studio" / "working_set"
+        ws_a.ensure()
+        bid_a = ws_a.ids()[0]
+        ws_a.review(bid_a, "approved", ["hard-case", "stress"])
+        assert ws_a.qa()["approved"] == 1
+        storage.Workspace().register(
+            config(demo / "s_11111111", data_dir=demo / "s_11111111" / "d")
+        )
+        assert len(storage.Workspace().entries()) == 1
+        with pytest.raises(G.SandboxViolation):
+            G.confine(demo / "s_22222222" / "x")
+
+        G.set_demo_session_id("s_22222222")
+        assert G.sandbox_root() == demo / "s_22222222"
+        ws_b = W.WorkingSet()
+        assert ws_b.root == demo / "s_22222222" / "studio" / "working_set"
+        ws_b.ensure()
+        assert ws_b.qa() == {"unreviewed": 4, "approved": 0, "flagged": 0}
+        assert all(row["tags"] == [] for row in ws_b.table())
+        assert storage.Workspace().entries() == []
+
+        G.set_demo_session_id(None)
+        monkeypatch.setenv(G.SESSION_ENV, "s_11111111")
+        assert G.get_demo_session_id() == "s_11111111"
+        assert G.sandbox_root() == demo / "s_11111111"
+    finally:
+        G.set_demo_session_id(None)
+
+
+def test_prune_old_sessions_keeps_newest_and_active(demo: Path) -> None:
+    import os
+
+    sids = [f"s_0000000{i}" for i in range(1, 6)]
+    for idx, sid in enumerate(sids, start=1):
+        d = demo / sid
+        d.mkdir(parents=True, exist_ok=True)
+        os.utime(d, (1000 + idx * 10, 1000 + idx * 10))
+    removed = G.prune_old_sessions(max_sessions=3, keep_sid="s_00000001")
+    assert removed == 2
+    remaining = sorted(p.name for p in demo.iterdir() if p.is_dir() and p.name.startswith("s_"))
+    assert remaining == ["s_00000001", "s_00000004", "s_00000005"]
+
+
+def test_display_path_strips_session_ids(demo: Path) -> None:
+    try:
+        G.set_demo_session_id("s_aaaaaaaa")
+        assert G.display_path(demo / "s_aaaaaaaa") == "demo sandbox"
+        assert (
+            G.display_path(demo / "s_aaaaaaaa" / "studio" / "export" / "ws")
+            == "demo sandbox / studio/export/ws"
+        )
+        G.set_demo_session_id(None)
+        assert (
+            G.display_path(demo / "s_aaaaaaaa" / "studio" / "export" / "ws")
+            == "demo sandbox / studio/export/ws"
+        )
+    finally:
+        G.set_demo_session_id(None)

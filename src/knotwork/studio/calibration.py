@@ -12,9 +12,21 @@ from knotwork.knotcore.seeds import SeedTree
 from knotwork.pipeline.io import append_jsonl, read_json, read_jsonl
 from knotwork.render.canvas import REPO_ROOT
 
-LOG = REPO_ROOT / "artifacts" / "calibration" / "human_calibration.jsonl"
+_DEFAULT_LOG = REPO_ROOT / "artifacts" / "calibration" / "human_calibration.jsonl"
+LOG = _DEFAULT_LOG
 VLM_TRIALS = REPO_ROOT / "samples" / "live_run" / "trials.jsonl"
 BUNDLE_RE = re.compile(r"kw-[0-9a-f]{20}")
+
+
+def active_log() -> Path:
+    """Active calibration log: monkeypatched `LOG`, else per-session sandbox in public demo."""
+    if LOG != _DEFAULT_LOG:
+        return LOG
+    from knotwork.studio import demo_guard
+
+    if demo_guard.is_public_demo():
+        return demo_guard.sandbox_root() / "calibration" / "human_calibration.jsonl"
+    return LOG
 
 
 def queue(dataset: Path, session: str) -> list[dict[str, Any]]:

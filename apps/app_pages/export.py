@@ -13,9 +13,8 @@ from knotwork.export.manifest import check_manifest
 from knotwork.export.run import run_export
 from knotwork.freshness import lineage
 from knotwork.pipeline.io import read_json
-from knotwork.render.canvas import REPO_ROOT
 from knotwork.studio import demo_guard, factory, forensics, guide, present, review, working_set
-from studio_ui import OUT, dataset_label, dataset_select, relative, resolve
+from studio_ui import dataset_label, dataset_select, relative, resolve, studio_out
 from ui_chrome import is_working_set, review_log_for
 
 PREVIEW_PX = 220
@@ -26,7 +25,7 @@ QA_LABELS = {"approved": "Approved", "flagged": "Flagged", "unreviewed": "Pendin
 def _preferred() -> str | None:
     """The batch just built in Studio, else the Working Set (the selector's first option)."""
     last = st.session_state.get("last_batch_dir")
-    if last and (REPO_ROOT / last / "index.jsonl").is_file():
+    if last and (resolve(str(last)) / "index.jsonl").is_file():
         return str(last)
     return None
 
@@ -180,16 +179,20 @@ with controls:
             default = (
                 f"studio/export/{dataset.name if dataset else 'dataset'}"
                 if demo_guard.is_public_demo()
-                else relative(OUT / "export" / (dataset.name if dataset else "dataset"))
+                else relative(studio_out() / "export" / (dataset.name if dataset else "dataset"))
             )
-            folder = st.text_input("Output folder", default, key=f"ex_out_{default}",
-                                   help=guide.tip("ex_out"))  # fmt: skip
+            if demo_guard.is_public_demo():
+                folder = default
+                st.caption(f"Output: `{demo_guard.display_path(resolve(folder))}` (auto-managed)")
+            else:
+                folder = st.text_input("Output folder", default, key=f"ex_out_{default}",
+                                       help=guide.tip("ex_out"))  # fmt: skip
     with st.container(border=True):
         st.markdown("**3. Export**")
         refused = demo_guard.path_problem(folder)
         if refused:
             st.error(refused, icon=":material/folder_off:")
-        out = OUT / "export" / "sandbox" if refused else resolve(folder)
+        out = studio_out() / "export" / "sandbox" if refused else resolve(folder)
         only = st.toggle("Approved items only", key="ex_approved",
                          help=guide.tip("qa_approved_only"))  # fmt: skip
         only_ids: set[str] | None = None

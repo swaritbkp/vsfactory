@@ -22,7 +22,7 @@ EMPTY_ANSWER = "Enter an answer before submitting."
 
 
 def _session_rows(who: str) -> list[dict[str, Any]]:
-    return [r for r in read_jsonl(calibration.LOG) if r.get("session") == who]
+    return [r for r in read_jsonl(calibration.active_log()) if r.get("session") == who]
 
 
 # ------------------------------------------------------------------ item card
@@ -83,7 +83,7 @@ def _show_result(result: dict[str, Any]) -> None:
         if result.get("working_set"):
             qa_review(working_set(), item["bundle_id"], f"he_{item['bundle_id']}")
         else:
-            review_controls(review.STUDIO_LOG, item["bundle_id"], item["plugin"], None,
+            review_controls(review.active_studio_log(), item["bundle_id"], item["plugin"], None,
                             f"he_{item['bundle_id']}")  # fmt: skip
     with st.container(horizontal=True, vertical_alignment="center"):
         st.toggle("Show witness overlay", key="he_witness", help=guide.tip("he_witness"))
@@ -99,7 +99,8 @@ def _trial(dataset: Path, who: str) -> None:
     if "last_result" in st.session_state:
         _show_result(st.session_state.last_result)
         return
-    answered = calibration.done_ids(who)
+    log = calibration.active_log()
+    answered = calibration.done_ids(who, log)
     items = calibration.queue(dataset, who)
     left = [i for i in items if i["bundle_id"] not in answered]
     if not left:
@@ -133,7 +134,7 @@ def _trial(dataset: Path, who: str) -> None:
             st.warning(EMPTY_ANSWER, icon=":material/edit:")
             return
         elapsed = time.monotonic() - trial["start"]
-        row = calibration.record(item, reply.strip(), elapsed, who)
+        row = calibration.record(item, reply.strip(), elapsed, who, log)
         st.session_state.last_result = {"item": item, "row": row,
                                         "working_set": is_working_set(dataset)}  # fmt: skip
         st.rerun()
@@ -203,7 +204,7 @@ def _v2_board() -> None:
 def baseline_frame() -> pd.DataFrame:
     """The committed live run's model accuracies (percent), best first. Not cached: the Shared
     column changes with every response a person submits."""
-    rows = present.scoreboard(calibration.summary(), present.model_names())
+    rows = present.scoreboard(calibration.summary(calibration.active_log()), present.model_names())
     frame = pd.DataFrame([r for r in rows if r["who"] != "You"])
     if frame.empty:
         return frame
@@ -229,9 +230,10 @@ with side:
     with st.expander("Session", icon=":material/badge:"):
         participant = st.text_input("Participant id", key="participant",
                                     help=guide.tip("he_participant"))  # fmt: skip
-        if calibration.LOG.is_file():
+        log = calibration.active_log()
+        if log.is_file():
             st.download_button(
-                "Download responses", calibration.LOG.read_bytes(), "human_calibration.jsonl",
+                "Download responses", log.read_bytes(), "human_calibration.jsonl",
                 icon=":material/download:", width="stretch", help=guide.tip("he_download"),
             )  # fmt: skip
 with card, st.container(border=True):

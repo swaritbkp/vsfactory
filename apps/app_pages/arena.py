@@ -44,7 +44,7 @@ from knotwork.studio.ssrf_guard import validate_custom_base_url
 from posttrain_ui import PRESETS as SANDBOX_PRESETS
 from posttrain_ui import posttrain_tab, reward_sandbox
 from studio_ui import relative, review_controls, run_with_status
-from ui_chrome import switch_factory_page, working_set
+from ui_chrome import switch_factory_page, sync_demo_session, working_set
 
 WS = storage.Workspace()
 #: execution mode label -> provider (`mock` is offline; the other two are live)
@@ -221,8 +221,8 @@ def _sidebar() -> None:
     ss = st.session_state
     with st.sidebar:
         if ss.ar_selected:
-            st.button("← Back to Arena home", icon=":material/arrow_back:", width="stretch",
-                      on_click=_new_session, key="ar_back_home")  # fmt: skip
+            st.button("Back to Arena home", icon=":material/arrow_back:", width="stretch",
+                      on_click=_open_showcase, key="ar_back_home")  # fmt: skip
         query = st.text_input("Search sessions", key="ar_q", placeholder="Name, client or model",
                               label_visibility="collapsed", icon=":material/search:",
                               help=guide.tip("ar_search"))  # fmt: skip
@@ -358,17 +358,23 @@ def _setup_card() -> dict[str, Any]:
         ))]  # fmt: skip
         reuse = source in ("reuse", "ws")
         items: list[ItemRecord] = []
+        auto_data, auto_results = storage.default_dirs(slug)
         if source == "ws":
             items = _ws_picker()
-            data_dir = st.text_input("Dataset folder (data_dir)", key="ar_data_dir",
-                                     help=guide.tip("ar_data_dir"))  # fmt: skip
-            st.caption("Launch copies the chosen items into this folder, so the run is frozen "
-                       "even if the Working Set changes later.")  # fmt: skip
+            if demo_guard.is_public_demo():
+                data_dir = auto_data
+            else:
+                data_dir = st.text_input("Dataset folder (data_dir)", key="ar_data_dir",
+                                         help=guide.tip("ar_data_dir"))  # fmt: skip
+            st.caption("Launch copies the chosen items into this session's dataset, so the run is "
+                       "frozen even if the Working Set changes later.")  # fmt: skip
         elif reuse:
             options = _dataset_options()
             picked = st.selectbox("Certified dataset", options, index=0 if options else None,
-                                  key="ar_reuse_dir", accept_new_options=True,
-                                  placeholder="Pick a dataset or paste a folder path",
+                                  key="ar_reuse_dir",
+                                  accept_new_options=not demo_guard.is_public_demo(),
+                                  placeholder="Pick a dataset" if demo_guard.is_public_demo()
+                                  else "Pick a dataset or paste a folder path",
                                   help=guide.tip("ar_reuse_dir"))  # fmt: skip
             data_dir = str(picked or "")
             refused = demo_guard.path_problem(data_dir) if data_dir else None
@@ -385,17 +391,25 @@ def _setup_card() -> dict[str, Any]:
                 st.caption(f"{certified:,} certified items in "
                            f"{len(storage.dataset_blocks(items))} block(s) · sha256 `{sha[:16]}…`. "
                            "Frozen: the same images and answers for every model.")  # fmt: skip
+        elif demo_guard.is_public_demo():
+            data_dir = auto_data
         else:
             data_dir = st.text_input("Dataset folder (data_dir)", key="ar_data_dir",
                                      help=guide.tip("ar_data_dir"))  # fmt: skip
-        results_dir = st.text_input("Results & reports folder (results_dir)", key="ar_results_dir",
-                                    help=guide.tip("ar_results_dir"))  # fmt: skip
-        if demo_guard.path_problem(results_dir or "."):
-            st.error(f"Results folder: {demo_guard.path_problem(results_dir)}",
-                     icon=":material/folder_off:")  # fmt: skip
-        elif results_dir and (storage.resolve(results_dir) / storage.RESULTS).is_file():
-            st.warning("This results folder already holds a session. Open it from the sidebar to "
-                       "resume, or choose an empty folder.", icon=":material/warning:")  # fmt: skip
+        if demo_guard.is_public_demo():
+            results_dir = auto_results
+            st.caption(f"Storage: `demo sandbox / arena / {slug}` (auto-managed)")
+        else:
+            results_dir = st.text_input("Results & reports folder (results_dir)",
+                                        key="ar_results_dir",
+                                        help=guide.tip("ar_results_dir"))  # fmt: skip
+            if demo_guard.path_problem(results_dir or "."):
+                st.error(f"Results folder: {demo_guard.path_problem(results_dir)}",
+                         icon=":material/folder_off:")  # fmt: skip
+            elif results_dir and (storage.resolve(results_dir) / storage.RESULTS).is_file():
+                st.warning("This results folder already holds a session. Open it from the sidebar "
+                           "to resume, or choose an empty folder.",
+                           icon=":material/warning:")  # fmt: skip
     return {"slug": slug, "reuse": reuse, "data_dir": data_dir, "results_dir": results_dir,
             "items": items, "source": source}  # fmt: skip
 
@@ -476,7 +490,7 @@ def _mode_card() -> dict[str, Any]:
         if ss.get("ar_mode") not in modes:  # e.g. a loaded live config in the public demo
             ss.ar_mode = next(iter(modes))
         provider = modes[str(st.segmented_control(
-            "Execution mode", list(modes), key="ar_mode", default=client.PROVIDERS["mock"],
+            "Execution mode", list(modes), key="ar_mode",
             required=True, width="stretch", help=guide.tip("ar_mode"),
         ))]  # fmt: skip
         mode = "mock" if provider == "mock" else "live"
@@ -561,6 +575,7 @@ def _custom_endpoint_fields() -> None:
 
 @st.fragment
 def _test_endpoint() -> None:
+    sync_demo_session()
     ss = st.session_state
     if st.button("Test endpoint", icon=":material/network_check:", key="ar_ping",
                  help=guide.tip("ar_test_endpoint")):  # fmt: skip
@@ -970,7 +985,8 @@ def _controls(entry_dir: Path, cfg: SessionConfig, state: str, running: bool) ->
                      help=guide.tip("ar_retry")):  # fmt: skip
             _relaunch(entry_dir, key, retry=True)
     with st.expander("Copy headless CLI command", icon=":material/terminal:"):
-        st.code(storage.cli_command(entry_dir), language="powershell", wrap_lines=True)
+        cli_target = Path(cfg.results_dir) if demo_guard.is_public_demo() else entry_dir
+        st.code(storage.cli_command(cli_target), language="powershell", wrap_lines=True)
         st.caption("Runs or resumes this session from a terminal or CI job. Live runs read the key "
                    "from the OPENROUTER_API_KEY environment variable.")  # fmt: skip
         st.download_button("Export campaign.yaml", export_campaign_yaml(cfg),
@@ -1098,6 +1114,7 @@ def _leaderboard(cfg: SessionConfig, trials: dict[str, TrialRecord]) -> None:
 
 
 def _live_body(entry_dir: Path, cfg: SessionConfig, was_running: bool) -> None:
+    sync_demo_session()
     status = storage.read_status(entry_dir)
     child = st.session_state.ar_procs.get(cfg.slug)
     alive = (status.state == "running" and runner.pid_alive(status.pid)) or (
@@ -1361,14 +1378,19 @@ def _session_view(slug: str) -> None:
     state = "running" if launching else status.state
     if status.state == "running" and not running:
         state = "stopped"
-    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
-        st.markdown(f"### {cfg.session_name}", width="content")
-        _pill(state)
-        st.badge(cfg.provider_label,
-                 color="violet" if cfg.mode == "live" else "gray",
-                 icon=":material/cloud:" if cfg.mode == "live" else ":material/science:")  # fmt: skip
-        if cfg.client:
-            st.badge(cfg.client, color="gray", icon=":material/apartment:")
+    with st.container(horizontal=True, vertical_alignment="center",
+                      horizontal_alignment="distribute", gap="small"):  # fmt: skip
+        with st.container(horizontal=True, vertical_alignment="center", gap="small",
+                          width="content"):  # fmt: skip
+            st.markdown(f"### {cfg.session_name}", width="content")
+            _pill(state)
+            st.badge(cfg.provider_label,
+                     color="violet" if cfg.mode == "live" else "gray",
+                     icon=":material/cloud:" if cfg.mode == "live" else ":material/science:")  # fmt: skip
+            if cfg.client:
+                st.badge(cfg.client, color="gray", icon=":material/apartment:")
+        st.button("Back to Arena home", icon=":material/arrow_back:",
+                  on_click=_open_showcase, key="ar_main_back_home")  # fmt: skip
     st.caption(f"Dataset `{demo_guard.display_path(storage.resolve(cfg.data_dir))}` · results "
                f"`{demo_guard.display_path(entry_dir)}` · run `{cfg.run_id or '—'}`")  # fmt: skip
     if status.message:

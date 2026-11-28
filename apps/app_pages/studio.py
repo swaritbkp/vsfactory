@@ -14,8 +14,8 @@ from PIL import Image
 from knotwork.posttrain import vcot
 from knotwork.studio import demo_guard, factory, forensics, guide, present, working_set
 from knotwork.studio.present import AUTO
-from studio_ui import OUT, relative, resolve, run_with_status, verdict_badge
-from ui_chrome import qa_review, switch_factory_page
+from studio_ui import relative, resolve, run_with_status, studio_out, verdict_badge
+from ui_chrome import qa_review, switch_factory_page, sync_demo_session
 from ui_chrome import working_set as active_set
 
 VIEWS = ("Beauty", "Witness Overlay", "ID Buffer", "CVD Simulation", "vCoT Steps")
@@ -37,7 +37,12 @@ CAPTIONS = {
 LEVELS = [AUTO, *(i / 10 for i in range(11))]
 IMAGE_PX = 400
 CERTIFY_ATTEMPTS = 3
-HOLDOUT_EXAMPLES = {"tangle": "strands=9:10", "gauge": "radius_px=200:240", "panel": "gauges=4"}
+HOLDOUT_EXAMPLES = {
+    "tangle": "strands=9:10",
+    "rack_patch": "strands=12:14",
+    "gauge": "radius_px=200:240",
+    "panel": "gauges=4",
+}
 SAMPLE = ("tangle", "T1_TRACE", 1)
 PLUGIN_LABELS = {"rack_patch": "Rack patch-bay"}
 
@@ -154,7 +159,7 @@ def _first_sample(kernel: str) -> dict[str, Any]:
         plugin,
         family,
         seed,
-        OUT / "sample" / kernel / f"{plugin}-{uuid.uuid4().hex[:8]}",
+        studio_out() / "sample" / kernel / f"{plugin}-{uuid.uuid4().hex[:8]}",
         certify_attempts=CERTIFY_ATTEMPTS,
     )
     return _view_of(made, seed)
@@ -163,7 +168,7 @@ def _first_sample(kernel: str) -> dict[str, Any]:
 def _generate(plugin: str, family: str) -> None:
     """Render and certify a new task. The current stage stays on screen until it is ready."""
     seed = int(st.session_state.seed)
-    target = OUT / "single" / f"{plugin}-{uuid.uuid4().hex[:8]}"
+    target = studio_out() / "single" / f"{plugin}-{uuid.uuid4().hex[:8]}"
 
     def action() -> dict[str, Any]:
         dials = _dials(
@@ -184,6 +189,7 @@ def _generate(plugin: str, family: str) -> None:
 # ------------------------------------------------------------------ batch build
 @st.fragment(run_every="2s")
 def _batch_live() -> None:
+    sync_demo_session()
     job = st.session_state.get("batch")
     if job is None:
         return
@@ -218,9 +224,21 @@ def _batch_result(job: dict[str, Any]) -> None:
         st.code(log.read_text(encoding="utf-8", errors="replace")[-2000:], language=None)
 
 
+def _switch_to_single_task() -> None:
+    st.session_state.studio_mode = "Single Task"
+
+
 def _batch_panel(plugin: str) -> None:
     if not factory.batch_ready(plugin):
         st.caption("This plugin has no profile section, so it supports single items only.")
+        st.button(
+            "Switch to Single Task",
+            icon=":material/arrow_back:",
+            type="primary",
+            width="stretch",
+            key="bt_to_single",
+            on_click=_switch_to_single_task,
+        )
         return
     most = demo_guard.cap(1_000_000, demo_guard.DEMO_LIMITS.batch_items)
     n = int(st.number_input("Certified base items", 1, most, min(20, most), key="bt_n",
@@ -247,20 +265,26 @@ def _batch_panel(plugin: str) -> None:
                                       help=guide.tip("bt_workers")))  # fmt: skip
         shard = int(st.number_input("Slots per shard (0 = flat)", 0, 100_000, 0, key="bt_shard",
                                     help=guide.tip("bt_shard")))  # fmt: skip
-    folder = st.text_input(
-        "Output folder",
-        f"artifacts/studio/batch/{plugin}-{split}",
-        key=f"bt_out_{plugin}_{split}",
-        help=guide.tip("bt_out"),
-    )
+    if demo_guard.is_public_demo():
+        folder = f"studio/batch/{plugin}-{split}"
+        refused = None
+        out = resolve(folder)
+        st.caption(f"Output: `{demo_guard.display_path(out)}` (auto-managed)")
+    else:
+        folder = st.text_input(
+            "Output folder",
+            f"artifacts/studio/batch/{plugin}-{split}",
+            key=f"bt_out_{plugin}_{split}",
+            help=guide.tip("bt_out"),
+        )
+        refused = demo_guard.path_problem(folder)
+        if refused:
+            st.error(refused, icon=":material/folder_off:")
+            return
+        out = resolve(folder)
     spec = factory.difficulty_from(
         _dials(("reasoning_load", "visual_stress", "occlusion_level", "color_regime"))
     )
-    refused = demo_guard.path_problem(folder)
-    if refused:
-        st.error(refused, icon=":material/folder_off:")
-        return
-    out = resolve(folder)
     args = factory.batch_command(
         plugin,
         n,
@@ -606,7 +630,7 @@ with stage:
         with progress:
             _generate(plugin, family)
     current = st.session_state.get("item")
-    if current is not None and current.get("plugin") != plugin:
+    if workspace_mode == "Single Task" and current is not None and current.get("plugin") != plugin:
         selected_label = plugin_label(plugin)
         shown_label = plugin_label(str(current["plugin"]))
         st.info(

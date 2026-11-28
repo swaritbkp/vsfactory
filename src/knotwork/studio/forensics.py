@@ -22,8 +22,12 @@ SEARCH_ROOTS = (REPO_ROOT / "artifacts", REPO_ROOT / "tests" / "bench" / "fixtur
 SEARCH_DEPTH = 4
 
 
-def find_datasets(roots: tuple[Path, ...] = SEARCH_ROOTS) -> list[Path]:
+def find_datasets(roots: tuple[Path, ...] | None = None) -> list[Path]:
     """Directories with an `index.jsonl` up to `SEARCH_DEPTH` levels under the search roots."""
+    if roots is None:
+        from knotwork.studio import demo_guard
+
+        roots = (demo_guard.sandbox_root(),) if demo_guard.is_public_demo() else SEARCH_ROOTS
     found: set[Path] = set()
     for root in roots:
         if not root.is_dir():

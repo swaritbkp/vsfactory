@@ -23,11 +23,20 @@ RANGE_PARAMS = {
         "identity_slots",
         "r2_distractor_pairs",
     ),
+    "rack_patch": (
+        "strands",
+        "braid_length",
+        "stroke_px",
+        "jitter_amp_px",
+        "identity_slots",
+        "r2_distractor_pairs",
+    ),
     "gauge": ("radius_px",),
     "panel": ("gauges", "extra_strands"),
 }
 CHOICE_PARAMS = {
     "tangle": ("color_regimes", "styles", "layouts"),
+    "rack_patch": ("color_regimes", "styles", "layouts"),
     "gauge": ("scale_mix",),
     "panel": (),
 }

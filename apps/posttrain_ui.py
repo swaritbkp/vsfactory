@@ -16,6 +16,7 @@ from knotwork.posttrain import curriculum, vcot
 from knotwork.posttrain.reward import is_full_image, parse_boxes, score_rollout
 from knotwork.studio import demo_guard, factory, guide, review
 from studio_ui import run_with_status
+from ui_chrome import sync_demo_session
 
 EXAMPLES = ("Grounded vCoT", "Lucky guess (no boxes)", "Wrong answer")
 #: the always-on sandbox's one-click presets (Model Arena home, no campaign needed)
@@ -132,6 +133,7 @@ def _item_label(i: ItemRecord) -> str:
 
 def _sandbox_body(items: list[ItemRecord], data: Path, key: str,
                   examples: tuple[str, ...]) -> None:  # fmt: skip
+    sync_demo_session()
     left, right = st.columns([1, 1.35], gap="medium")
     with left:
         item = st.selectbox("Item", items, key=f"{key}_item", help=guide.tip("pt_item"),

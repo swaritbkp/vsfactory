@@ -44,6 +44,13 @@ ROOT_ENV = "KNOTWORK_ARENA_ROOT"  # tests and multi-tenant installs point the in
 
 
 def workspace_root() -> Path:
+    from knotwork.studio import demo_guard
+
+    if demo_guard.is_public_demo():
+        if demo_guard.get_demo_session_id() is not None:
+            return demo_guard.sandbox_root() / "arena"
+        override = os.environ.get(ROOT_ENV, "").strip()
+        return demo_guard.confine(override) if override else demo_guard.sandbox_root() / "arena"
     override = os.environ.get(ROOT_ENV, "").strip()
     return Path(override) if override else DEFAULT_ROOT
 
@@ -319,8 +326,15 @@ class Workspace:
     """The sessions index: one row per session, wherever its folders live."""
 
     def __init__(self, root: Path | None = None) -> None:
-        self.root = Path(root) if root is not None else workspace_root()
-        self.index = self.root / INDEX_NAME
+        self._root = Path(root) if root is not None else None
+
+    @property
+    def root(self) -> Path:
+        return self._root if self._root is not None else workspace_root()
+
+    @property
+    def index(self) -> Path:
+        return self.root / INDEX_NAME
 
     def entries(self, include_archived: bool = False) -> list[SessionIndexEntry]:
         data = read_json(self.index, {})
@@ -391,7 +405,11 @@ class Workspace:
 
 
 def default_dirs(slug: str, root: Path | None = None) -> tuple[str, str]:
-    """(data_dir, results_dir) defaults for a session, repository-relative when possible."""
+    """(data_dir, results_dir) defaults for a session, repository/sandbox-relative when possible."""
+    from knotwork.studio import demo_guard
+
+    if root is None and demo_guard.is_public_demo():
+        return f"arena/{slug}/data", f"arena/{slug}/results"
     base = (root if root is not None else workspace_root()) / slug
     pair = []
     for leaf in ("data", "results"):

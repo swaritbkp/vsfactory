@@ -140,8 +140,17 @@ def tags_of(states: dict[str, ReviewRecord], item_id: str) -> list[str]:
     return list(rec.tags) if rec else []
 
 
+def active_studio_log() -> Path:
+    """Studio-wide fallback QA log: confined per browser session in the public demo."""
+    from knotwork.studio import demo_guard
+
+    if demo_guard.is_public_demo():
+        return demo_guard.sandbox_root() / "review" / LOG_NAME
+    return STUDIO_LOG
+
+
 __all__ = [
     "BADGES", "LOG_NAME", "MAX_TAGS", "QA_FILTER", "STATUSES", "STUDIO_LOG", "TAGS",
-    "ReviewRecord", "approved_ids", "clean_tags", "counts", "filter_note", "load_review_states",
-    "record_review", "status_of", "tags_of",
+    "ReviewRecord", "active_studio_log", "approved_ids", "clean_tags", "counts", "filter_note",
+    "load_review_states", "record_review", "status_of", "tags_of",
 ]  # fmt: skip
