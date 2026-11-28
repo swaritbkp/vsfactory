@@ -20,7 +20,7 @@ Every row gives the command or test that reproduces it.
 
 | Check | Result | Reproduce |
 |---|---|---|
-| Fault-injection matrix M1–M14, 4 injections per fault | **56 / 56 caught** with the exact expected code; **0 / 56** clean controls quarantined. Re-run 2026-11-27 on `b92915e` in 71 s. | `uv run knot mutate --fault all --n 4` (also `tests/pipeline/test_mutate.py`, tier2, and the nightly mutate step) |
+| Fault-injection matrix M1–M14, 4 injections per fault (all 14 fault classes and 56 injections self-designed by the team; not an external mutation-testing framework) | **56 / 56 caught** with the exact expected code; **0 / 56** clean controls quarantined. Re-run 2026-11-27 on `b92915e` in 71 s. | `uv run knot mutate --fault all --n 4` (also `tests/pipeline/test_mutate.py`, tier2, and the nightly mutate step) |
 | Golden self test | **66 / 66** bundles regenerated (18 `tangle`, 12 `gauge`, 36 `panel`; seed 1234) and re-verified; answers, verdicts, digests and kernel hash match. Re-run 2026-11-27 on `b92915e` in 4 min 25 s. | `uv run knot selftest` |
 | File-only verification | 66 / 66 clean. A 1-bit id-buffer change and an edited answer are both caught (`E_DIGEST_MISMATCH`). No plugin code is imported. | `uv run knot verify <dir>`; gate `p3.verify` |
 | Real render defect caught by the kernel | Crowded panel crossings clipped the top cable's halo: 4 / 120 clean panels failed the crossing-colour check; 0 / 400 after the renderer fix | commit `aaf2528` (measurement in its message) |
@@ -151,7 +151,8 @@ The full command log is [`docs/evidence/v2_live_audit/verification_log.txt`](doc
 
 ## 9. Open items
 
-See [`BLOCKERS.md`](BLOCKERS.md):
+All documented failure cases are consolidated in [`README.md` section 10, Failure cases](README.md#10-failure-cases). Open blockers are in
+[`BLOCKERS.md`](BLOCKERS.md):
 
 - 3.6: `panel` P1 probe residual (open).
 - 5.6: mock staircase tolerance (resolved for the gate function).

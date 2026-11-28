@@ -49,7 +49,8 @@ passes. Every other bundle is quarantined with an exact `E_*` code.
 The kernel's behaviour is pinned two ways:
 
 - a fault-injection matrix of 14 renderer bug classes, 4 injections each: 56 / 56 caught, 0 / 56
-  clean controls rejected;
+  clean controls rejected (all 14 classes and 56 injections were self-designed by the team as
+  adversarial corruptions; this is not an external mutation-testing framework);
 - a golden set of 66 bundles regenerated and re-verified on every `knot selftest`.
 
 ## Contents generated in this repository
@@ -175,6 +176,9 @@ Claims about natural-image perception, reading real industrial instruments, or s
 decisions.
 
 ## Limitations
+
+Every documented failure case (quarantine, model collapses, reward hacking, fixed demo
+defects) is consolidated in [`README.md` section 10, Failure cases](README.md#10-failure-cases).
 
 - **Scene realism.** Scenes are synthetic orthographic 2-D renders with a photographic finish. There
   is no camera perspective, lens distortion, real-object occlusion or real-world clutter. Prompts are
