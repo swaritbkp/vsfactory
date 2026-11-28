@@ -9,7 +9,7 @@ generator's answer and the kernel's answer agree. The same certified tasks drive
 arena and a post-training pipeline: grounded chain-of-thought traces, preference pairs, GRPO data and
 a reward verifier. All of it runs offline.
 
-**Live sandbox:** [https://knotwork-demo-y5i4boaq7q-el.a.run.app/](https://knotwork-demo-y5i4boaq7q-el.a.run.app/) runs the Studio in locked Offline-Mock demo mode (`KNOTWORK_PUBLIC_DEMO=1`, `KNOTWORK_NETWORK=deny`, `max-instances=2`, GCP budget alert configured). See
+**Live sandbox:** [https://knotwork-demo-y5i4boaq7q-el.a.run.app/](https://knotwork-demo-y5i4boaq7q-el.a.run.app/) runs the Studio in locked Offline-Mock demo mode (`KNOTWORK_PUBLIC_DEMO=1`, `KNOTWORK_NETWORK=deny`, `max-instances=2`, GCP budget alert configured). `KNOTWORK_DEMO_ALLOW_BYOK` stays off through judging, so the public demo makes no live model calls. See
 [`docs/DEPLOY_CLOUD_RUN.md`](docs/DEPLOY_CLOUD_RUN.md).
 
 [![ci](https://github.com/swaritbkp/vsfactory/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/swaritbkp/vsfactory/actions/workflows/ci.yml)
@@ -50,8 +50,9 @@ grounded reasoning steps. Each numbered box is the pixel extent of an object mas
 7. [MLOps, release gating and extensibility](#7-mlops-release-gating-and-extensibility)
 8. [Deployment and reproducibility](#8-deployment-and-reproducibility)
 9. [Limitations and open items](#9-limitations-and-open-items)
-10. [Way forward](#10-way-forward)
-11. [References, documentation map and provenance](#11-references-documentation-map-and-provenance)
+10. [Failure cases](#10-failure-cases)
+11. [Way forward](#11-way-forward)
+12. [References, documentation map and provenance](#12-references-documentation-map-and-provenance)
 
 ---
 
@@ -138,7 +139,9 @@ validity. It does not prove that a task is easy or hard.
 
 ### Fault proofs and goldens
 
-`knot mutate` injects 14 classes of renderer bug (M1–M14: swapped labels, clipped halos, shifted
+This is **fault-injection testing**, not an external mutation-testing framework: the team designed all
+14 fault classes (56 injections) itself, as adversarial corruptions of geometry, witnesses and renders,
+to test whether `knotcore` detects and quarantines them. `knot mutate` injects 14 classes of renderer bug (M1–M14: swapped labels, clipped halos, shifted
 needles, missing crossings, wrong zone colours, panel composition faults and others), 4 injections
 each. The kernel catches all 56 with the expected error code and rejects none of the 56 clean
 controls. The kernel also caught a real defect during development. At crowded panel crossings the
@@ -586,6 +589,10 @@ With `KNOTWORK_PUBLIC_DEMO=1` the same image becomes a public sandbox
   `OPENROUTER_API_KEY` or `.env`.
 - The `Import campaign.yaml` uploader is hidden, and external `knotwork.plugins` entry points are
   not loaded: only the four built-in plugins run.
+- Each browser session gets its own sandbox folder (`s_<8hex>`) under that root, with bounded
+  pruning of old sessions.
+- `KNOTWORK_DEMO_ALLOW_BYOK=1` would opt into a capped Small Live BYOK Test (SPEC D-50). The
+  deployed demo keeps it **off through judging**: strict Offline Mock only.
 - A sandbox banner shows on every page. With the variable unset or `0`, nothing changes.
 
 ```bash
@@ -625,7 +632,70 @@ Full entries are in [`BLOCKERS.md`](BLOCKERS.md), and the gate record is in
 - **CI scope.** `ci.yml` runs `tier0` and `tier1` on every push. `tier2` (bulk generation, probes,
   the 10-render `rack_patch` yield gate, runner resume) and the phase gates run in `nightly.yml`.
 
-## 10. Way forward
+## 10. Failure cases
+
+Every failure case the repository documents, in one place. Numbers are copied from the sections and
+evidence files cited.
+
+### Generator and kernel certification failures
+
+- **Fail-closed quarantine.** A bundle is released only when the generator's answer D1 equals the
+  kernel's re-derived answer D3 and every claim re-checks. Anything else is quarantined with an exact
+  `E_*` code before any model sees it (section 2).
+- **v2 live audit yield.** 59 / 60 items were certified (98.3 %); 1 `rack_patch` monochrome item was
+  quarantined and never asked ([`docs/evidence/v2_live_audit/`](docs/evidence/v2_live_audit/)).
+- **Benchmark pool rejection.** Rejection rate 0.5 % `tangle`, 0.7 % `gauge`, 6.1 % `panel` on the
+  600-item-per-plugin `split=test` pool ([`DATA_CARD.md`](DATA_CARD.md)).
+- **Self-designed fault injection.** 56 / 56 injected faults (M1–M14, 4 each) caught with the
+  expected code; 0 / 56 clean controls rejected. A single-bit id-buffer change is reported as
+  `E_DIGEST_MISMATCH`.
+- **Real render defect.** At crowded panel crossings the renderer clipped the top cable's halo: 4 of
+  120 clean panels failed the crossing-colour check, 0 of 400 after the fix (commit `aaf2528`).
+- **Open probe residual (Blocker 3.6).** `panel` P1_READ_TRACE still beats chance under GBDT image
+  statistics, 0.173 against a 0.164 limit; gate `p3.probes` fails on this row (section 9).
+
+### Model evaluation and benchmark failures
+
+- **API error.** 540 trials were planned and 531 live calls issued for the 59 certified items; 530
+  were scored and 1 failed (Gemini 2.5 Flash, `rack_patch` monochrome; not retried, L-2).
+- **Combined monochrome + high-stress collapse on `rack_patch`.** GPT-5.4 dropped from 61.1 % to
+  27.3 %, Qwen3-VL-235B-A22B from 19.4 % to 3.0 %, and Gemini 2.5 Flash went 13.9 % → 12.5 %
+  (section 5).
+- **Reliability gap.** 11 of 15 block × model cells have a `pass@3 − pass^3` gap of 10 points or
+  more. GPT-5.4 on `tangle` monochrome (High stress) solves 83.3 % of items at least once but only
+  16.7 % on all three tries.
+- **Multi-hop floor.** `panel` Hard logic sits at 11.1–16.7 % for every model.
+- **Colour stood in for tracing (v1).** On matched pairs with identical geometry, GPT-5.4 traced
+  59.4 % of unique-colour cables and 3.1 % of monochrome ones (exact McNemar *p* = 4 × 10⁻⁵).
+- **No model checked the premise (v1 P5 true-premise control).** "Yes" on true vs false premise, of
+  24: GPT-5.4 0 vs 0, Gemini 2.5 Flash 15 vs 12, Qwen3-VL-235B-A22B 23 vs 24; no gap is significant.
+- **Vision vs reasoning failures.** For a failed item, `knot counterfactual` builds certified
+  counterfactual twin suites that separate perception failures from reasoning failures (section 3).
+- **Reward hacking.** A correct answer with the full-image box `[0,0,1000,1000]`, with no boxes, or
+  with only weak boxes (IoU < 0.5) is gated to 0.150 and flagged `reward_hack_flag` (section 6,
+  SPEC D-49).
+- **Live results at the floor (L-1).** Staircases bound thresholds rather than measure them, and twin
+  drops are directional at n = 24.
+
+### Pre-lock engineering and live-demo defects (found in audits, fixed by hand)
+
+Found during pre-lock walkthroughs of the deployed Cloud Run demo and fixed in
+[pull request #2](https://github.com/swaritbkp/vsfactory/pull/2) (v2.1) and
+[pull request #3](https://github.com/swaritbkp/vsfactory/pull/3) (v2.1.1):
+
+- **Shared `/tmp` cross-visitor contamination.** All visitors shared one demo folder. Fixed with
+  per-browser-session sandbox folders (`s_<8hex>`), bounded LRU pruning and a `Reset my sandbox`
+  button (PR #3).
+- **`rack_patch` Batch Factory dead end.** Batch Factory had no `rack_patch` profile section. Fixed by
+  building that profile section in memory, with a defensive `Switch to Single Task` fallback (PR #3).
+- **Arena session-view trap.** Inside a session there was no way back. Fixed with a `Back to Arena
+  home` button in the session header and a Hero Stepper reset (PR #3).
+- **Residual `/tmp` inputs in demo mode.** Editable folder fields exposed sandbox paths. Replaced with
+  auto-managed `demo sandbox / ...` captions; server-side path confinement is unchanged (PR #3).
+- **Secret-pattern gaps.** `SECRET_RE` was widened to cover Google `AIza`, Groq, xAI, Hugging Face,
+  GitHub and AWS key shapes beside `sk-` and bearer tokens (PR #2).
+
+## 11. Way forward
 
 The items below are engineering milestones, listed in rough order of dependency. None is
 implemented on `main` today.
@@ -646,7 +716,7 @@ implemented on `main` today.
    CAD tracing, and UI grounding. They would reuse the same kernel, fault harness and certificate
    format.
 
-## 11. References, documentation map and provenance
+## 12. References, documentation map and provenance
 
 ### Documentation map
 
@@ -708,6 +778,30 @@ merged into `main` through
 [pull request #1](https://github.com/swaritbkp/vsfactory/pull/1) as merge commit `b92915e`, from
 branch head `3e37fcc`. The branch is kept unchanged on the remote as the complete commit-by-commit
 record of that work and receives no further commits.
+
+### AI Tools & Models
+
+**Development, orchestration, coding and audit tools (Team Bilota)**
+
+| Person | Tool | Model (exact name) | Setting | Used for |
+| --- | --- | --- | --- | --- |
+| Swarit Sharma | Gemini (browser) | Gemini 4 Neon | High | Orchestrator and planning: architecture design, sprint prompt synthesis, adversarial audit review, live walkthrough video inspection, and release gating |
+| Swarit Sharma | Claude Code | Claude Opus 5.5, Claude Sonnet 5.5 | Medium | Core coding: initial Knotwork v1/v2 build, pipeline/evidence/benchmark implementation, test suites, and pre-lock documentation alignment |
+| Swarit Sharma | Antigravity | Gemini 4 Hydrogen | High | Coding and verification: v2.1 UX overhaul (5-stage Hero Stepper, Starter Working Set, custom endpoints and SSRF hardening), v2.1.1 live-snag fixes (per-session isolation, Rack patch-bay batch support, Arena session-view escape), dual-session Playwright verification, and PR/CI merges |
+| Swarit Sharma | OpenCode (OpenRouter) | Nemotron 3.5 Super VL (free), Nemotron 3 Ultra (free) | Thinking on (VL) / High (Ultra) | Independent QA and automation: read-only pre-merge security and regression audits, SSRF/secret probes, and automated click-by-click Playwright walkthrough recording of the deployed Cloud Run app |
+| Pankaj David | Claude app | Claude Opus 5.5 | — | Review and audit only: pulled `main` at `878eef1`, reran the `tier0+tier1` suite (`560 passed, 1 skipped, 0 failed`), verified live-audit numbers against `docs/evidence/v2_live_audit/`, and reviewed the custom-endpoint guard (wrote and committed zero code) |
+
+Pankaj David performed independent verification and audit only and did not write or commit code in
+the repository; Swarit Sharma authored, orchestrated and committed all repository changes.
+
+**Vision-language models evaluated by Knotwork (benchmarks and live audits)**
+
+These are the models Knotwork measured, not tools used to build it:
+
+- `GPT-5.4`, `Gemini 2.5 Flash` and `Qwen3-VL-235B-A22B`, via OpenRouter, in the v1 Phase 5 live
+  audit (1,069 trials) and the v2 4-domain live audit (531 calls); see section 5.
+- Model Arena also accepts any OpenAI-compatible endpoint (`provider: openai_compat` + `base_url`:
+  vLLM, SGLang, Ollama, OpenAI, Gemini; SPEC D-50). No results from custom endpoints are reported.
 
 ### Team and license
 
