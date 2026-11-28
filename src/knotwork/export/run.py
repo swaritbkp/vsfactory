@@ -26,9 +26,12 @@ def run_export(
     limit: int | None,
     max_shard_mb: float | None = None,
     only_ids: set[str] | None = None,
+    filters: dict[str, object] | None = None,
 ) -> int:
     """Export a dataset. `only_ids` (the Human QA *Approved items only* filter) keeps just those
-    bundle ids and records `qa_filter` / `approved_count` in the summary and the manifest."""
+    bundle ids and records `qa_filter` / `approved_count` in the summary and the manifest.
+    `filters` (the Studio's QA and tag filters) replaces the recorded `qa_filter` and adds
+    `tag_filter`, so the manifest always says which filter produced the export."""
     profile = yaml.safe_load(PROFILE.read_text(encoding="utf-8"))
     items = load_items(Path(data), profile, None if only_ids is not None else limit)
     qa: dict[str, object] | None = None
@@ -36,6 +39,14 @@ def run_export(
         total = len(items)
         items = [i for i in items if i.task["bundle_id"] in only_ids][: limit or None]
         qa = {"qa_filter": "approved_only", "approved_count": len(items), "candidate_count": total}
+        if filters:
+            qa = {**filters, "candidate_count": total}
+            count = (
+                "approved_count"
+                if filters.get("qa_filter") == "approved_only"
+                else "selected_count"
+            )
+            qa[count] = len(items)
         if not items:
             print(f"export: 0 of {total} bundles under {data} are approved; nothing to export")
             return 1

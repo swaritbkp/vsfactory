@@ -35,7 +35,7 @@ def relative(path: Path) -> str:
     try:
         return path.resolve().relative_to(REPO_ROOT).as_posix()
     except ValueError:
-        return str(path)
+        return str(path.resolve())
 
 
 def resolve(text: str) -> Path:
@@ -62,8 +62,27 @@ def _item_count(folder: str) -> int:
         return sum(1 for line in handle if line.strip())
 
 
+def working_set_folder() -> str:
+    from ui_chrome import working_set
+
+    return relative(working_set().root)
+
+
+def dataset_options() -> list[str]:
+    """The Working Set first, then every discovered dataset that holds at least one item. Empty
+    or unbuilt folders (such as test fixtures before their first run) are never offered."""
+    found = [relative(p) for p in forensics.find_datasets()]
+    built = [f for f in found if _item_count(f) > 0]
+    return list(dict.fromkeys([working_set_folder(), *built]))
+
+
 def dataset_label(folder: str) -> str:
     """`Tangle · Benchmark split · 600 items` for a repository-relative dataset folder."""
+    if folder == working_set_folder():
+        from ui_chrome import working_set
+
+        n = len(working_set().rows())
+        return f"Working Set · {n} certified item{'s' if n != 1 else ''}"
     source = next((name for prefix, name in SOURCES if folder.startswith(prefix)), "Folder")
     name = folder.rstrip("/").rsplit("/", 1)[-1].replace("data_", "").replace("_", " ")
     count = _item_count(folder)
@@ -74,8 +93,9 @@ def dataset_label(folder: str) -> str:
 def dataset_select(
     label: str, key: str, prefer: str | None = None, help: str | None = None
 ) -> Path | None:
-    """One searchable box over discovered datasets that also accepts a typed folder."""
-    options = [relative(p) for p in forensics.find_datasets()]
+    """One searchable box over discovered datasets that also accepts a typed folder. The Working
+    Set comes first and is the default unless `prefer` names another listed dataset."""
+    options = dataset_options()
     index = options.index(prefer) if prefer in options else (0 if options else None)
     chosen = st.selectbox(
         label,
@@ -97,7 +117,8 @@ def dataset_select(
             icon=":material/folder_off:",
         )
         return None
-    st.caption(f"Folder: `{relative(path)}`")
+    if str(chosen) != working_set_folder():
+        st.caption(f"Folder: `{demo_guard.display_path(path)}`")
     return path
 
 
@@ -136,7 +157,9 @@ def _hide_guide() -> None:
 
 
 def _go(page: str) -> None:
-    st.switch_page(guide.PAGES[page][1])
+    from ui_chrome import switch_factory_page
+
+    switch_factory_page(page)
 
 
 @st.dialog(TOUR_TITLE, width="large")
@@ -153,43 +176,32 @@ def tour_dialog() -> None:
 
 
 def guide_controls(page: str | None) -> None:
-    """Guided mode toggle, Page guide popover and Quick tour button, for the header row."""
+    """Guided mode toggle, Page guide details and Quick tour trigger inside System & Guide."""
     st.session_state.setdefault(GUIDED_KEY, True)
-    with st.container(horizontal=True, width="content", gap="small", vertical_alignment="center"):
-        st.toggle("Guided mode", key=GUIDED_KEY, help=guide.tip("guided_mode"))
-        if page is not None:
-            info = guide.PAGE_GUIDES[page]
-            with st.popover("Page guide", icon=":material/help:", help=guide.tip("page_guide")):
-                st.markdown(f"**{info['title']}**: {info['summary']}")
-                st.markdown("\n".join(f"{i}. {s}" for i, s in enumerate(info["steps"], 1)))
-                st.caption(f"Try first: {info['try_first']}")
-                st.markdown("**Terms**")
-                terms = "\n".join(f"- **{t}**: {guide.GLOSSARY[t]}" for t in info["terms"])
-                st.markdown(terms)
-        if st.button("Quick tour", icon=":material/route:", type="tertiary", key="tour_open",
-                     help=guide.tip("quick_tour")):  # fmt: skip
-            tour_dialog()
+    st.toggle("Guided mode", key=GUIDED_KEY, help=guide.tip("guided_mode"))
+    if page is not None:
+        info = guide.PAGE_GUIDES[page]
+        with st.expander("Page guide", icon=":material/help:"):
+            st.markdown(f"**{info['title']}**: {info['summary']}")
+            st.markdown("\n".join(f"{i}. {s}" for i, s in enumerate(info["steps"], 1)))
+            st.caption(f"Try first: {info['try_first']}")
+            st.markdown("**Terms**")
+            terms = "\n".join(f"- **{t}**: {guide.GLOSSARY[t]}" for t in info["terms"])
+            st.markdown(terms)
+    if st.button("Quick tour", icon=":material/route:", key="tour_open", width="stretch",
+                 help=guide.tip("quick_tour")):  # fmt: skip
+        tour_dialog()
 
 
 def guide_strip(page: str | None) -> None:
-    """One slim bordered strip: the tour step, a tip, Next step and Hide guide. Guided mode only."""
+    """Single-line guide caption inside the Hero card when Guided mode is active."""
     if page is None or not guided():
         return
     i = guide.tour_index(page)
     step = guide.TOUR_STEPS[i]
-    following = guide.next_page(page)
-    with st.container(border=True, key="guide_strip"):
-        text, actions = st.columns([3, 1.3], vertical_alignment="center")
-        text.markdown(
-            f"**Step {i + 1} of {len(guide.TOUR_STEPS)} · {step['goal']}**  \n:gray[{step['tip']}]"
-        )
-        with actions, st.container(horizontal=True, horizontal_alignment="right", gap="small"):
-            st.button("Hide guide", type="tertiary", key="guide_hide", on_click=_hide_guide,
-                      help=guide.tip("hide_guide"))  # fmt: skip
-            target = following or guide.TOUR_STEPS[0]["page"]
-            label = f"Next step: {guide.PAGES[target][0]} →" if following else "Back to Studio"
-            if st.button(label, key="guide_next", help=guide.tip("next_step")):
-                _go(target)
+    st.markdown(
+        f":small[:gray[**Step {i + 1} of {len(guide.TOUR_STEPS)} · Guide:** {step['tip']}]]"
+    )
 
 
 def review_controls(log: Path, item_id: str, domain: str, seed: int | None, key: str) -> str:

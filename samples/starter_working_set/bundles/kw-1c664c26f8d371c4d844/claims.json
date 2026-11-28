@@ -1,0 +1,428 @@
+{
+ "claims": [
+  {
+   "args": [
+    "tangle/terminal:start_01"
+   ],
+   "claim_id": "trace_01",
+   "expected": {
+    "canonical": "01",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "01"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_01",
+    "*"
+   ],
+   "claim_id": "cross_01",
+   "expected": {
+    "canonical": "0",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 0
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_02"
+   ],
+   "claim_id": "trace_02",
+   "expected": {
+    "canonical": "06",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "06"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_02",
+    "*"
+   ],
+   "claim_id": "cross_02",
+   "expected": {
+    "canonical": "4",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 4
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_03"
+   ],
+   "claim_id": "trace_03",
+   "expected": {
+    "canonical": "05",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "05"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_03",
+    "*"
+   ],
+   "claim_id": "cross_03",
+   "expected": {
+    "canonical": "4",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 4
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_04"
+   ],
+   "claim_id": "trace_04",
+   "expected": {
+    "canonical": "04",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "04"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_04",
+    "*"
+   ],
+   "claim_id": "cross_04",
+   "expected": {
+    "canonical": "4",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 4
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_05"
+   ],
+   "claim_id": "trace_05",
+   "expected": {
+    "canonical": "02",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "02"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_05",
+    "*"
+   ],
+   "claim_id": "cross_05",
+   "expected": {
+    "canonical": "3",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 3
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_06"
+   ],
+   "claim_id": "trace_06",
+   "expected": {
+    "canonical": "08",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "08"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_06",
+    "*"
+   ],
+   "claim_id": "cross_06",
+   "expected": {
+    "canonical": "2",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 2
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_07"
+   ],
+   "claim_id": "trace_07",
+   "expected": {
+    "canonical": "03",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "03"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_07",
+    "*"
+   ],
+   "claim_id": "cross_07",
+   "expected": {
+    "canonical": "4",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 4
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_08"
+   ],
+   "claim_id": "trace_08",
+   "expected": {
+    "canonical": "09",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "09"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_08",
+    "*"
+   ],
+   "claim_id": "cross_08",
+   "expected": {
+    "canonical": "1",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 1
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_09"
+   ],
+   "claim_id": "trace_09",
+   "expected": {
+    "canonical": "07",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "07"
+   },
+   "op": "TRACE"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_09",
+    "*"
+   ],
+   "claim_id": "cross_09",
+   "expected": {
+    "canonical": "2",
+    "tolerance": 0.0,
+    "type": "int",
+    "value": 2
+   },
+   "op": "CROSS"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_02",
+    "tangle/terminal:start_03",
+    0
+   ],
+   "claim_id": "ontop_0203_0",
+   "expected": {
+    "canonical": "02",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "02"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_02",
+    "tangle/terminal:start_04",
+    0
+   ],
+   "claim_id": "ontop_0204_0",
+   "expected": {
+    "canonical": "04",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "04"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_02",
+    "tangle/terminal:start_05",
+    0
+   ],
+   "claim_id": "ontop_0205_0",
+   "expected": {
+    "canonical": "02",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "02"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_02",
+    "tangle/terminal:start_07",
+    0
+   ],
+   "claim_id": "ontop_0207_0",
+   "expected": {
+    "canonical": "07",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "07"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_03",
+    "tangle/terminal:start_04",
+    0
+   ],
+   "claim_id": "ontop_0304_0",
+   "expected": {
+    "canonical": "03",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "03"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_03",
+    "tangle/terminal:start_05",
+    0
+   ],
+   "claim_id": "ontop_0305_0",
+   "expected": {
+    "canonical": "03",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "03"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_03",
+    "tangle/terminal:start_07",
+    0
+   ],
+   "claim_id": "ontop_0307_0",
+   "expected": {
+    "canonical": "07",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "07"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_04",
+    "tangle/terminal:start_05",
+    0
+   ],
+   "claim_id": "ontop_0405_0",
+   "expected": {
+    "canonical": "04",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "04"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_04",
+    "tangle/terminal:start_07",
+    0
+   ],
+   "claim_id": "ontop_0407_0",
+   "expected": {
+    "canonical": "07",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "07"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_06",
+    "tangle/terminal:start_07",
+    0
+   ],
+   "claim_id": "ontop_0607_0",
+   "expected": {
+    "canonical": "07",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "07"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_06",
+    "tangle/terminal:start_09",
+    0
+   ],
+   "claim_id": "ontop_0609_0",
+   "expected": {
+    "canonical": "09",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "09"
+   },
+   "op": "ONTOP"
+  },
+  {
+   "args": [
+    "tangle/terminal:start_08",
+    "tangle/terminal:start_09",
+    0
+   ],
+   "claim_id": "ontop_0809_0",
+   "expected": {
+    "canonical": "09",
+    "tolerance": 0.0,
+    "type": "label",
+    "value": "09"
+   },
+   "op": "ONTOP"
+  }
+ ],
+ "plugin": "rack_patch"
+}

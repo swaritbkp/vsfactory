@@ -1,0 +1,1292 @@
+{
+ "answer": {
+  "canonical": "01",
+  "tolerance": 0.0,
+  "type": "label",
+  "value": "01"
+ },
+ "bundle_id": "kw-1c664c26f8d371c4d844",
+ "canary": "KNOTWORK-CANARY-adefa3976ecf67454dc25b1f85753c8f",
+ "certificate": {
+  "agree": true,
+  "bundle_id": "kw-1c664c26f8d371c4d844",
+  "checks": [
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.6307839212371034,
+    "name": "contrast",
+    "obj_id": 11,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.3339499904860268,
+    "name": "contrast",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.26261272218767695,
+    "name": "contrast",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.41504916516422735,
+    "name": "contrast",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.3577719319140266,
+    "name": "contrast",
+    "obj_id": 15,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.6401148719318315,
+    "name": "contrast",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.33024453509399276,
+    "name": "contrast",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.26429892521044485,
+    "name": "contrast",
+    "obj_id": 18,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.41259752300063507,
+    "name": "contrast",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.021593175144029253,
+    "name": "crossing_color",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.015221701972045143,
+    "name": "crossing_color",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.02896393592834301,
+    "name": "crossing_color",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.02333758564380095,
+    "name": "crossing_color",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.024969961137926933,
+    "name": "crossing_color",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.027861192510475807,
+    "name": "crossing_color",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.024420252310467627,
+    "name": "crossing_color",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.021253043148515782,
+    "name": "crossing_color",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.014683593486938262,
+    "name": "crossing_color",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.023236722898702933,
+    "name": "crossing_color",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.024567823150324464,
+    "name": "crossing_color",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.014767478052285232,
+    "name": "crossing_color",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_UNEXPLAINED_INK",
+    "metric": 0.0,
+    "name": "unexplained_ink",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 30.0
+   },
+   {
+    "code": "E_OOB",
+    "metric": 0.0,
+    "name": "oob_mask",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 0.0
+   },
+   {
+    "code": "E_OOB",
+    "metric": 0.0,
+    "name": "oob_box",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 0.0
+   },
+   {
+    "code": "E_CVD_AMBIGUOUS",
+    "metric": 18.144379682940738,
+    "name": "cvd_strands",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 7.5,
+    "name": "stroke_768",
+    "obj_id": 11,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 7.5,
+    "name": "stroke_768",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 7.5,
+    "name": "stroke_768",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 7.5,
+    "name": "stroke_768",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 7.5,
+    "name": "stroke_768",
+    "obj_id": 15,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 7.5,
+    "name": "stroke_768",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 7.5,
+    "name": "stroke_768",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 7.5,
+    "name": "stroke_768",
+    "obj_id": 18,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 7.5,
+    "name": "stroke_768",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 1000000000.0,
+    "name": "crossing_spacing",
+    "obj_id": 11,
+    "passed": true,
+    "threshold": 40.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.885871640296855,
+    "name": "crossing_angle",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.87658524879324,
+    "name": "crossing_angle",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.970405485630245,
+    "name": "crossing_angle",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.614804746849686,
+    "name": "crossing_angle",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 103.95331880577464,
+    "name": "crossing_spacing",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 40.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.57039004630061,
+    "name": "crossing_angle",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.926331817829954,
+    "name": "crossing_angle",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.859751877537825,
+    "name": "crossing_angle",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.614804746849686,
+    "name": "crossing_angle",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 101.95331880577413,
+    "name": "crossing_spacing",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 40.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.57039004630061,
+    "name": "crossing_angle",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.885871640296855,
+    "name": "crossing_angle",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 47.26478291392966,
+    "name": "crossing_angle",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.57039004630061,
+    "name": "crossing_angle",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 101.95331880577413,
+    "name": "crossing_spacing",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 40.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.926331817829954,
+    "name": "crossing_angle",
+    "obj_id": 15,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.87658524879324,
+    "name": "crossing_angle",
+    "obj_id": 15,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 47.26478291392966,
+    "name": "crossing_angle",
+    "obj_id": 15,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 104.53910524340142,
+    "name": "crossing_spacing",
+    "obj_id": 15,
+    "passed": true,
+    "threshold": 40.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.57039004630061,
+    "name": "crossing_angle",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 47.26478291392966,
+    "name": "crossing_angle",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 363.6101730552666,
+    "name": "crossing_spacing",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 40.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.57039004630061,
+    "name": "crossing_angle",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.859751877537825,
+    "name": "crossing_angle",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.970405485630245,
+    "name": "crossing_angle",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.57039004630061,
+    "name": "crossing_angle",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 102.95331880577464,
+    "name": "crossing_spacing",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 40.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.67031367370981,
+    "name": "crossing_angle",
+    "obj_id": 18,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 1000000000.0,
+    "name": "crossing_spacing",
+    "obj_id": 18,
+    "passed": true,
+    "threshold": 40.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 46.67031367370981,
+    "name": "crossing_angle",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_TANGENT_CROSSING",
+    "metric": 47.26478291392966,
+    "name": "crossing_angle",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 25.0
+   },
+   {
+    "code": "E_CROSSING_SPACING",
+    "metric": 365.1959594928935,
+    "name": "crossing_spacing",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 40.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 11,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 15,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 18,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 11,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 15,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_TERMINAL_CLEARANCE",
+    "metric": 22.0,
+    "name": "terminal_clearance",
+    "obj_id": 18,
+    "passed": true,
+    "threshold": 10.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 20,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 21,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 22,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 23,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 24,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 25,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 26,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 27,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 28,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 29,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 30,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 31,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 32,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 33,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 34,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 35,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 36,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 37,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.9166666666666666,
+    "name": "oracle_path",
+    "obj_id": 11,
+    "passed": true,
+    "threshold": 0.7
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.9375,
+    "name": "oracle_path",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 0.7
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.90625,
+    "name": "oracle_path",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 0.7
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.9479166666666666,
+    "name": "oracle_path",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 0.7
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.9375,
+    "name": "oracle_path",
+    "obj_id": 15,
+    "passed": true,
+    "threshold": 0.7
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.9479166666666666,
+    "name": "oracle_path",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 0.7
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.90625,
+    "name": "oracle_path",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.7
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.9270833333333334,
+    "name": "oracle_path",
+    "obj_id": 18,
+    "passed": true,
+    "threshold": 0.7
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.9270833333333334,
+    "name": "oracle_path",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 0.7
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.4274700629221736,
+    "name": "oracle_crossing",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.5234724167901322,
+    "name": "oracle_crossing",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.4365703926437815,
+    "name": "oracle_crossing",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.4339066313125777,
+    "name": "oracle_crossing",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.5050411918606591,
+    "name": "oracle_crossing",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.44535473594214847,
+    "name": "oracle_crossing",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.4337478339828207,
+    "name": "oracle_crossing",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.5224676258158424,
+    "name": "oracle_crossing",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.509041936817281,
+    "name": "oracle_crossing",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.7175968747407158,
+    "name": "oracle_crossing",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.746423836347331,
+    "name": "oracle_crossing",
+    "obj_id": 16,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.5218323154674858,
+    "name": "oracle_crossing",
+    "obj_id": 18,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8037690130588718,
+    "name": "oracle_object",
+    "obj_id": 20,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.812502651943702,
+    "name": "oracle_object",
+    "obj_id": 21,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.759574684967056,
+    "name": "oracle_object",
+    "obj_id": 22,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8329252380296464,
+    "name": "oracle_object",
+    "obj_id": 23,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.7693083911512432,
+    "name": "oracle_object",
+    "obj_id": 24,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.824982866719328,
+    "name": "oracle_object",
+    "obj_id": 25,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8004430676251286,
+    "name": "oracle_object",
+    "obj_id": 26,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.7563759806132019,
+    "name": "oracle_object",
+    "obj_id": 27,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8226859361918697,
+    "name": "oracle_object",
+    "obj_id": 28,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8037690130588718,
+    "name": "oracle_object",
+    "obj_id": 29,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.812502651943702,
+    "name": "oracle_object",
+    "obj_id": 30,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.759574684967056,
+    "name": "oracle_object",
+    "obj_id": 31,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8329252380296464,
+    "name": "oracle_object",
+    "obj_id": 32,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.7693083911512432,
+    "name": "oracle_object",
+    "obj_id": 33,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.824982866719328,
+    "name": "oracle_object",
+    "obj_id": 34,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8004430676251286,
+    "name": "oracle_object",
+    "obj_id": 35,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.7563759806132019,
+    "name": "oracle_object",
+    "obj_id": 36,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8226859361918697,
+    "name": "oracle_object",
+    "obj_id": 37,
+    "passed": true,
+    "threshold": 0.08
+   }
+  ],
+  "claims_checked": 30,
+  "claims_failed": 0,
+  "codes": [],
+  "d1": {
+   "canonical": "01",
+   "tolerance": 0.0,
+   "type": "label",
+   "value": "01"
+  },
+  "d2": {
+   "canonical": "01",
+   "tolerance": 0.0,
+   "type": "label",
+   "value": "01"
+  },
+  "d3": {
+   "canonical": "01",
+   "tolerance": 0.0,
+   "type": "label",
+   "value": "01"
+  },
+  "kernel_sha256": "cc915c558ec021270fb01b0baab9726af53c21735be08512ed06d36bceadf42f",
+  "kernel_version": "1.0.0",
+  "ocr_engine": "rapidocr",
+  "steps": [
+   {
+    "codes": [],
+    "evidence": {
+     "end_terminal": "tangle/terminal:end_01",
+     "ocr_text": "01",
+     "path_px": 6417
+    },
+    "inputs": [
+     "tangle/terminal:start_01"
+    ],
+    "op": "TRACE",
+    "output": "01",
+    "step_id": "s0"
+   }
+  ],
+  "verdict": "CERTIFIED"
+ },
+ "family": "T1_TRACE",
+ "files": {
+  "beauty.png": "abacc0ba19d141b5b13f2c50aba0e5d1ac98476e3509f86e0388a9a0ef4c16f8",
+  "claims.json": "75cf834cd344657472333944c5e71aa73590fb4fe5a953d828f5559e59daadd2",
+  "id_buffer.png": "dc99afc4454dbeb51b777df5ebb1c3e55d17dbb9e22c0c08d3ab70fcc153c2e8",
+  "manifest.json": "aeec3a1bec1afda7f5d91b76c9a2c2bb2ad7591f36dd5c77b07a71cdd5f89f0c",
+  "masks/obj_00001.png": "049915a205e24576e6bda64d0bfa969b54f1f36e656f8dd17f4c260cfa342b7a",
+  "masks/obj_00002.png": "0d40b51577afbedf577e5650505fe47b1dc9c400b352e7be333ce7bf84503ff9",
+  "masks/obj_00003.png": "9e244adb13ecdb31cd045abd001c1590533c2d48d3e827d7e155239888334777",
+  "masks/obj_00004.png": "a142dcba08e3ebfe8462845e492d41126e4ff4f2b7532b490254ab705273019b",
+  "masks/obj_00005.png": "303e452ca633af69284c560ccc2369b34ece6a7f09c00d690ae75559e785bd16",
+  "masks/obj_00006.png": "32ff73efc3958d3af5f7aec89a4cd61ea37ddf53fd4884d13403e3962d78b90b",
+  "masks/obj_00007.png": "dbec0bd987eef0a20ceb4b0faefa6f6944e94950e337d41fe89f708a7ceeb1ed",
+  "masks/obj_00008.png": "a1ffa118535234220941d5aa57165c30df40a57c74c3c64610f01abe068ad17e",
+  "masks/obj_00009.png": "43c02ca23c2c3c60062aa15ba9c5aaae6f601d8473f994d8f1bec8a53be49265",
+  "masks/obj_00010.png": "fe575f49e13d9c8fc7d7507bea3f80c1a5038accdcadb0257bc72cd8744d58e1",
+  "masks/obj_00011.png": "1c48b6837174abc60a032f6dde0ca9b5c8d4f990c80d971601ab509845ff5f91",
+  "masks/obj_00012.png": "edede6c9fcd7e3905a3435e1a6b3b553f6406989385b03575829d34972a2d36b",
+  "masks/obj_00013.png": "4c612749748698ef7c9956d6808c588c44d91096196922e0bf7dce90e17cb0d1",
+  "masks/obj_00014.png": "49ef4755353d3cca065179336e1759418a63fd6a56e37c52f31ac962c6f8d5cb",
+  "masks/obj_00015.png": "764b6130e022fb5926d3faad1ecb654826ba00bb9c7563768dc721d2b39e77ff",
+  "masks/obj_00016.png": "63dc4d854a00d851cedd933c146000c9b91d3c63a6aa3c6fa43b644b65e1f2e8",
+  "masks/obj_00017.png": "7625f5129a7efe6e82251b59b7ded3e31bad11382e75b9939735d87d0b2b0fdd",
+  "masks/obj_00018.png": "083d76c8c322b606f57abd895cb76c40ff110d7987f0aab2e4e01ceeb9382ff4",
+  "masks/obj_00019.png": "dca7c9c9bd3a6d6b2bf8f9fbce3be7741e4b28a9dde55497a577dfd55d38b00f",
+  "masks/obj_00020.png": "1b395d335d28b99ef091c869363a21eda89947a0e8cb9c167df68795a4a5a056",
+  "masks/obj_00021.png": "08f74172c17bb0e43814cf81957ed1cbdf14a3e8b42a6840cfbd86ec088b8dfa",
+  "masks/obj_00022.png": "98a4181df2197162adebedd89e33b4820b900ff23046ef8c7ef1937eb7dbe7d3",
+  "masks/obj_00023.png": "fa9130276a7c0f72e0b59afa8e239240bbb6a5f19aec6026ecb86164363124e9",
+  "masks/obj_00024.png": "988d2c10f063894a535d5868a098ab82bd664d0c8665a6d9e3c6657b418080c9",
+  "masks/obj_00025.png": "65b0375efff9fc7eae7fcca1c1034493f1f3051fdbe3d22de7d2bd3f8e846bd8",
+  "masks/obj_00026.png": "094170a75e044c4c2000f8d9591ab75f5c07c84e579e771e34cdde17ec31c697",
+  "masks/obj_00027.png": "534c4df8df9873dea23b6e82cdeec82afabb7e0a80e780330b560c720826b3d9",
+  "masks/obj_00028.png": "95bcb3a8f694be80affb5e37c4a94afd814e9a57c8931566b36aa5e990315cc2",
+  "masks/obj_00029.png": "9e8b023975a5da3fc3b673c28e1c9d57f8bdd80f40a1c614314e715e5413ebac",
+  "masks/obj_00030.png": "99f4888f47eca06da01eeb4b62ca0e1de40c7b09f0a49899d47e0c0c804118d7",
+  "masks/obj_00031.png": "e2a2aec9366dd06bc060e8048080a4b819a4d7b5c626c5af44e9f6fae23fdb5b",
+  "masks/obj_00032.png": "1a59bd6033ff6f8558e03fd596c5d5d225f759eb439478fa33de2280203b4888",
+  "masks/obj_00033.png": "9061363ec1bb7eb82703ca01a95501e58a237cd3bb3866ffcf480e07575abfb8",
+  "masks/obj_00034.png": "8fbd238e0f39aa5ce7773704085bcdb8ed9d0d1b54927062ad190719f9b13e93",
+  "masks/obj_00035.png": "a7c1baac81a0b9c03c9c7e4fd71de4c2ddaae0fea448816405bc00fd3d55b63b",
+  "masks/obj_00036.png": "ffbdf568073442f7fa1ef1e04aad82548bf4e6a9c0d1eaee6db37cb8a4e3565e",
+  "masks/obj_00037.png": "5d12043ecbe1592aeab3929cffa89bc32caf11376554e3116812269aaa1fb468"
+ },
+ "freshness_receipt_id": "623d229b48410ab8ceffb2c2124875338637c7d1ddd71d3372f8cde7c2f6ae5f",
+ "plugin": "rack_patch",
+ "question": {
+  "answer_type": "label",
+  "difficulty": {
+   "n": 9.0
+  },
+  "difficulty_spec": {
+   "color_regime": "unique",
+   "dpi_scale": null,
+   "jitter_px": null,
+   "noise": null,
+   "occlusion_level": 0.0,
+   "realism": 0.0,
+   "reasoning_load": 0.2,
+   "stroke_px": null,
+   "visual_stress": 0.0
+  },
+  "family": "T1_TRACE",
+  "options": [
+   "01",
+   "02",
+   "03",
+   "04",
+   "05",
+   "06",
+   "07",
+   "08",
+   "09"
+  ],
+  "premise": null,
+  "program_id": "rack_patch/T1_TRACE/29b06f6ba7b3006b",
+  "steps": [
+   {
+    "args": [
+     "tangle/terminal:start_01"
+    ],
+    "op": "TRACE",
+    "step_id": "s0"
+   }
+  ],
+  "text": "The image shows a server-rack patch bay: switch ports SW-01, SW-02, ... on the top bank and patch-panel ports PP-01, PP-02, ... on the bottom bank. Trace the patch cable plugged into top switch port SW-01. Which bottom patch-bay port does it terminate in? Answer with the two-digit port number printed under it.\nEnd your reply with a final line of the form 'ANSWER: <two-digit port number>'."
+ },
+ "scene_id": "e11045553aa73602c4139bd0a2735a0eb88a83776de9368244c8d33020c5a863",
+ "schema_version": "1.1.0",
+ "seed_path": "s:studio/s:rack_patch/s:T1_TRACE/i:0/s:scene",
+ "split": "dev",
+ "twins": {
+  "base_id": null,
+  "causal_id": null,
+  "edit": null,
+  "nuisance_id": null,
+  "pixel_diff_frac": null,
+  "role": "base"
+ }
+}

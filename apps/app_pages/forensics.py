@@ -14,8 +14,9 @@ from knotwork.knotcore.contracts import FAULT_EXPECTED, FAULT_PLUGIN, FaultCode
 from knotwork.pipeline.counterfactual import run_counterfactual
 from knotwork.pipeline.io import read_json
 from knotwork.render.canvas import REPO_ROOT
-from knotwork.studio import factory, fault_proofs, forensics, guide, present
+from knotwork.studio import demo_guard, factory, fault_proofs, forensics, guide, present
 from studio_ui import OUT, dataset_select, relative, resolve, run_with_status, verdict_badge
+from ui_chrome import working_set
 
 SECTIONS = ("Counterfactual twins", "Quarantine", "Fault proofs")
 IMAGE_TWINS = (
@@ -33,6 +34,8 @@ MAX_SEGMENTS = 4
 CARD_HEIGHT = 380
 SAMPLE_REPORT = "samples/demo_forensics"  # committed sample: real twins, written replies
 BUILD_REPORT = "artifacts/studio/counterfactual"
+WS_REPORT = OUT / "counterfactual" / "working_set"
+COMMITTED = "samples/"
 
 
 def _percent(value: float | None) -> str:
@@ -48,9 +51,15 @@ def _kpis(dataset: Path | None) -> None:
     b.metric("Quarantine rate", _percent(kpi["quarantine_rate"]), border=True,
              help=guide.tip("kpi_quarantine"))  # fmt: skip
     caught = "n/a" if cover["caught"] is None else f"{cover['caught']} / {cover['total']}"
-    source = f"From {relative(cover['report'])}." if cover["report"] else "Run `knot mutate`."
+    source = (
+        f"From {demo_guard.display_path(cover['report'])}."
+        if cover["report"]
+        else "Run `knot mutate`."
+    )
     c.metric("Fault matrix coverage", caught, border=True,
              help=f"{guide.tip('kpi_faults')} {source}")  # fmt: skip
+    if cover["caught"] is not None:
+        c.caption("14 fault classes (M1–M14) × 4 injections = 56/56 caught")
 
 
 # ------------------------------------------------------------------ twins
@@ -60,30 +69,58 @@ def _request(action: str) -> None:
     st.session_state.cf_action = action
 
 
-def _source_controls() -> Path:
+def _ws_twins_card() -> None:
+    """Sleek single-row bar while the committed sample is shown: build twins for the Working Set."""
+    ws_report = (
+        "studio/counterfactual/working_set" if demo_guard.is_public_demo() else relative(WS_REPORT)
+    )
+    if st.session_state.get("cf_out") == ws_report:
+        return
+    with st.container(border=True, key="cf_ws_card"):
+        text, go = st.columns([3.5, 1.5], vertical_alignment="center")
+        built = (WS_REPORT / "suites.json").is_file()
+        text.markdown(
+            "**Working Set twins** — :gray[sample below; generate clean, palette-swap, "
+            "step-down & text twins for your item.]"
+        )
+        label = "Open Working Set twins" if built else "Generate counterfactual twins"
+        clicked = go.button(label, type="primary", icon=":material/difference:", width="stretch",
+                            key="cf_ws_go", help=guide.tip("fx_ws_twins"))  # fmt: skip
+    if clicked and (
+        built
+        or run_with_status(
+            "Render twins for the first Working Set item",
+            lambda: forensics.dataset_suite(working_set().root, WS_REPORT),
+        )
+    ):
+        st.session_state.cf_out = ws_report
+        st.rerun()
+
+
+def _source_popover() -> Path:
     st.session_state.setdefault("cf_out", SAMPLE_REPORT)
-    with st.container(horizontal=True, vertical_alignment="bottom"):
+    with st.popover("Source & build", icon=":material/construction:", width="stretch",
+                    help=guide.tip("cf_build")):  # fmt: skip
         st.text_input("Report folder", key="cf_out", help=guide.tip("cf_out"))
-        with st.popover("Build from failures", icon=":material/construction:",
-                        help=guide.tip("cf_build")):  # fmt: skip
-            data = st.text_input("Data folder", "samples/live_failures", key="cf_data",
-                                 help=guide.tip("cf_data"))  # fmt: skip
-            failures = st.text_input(
-                "Failures file or folder",
-                "samples/live_failures",
-                key="cf_fail",
-                help=guide.tip("cf_fail"),
-            )
-            st.button("Build twin suites", type="primary", width="stretch", key="cf_go",
-                      on_click=_request, args=("build",), help=guide.tip("cf_build"))  # fmt: skip
-        st.button("Demo suite", icon=":material/auto_awesome:", key="cf_demo", on_click=_request,
-                  args=("demo",), help=guide.tip("cf_demo"))  # fmt: skip
-    out = resolve(str(st.session_state.cf_out))
+        data = st.text_input("Data folder", "samples/live_failures", key="cf_data",
+                             help=guide.tip("cf_data"))  # fmt: skip
+        failures = st.text_input(
+            "Failures file or folder",
+            "samples/live_failures",
+            key="cf_fail",
+            help=guide.tip("cf_fail"),
+        )
+        c1, c2 = st.columns(2)
+        c1.button("Build twin suites", type="primary", width="stretch", key="cf_go",
+                  on_click=_request, args=("build",), help=guide.tip("cf_build"))  # fmt: skip
+        c2.button("Demo suite", icon=":material/auto_awesome:", width="stretch", key="cf_demo",
+                  on_click=_request, args=("demo",), help=guide.tip("cf_demo"))  # fmt: skip
+    out = _read(str(st.session_state.cf_out))
     action = st.session_state.pop("cf_action", None)
     if action == "build":
         code = run_with_status(
             "Build twin suites",
-            lambda: run_counterfactual(resolve(data), resolve(failures), out),
+            lambda: run_counterfactual(_read(data), _read(failures), out),
         )
         if code not in (None, 0):
             st.warning("No suite was built: the data folder does not hold the failed bundles.")
@@ -92,11 +129,21 @@ def _source_controls() -> Path:
     return out
 
 
+def _read(text: str) -> Path:
+    """A folder to read. Committed `samples/` are read from the repository even in the public
+    demo (they are read-only files that ship with the image); anything else goes through
+    `resolve`, which confines it to the sandbox there."""
+    clean = text.strip().replace("\\", "/")
+    if clean.startswith(COMMITTED) and ".." not in Path(clean).parts:
+        return REPO_ROOT / clean
+    return resolve(text)
+
+
 def _image_path(text: str | None) -> Path | None:
     """Report images are absolute, or repository-relative in the committed sample."""
     if not text:
         return None
-    path = resolve(text)
+    path = _read(text)
     return path if path.is_file() else None
 
 
@@ -161,13 +208,15 @@ def _diagnosis_card(suite: dict[str, Any], solved: dict[str, bool]) -> None:
 
 
 def _twins() -> None:
-    out = _source_controls()
+    _ws_twins_card()
+    item_col, src_col = st.columns([3.2, 1.0], vertical_alignment="center")
+    with src_col:
+        out = _source_popover()
     report = out / "suites.json"
     if not report.is_file():
-        st.info(
-            "No twin report in this folder yet. Press **Demo suite** for a full set of twins, or "
-            "open **Build from failures** to mine the committed live failures (text twins only).",
-            icon=":material/troubleshoot:",
+        st.caption(
+            "No twin report in this folder yet. Press Demo suite for a full set of twins, or "
+            "open Source & build to mine the committed live failures (text twins only)."
         )
         return
     suites = read_json(report)["suites"]
@@ -175,24 +224,24 @@ def _twins() -> None:
         st.warning("This report has no suites. Build one with Demo suite.")
         return
     recorded_all = present.load_twin_results(out)
-    if any(s.get("sample") for s in suites):
-        st.warning(
-            "Sample data: the items and twins are real certified renders, but the model replies "
-            "were written for this demo. They are not results from any model.",
-            icon=":material/science:",
-        )
     by_label: dict[str, dict[str, Any]] = {}
     for s in suites:
         graded = present.grade_twins(s, recorded_all.get(s["bundle_id"], {}))
         name = s.get("sample_title") or f"{s['family']} {s['bundle_id'][-6:]}"
         by_label[f"{name}: {present.diagnose(graded)[0]}"] = s
     labels = list(by_label)
-    if len(labels) <= MAX_SEGMENTS:
-        chosen = st.segmented_control("Item", labels, default=labels[0], required=True,
-                                      key="cf_item", label_visibility="collapsed",
-                                      help=guide.tip("cf_item"))  # fmt: skip
-    else:
-        chosen = st.selectbox("Item", labels, key="cf_item", help=guide.tip("cf_item"))
+    with item_col:
+        if len(labels) <= MAX_SEGMENTS:
+            chosen = st.segmented_control("Item", labels, default=labels[0], required=True,
+                                          key="cf_item", label_visibility="collapsed",
+                                          help=guide.tip("cf_item"))  # fmt: skip
+        else:
+            chosen = st.selectbox("Item", labels, key="cf_item", help=guide.tip("cf_item"))
+    if any(s.get("sample") for s in suites):
+        st.warning(
+            "Sample data: real certified renders; model replies were written for this demo.",
+            icon=":material/science:",
+        )
     suite = by_label[str(chosen)]
     bid = suite["bundle_id"]
     recorded = recorded_all.get(bid, {})
@@ -297,7 +346,10 @@ def _strip(fault: FaultCode, sides: list[fault_proofs.ProofSide]) -> None:
             st.caption(", ".join(side.codes) or "no codes: certified")
 
 
+@st.fragment
 def _faults() -> None:
+    """Live Fault Check: inject a renderer fault, run the kernel, show the verdict and its code.
+    A fragment, so a check redraws only this section."""
     sample = _sample()
     values = [f.value for f in FaultCode]
     default_fault, default_seed = (sample[0], sample[1]) if sample else (FaultCode.M1, 3)
@@ -307,7 +359,8 @@ def _faults() -> None:
         fault = FaultCode(st.selectbox("Fault", values, key="fp_fault", format_func=_fault_label,
                                        help=guide.tip("fp_fault")))  # fmt: skip
         seed = int(st.number_input("Seed", 0, 2**31 - 1, key="fp_seed", help=guide.tip("fp_seed")))
-        go = st.button("Build proof strip", type="primary", key="fp_go", help=guide.tip("fp_go"))
+        go = st.button("Run live fault check", type="primary", icon=":material/bug_report:",
+                       key="fp_go", help=guide.tip("fp_live"))  # fmt: skip
     st.caption("One scene rendered twice, with and without the fault; both go through the kernel.")
     if go:
         st.session_state.fp_built = (fault.value, seed)
@@ -316,26 +369,39 @@ def _faults() -> None:
         st.caption("Committed default proof (`samples/fault_proof/`): shown instantly on open.")
         return
     if st.session_state.get("fp_built") != (fault.value, seed):
-        st.info(
-            "Press **Build proof strip** to render this fault and seed.", icon=":material/build:"
-        )
+        st.caption("Press Run live fault check to inject this fault and certify both renders.")
         return
     sides = run_with_status("Inject and certify", lambda: _proof(fault.value, seed))
     if sides is not None:
+        _verdict_line(fault, sides)
         _strip(fault, sides)
 
 
+def _verdict_line(fault: FaultCode, sides: list[fault_proofs.ProofSide]) -> None:
+    faulty = sides[-1]
+    expected = fault_proofs.expected_code(fault)
+    caught = fault_proofs.caught(fault, faulty)
+    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+        st.markdown("**Kernel verdict on the faulty render**", width="content")
+        if faulty.verdict == "CERTIFIED":
+            st.badge("CERTIFIED", color="red", icon=":material/gpp_bad:")
+        else:
+            st.badge("QUARANTINED", color="green", icon=":material/block:")
+        st.badge(expected if caught else f"{expected} missing", color="green" if caught else "red",
+                 icon=":material/code:")  # fmt: skip
+
+
 # ------------------------------------------------------------------ page
-prefer = relative(REPO_ROOT / "artifacts" / "selftest" / "data" / "panel")
-picker, _ = st.columns([2, 3])
-with picker:
-    run = dataset_select("Run", "fx_dataset", prefer, help=guide.tip("fx_run"))
-_kpis(run)
+run_col, sec_col = st.columns([1.6, 2.4], vertical_alignment="bottom")
+with run_col:
+    run = dataset_select("Run", "fx_dataset", help=guide.tip("fx_run"))
 st.session_state.setdefault("fx_section", SECTIONS[0])  # Model Arena may preselect a section
-section = st.segmented_control(
-    "Section", SECTIONS, required=True, key="fx_section",
-    label_visibility="collapsed", help=guide.tip("fx_section"),
-)  # fmt: skip
+with sec_col:
+    section = st.segmented_control(
+        "Section", SECTIONS, required=True, key="fx_section",
+        label_visibility="collapsed", width="stretch", help=guide.tip("fx_section"),
+    )  # fmt: skip
+_kpis(run)
 if section == "Quarantine":
     _quarantine(run)
 elif section == "Fault proofs":

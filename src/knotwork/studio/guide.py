@@ -76,7 +76,7 @@ PAGE_GUIDES: Final[dict[str, PageGuide]] = {
             "Pick a plugin (Rack patch-bay or Tangle are good first picks) and a preset.",
             "Press Generate & Certify Task.",
             "Switch the view to Witness Overlay to see the kernel's evidence.",
-            "Open Batch & OOD Build to make a whole dataset with twins and holdouts.",
+            "Tag it and press Add to Working Set, or Quick test in Arena.",
         ],
         "try_first": "Choose Rack patch-bay, press Generate & Certify Task, then open Witness "
         "Overlay.",
@@ -87,12 +87,12 @@ PAGE_GUIDES: Final[dict[str, PageGuide]] = {
         "summary": "Run vision models on certified items and export a research-grade report.",
         "steps": [
             "Press New session, name it and keep data and results in separate folders.",
-            "Choose Offline Mock (no key) or Live (OpenRouter), and set a spend cap.",
+            "Choose Offline Mock, Live · OpenRouter or a custom endpoint, and a spend cap.",
             "Add blocks: one domain, preset and sample count each.",
             "Launch, then open the Report tab to export HTML, Markdown, JSON, CSV and a ZIP.",
         ],
-        "try_first": "Open a finished session in the sidebar and look at its leaderboard and "
-        "Report tab.",
+        "try_first": "Open the Showcase tab for the v2 live audit, then try the Reward verifier "
+        "sandbox presets.",
         "terms": ["Wilson 95% CI", "Cost per Correct ($/correct)", "Quarantine (E_* codes)"],
     },
     "forensics": {
@@ -123,9 +123,9 @@ PAGE_GUIDES: Final[dict[str, PageGuide]] = {
         "title": "Export",
         "summary": "Write certified datasets in the formats evaluation and training tools read.",
         "steps": [
-            "Choose a dataset (a Studio batch is preselected).",
+            "Choose a dataset (the Working Set is preselected) and filter by QA tag.",
             "Choose formats: Parquet / HF, Harbor, RLVR; a manifest is always written.",
-            "Press Export dataset, then verify lineage against the files.",
+            "Press Export dataset, download the ZIP, then verify lineage against the files.",
         ],
         "try_first": "Export the preselected dataset and press Verify against files under "
         "Manifest & lineage.",
@@ -398,6 +398,40 @@ TOOLTIPS: Final[dict[str, str]] = {
     "is Approved. Off keeps every item.",
     "pt_provenance": "Clean-IP Provenance: git and kernel hashes, dataset and eval-seed hashes, "
     "seed disjointness, and the only external asset (the bundled font).",
+    # v2.1 Working Set and workflow
+    "ws_pill": "The Working Set: certified items shared by every page. Studio adds to it; Arena, "
+    "Forensics, Human Eval and Export open on it.",
+    "qa_jump": "Open the next page of the journey with the Working Set already selected.",
+    "qa_decision": "Approve keeps the item for approved-only exports; Flag marks it as suspect.",
+    "qa_tags": "Tags travel with the review into review_log.jsonl and can filter the export.",
+    "qa_save": "Append this decision, its tags and note to the Working Set's review log.",
+    "st_add_ws": "Copy this certified item, its witness and vCoT trace into the Working Set. "
+    "Adding the same item twice changes nothing.",
+    "st_quick_arena": "Open Model Arena with this item preselected for a fast small evaluation.",
+    "st_download": "A ZIP of beauty.png, witness_overlay.png, manifest.json, task.json and the "
+    "vCoT SFT line.",
+    "ar_source": "Where the items come from: the Working Set, freshly generated blocks, or a "
+    "dataset folder already on disk.",
+    "ar_ws_items": "Which Working Set items to evaluate. Each domain becomes one block.",
+    "ar_base_url": "The server's OpenAI-compatible base URL, such as http://localhost:8000/v1 "
+    "for vLLM or http://localhost:11434/v1 for Ollama.",
+    "ar_model_id": "The model name the endpoint expects, such as Qwen/Qwen2.5-VL-7B-Instruct.",
+    "ar_custom_key": "Optional. Local servers usually need none. Held in this browser session "
+    "only; never written to a file.",
+    "ar_test_endpoint": "Call the endpoint's /models list once to check that it answers. No "
+    "image is sent and nothing is charged.",
+    "ar_showcase": "The committed v2 live audit: 531 real calls to three vision models, opened "
+    "read-only.",
+    "sb_preset": "Load a ready-made rollout: a grounded trace, an ungrounded guess, or a box "
+    "that covers the whole image.",
+    "fx_ws_twins": "Render counterfactual twins for the first Working Set item and open them "
+    "here. Takes about a minute.",
+    "fp_live": "Inject the fault into a fresh render, run the kernel, and show the verdict and "
+    "the exact error code it raised.",
+    "ex_tags": "Keep only items carrying at least one of these QA tags. The filter is recorded "
+    "in the manifest.",
+    "ex_download_zip": "Download every exported file as one ZIP, built in memory.",
+    "dev_datasets": "Also list folders that are not built yet, such as test fixtures.",
 }
 
 

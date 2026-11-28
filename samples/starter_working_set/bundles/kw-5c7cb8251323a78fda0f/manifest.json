@@ -1,0 +1,931 @@
+{
+ "background_rgb": [
+  192,
+  198,
+  204
+ ],
+ "beauty": "beauty.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "font_sha256": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
+ "gauges": [
+  {
+   "claimed_center": [
+    789.5030038094,
+    355.6000908250122
+   ],
+   "claimed_radius": 120.0,
+   "dial_obj": 7,
+   "gauge_id": "panel/gauge:g1",
+   "needle_obj": 17,
+   "port_terminal": "panel/terminal:port_g1",
+   "ticks": [
+    {
+     "label_obj": 19,
+     "tick_obj": 11
+    },
+    {
+     "label_obj": 20,
+     "tick_obj": 12
+    },
+    {
+     "label_obj": 21,
+     "tick_obj": 13
+    },
+    {
+     "label_obj": 22,
+     "tick_obj": 14
+    },
+    {
+     "label_obj": 23,
+     "tick_obj": 15
+    }
+   ],
+   "zones": [
+    {
+     "name": "green",
+     "zone_obj": 8
+    },
+    {
+     "name": "amber",
+     "zone_obj": 9
+    },
+    {
+     "name": "red",
+     "zone_obj": 10
+    }
+   ]
+  },
+  {
+   "claimed_center": [
+    789.5030038094,
+    779.6000908250122
+   ],
+   "claimed_radius": 120.0,
+   "dial_obj": 25,
+   "gauge_id": "panel/gauge:g2",
+   "needle_obj": 35,
+   "port_terminal": "panel/terminal:port_g2",
+   "ticks": [
+    {
+     "label_obj": 37,
+     "tick_obj": 29
+    },
+    {
+     "label_obj": 38,
+     "tick_obj": 30
+    },
+    {
+     "label_obj": 39,
+     "tick_obj": 31
+    },
+    {
+     "label_obj": 40,
+     "tick_obj": 32
+    },
+    {
+     "label_obj": 41,
+     "tick_obj": 33
+    }
+   ],
+   "zones": [
+    {
+     "name": "green",
+     "zone_obj": 26
+    },
+    {
+     "name": "amber",
+     "zone_obj": 27
+    },
+    {
+     "name": "red",
+     "zone_obj": 28
+    }
+   ]
+  }
+ ],
+ "id_buffer": "id_buffer.png",
+ "objects": [
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    156
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00001.png",
+   "name": "panel/decor:screw0",
+   "obj_id": 1,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    156
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00002.png",
+   "name": "panel/decor:screw1",
+   "obj_id": 2,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    156
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00003.png",
+   "name": "panel/decor:screw2",
+   "obj_id": 3,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    156
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00004.png",
+   "name": "panel/decor:screw3",
+   "obj_id": 4,
+   "parent": null
+  },
+  {
+   "box": {
+    "x0": 113,
+    "x1": 287,
+    "y0": 45,
+    "y1": 63
+   },
+   "color_rgb": [
+    64,
+    66,
+    70
+   ],
+   "font_px": 14,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00005.png",
+   "name": "panel/decor:placard_top",
+   "obj_id": 5,
+   "parent": null
+  },
+  {
+   "box": {
+    "x0": 89,
+    "x1": 310,
+    "y0": 961,
+    "y1": 979
+   },
+   "color_rgb": [
+    64,
+    66,
+    70
+   ],
+   "font_px": 14,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00006.png",
+   "name": "panel/decor:placard_bottom",
+   "obj_id": 6,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    241,
+    238,
+    229
+   ],
+   "font_px": null,
+   "kind": "dial",
+   "label_text": null,
+   "mask": "masks/obj_00007.png",
+   "name": "panel/dial:g1",
+   "obj_id": 7,
+   "parent": "panel/gauge:g1"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    40,
+    160,
+    70
+   ],
+   "font_px": null,
+   "kind": "zone_arc",
+   "label_text": null,
+   "mask": "masks/obj_00008.png",
+   "name": "panel/zone_arc:g1_green",
+   "obj_id": 8,
+   "parent": "panel/gauge:g1"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    232,
+    160,
+    20
+   ],
+   "font_px": null,
+   "kind": "zone_arc",
+   "label_text": null,
+   "mask": "masks/obj_00009.png",
+   "name": "panel/zone_arc:g1_amber",
+   "obj_id": 9,
+   "parent": "panel/gauge:g1"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    210,
+    40,
+    40
+   ],
+   "font_px": null,
+   "kind": "zone_arc",
+   "label_text": null,
+   "mask": "masks/obj_00010.png",
+   "name": "panel/zone_arc:g1_red",
+   "obj_id": 10,
+   "parent": "panel/gauge:g1"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    35,
+    35,
+    35
+   ],
+   "font_px": null,
+   "kind": "tick",
+   "label_text": null,
+   "mask": "masks/obj_00011.png",
+   "name": "panel/tick:g1_0",
+   "obj_id": 11,
+   "parent": "panel/gauge:g1"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    35,
+    35,
+    35
+   ],
+   "font_px": null,
+   "kind": "tick",
+   "label_text": null,
+   "mask": "masks/obj_00012.png",
+   "name": "panel/tick:g1_1",
+   "obj_id": 12,
+   "parent": "panel/gauge:g1"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    35,
+    35,
+    35
+   ],
+   "font_px": null,
+   "kind": "tick",
+   "label_text": null,
+   "mask": "masks/obj_00013.png",
+   "name": "panel/tick:g1_2",
+   "obj_id": 13,
+   "parent": "panel/gauge:g1"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    35,
+    35,
+    35
+   ],
+   "font_px": null,
+   "kind": "tick",
+   "label_text": null,
+   "mask": "masks/obj_00014.png",
+   "name": "panel/tick:g1_3",
+   "obj_id": 14,
+   "parent": "panel/gauge:g1"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    35,
+    35,
+    35
+   ],
+   "font_px": null,
+   "kind": "tick",
+   "label_text": null,
+   "mask": "masks/obj_00015.png",
+   "name": "panel/tick:g1_4",
+   "obj_id": 15,
+   "parent": "panel/gauge:g1"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    70,
+    70,
+    70
+   ],
+   "font_px": null,
+   "kind": "tick_minor",
+   "label_text": null,
+   "mask": "masks/obj_00016.png",
+   "name": "panel/tick_minor:g1",
+   "obj_id": 16,
+   "parent": "panel/gauge:g1"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    200,
+    30,
+    30
+   ],
+   "font_px": null,
+   "kind": "needle",
+   "label_text": null,
+   "mask": "masks/obj_00017.png",
+   "name": "panel/needle:g1",
+   "obj_id": 17,
+   "parent": "panel/gauge:g1"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    158
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00018.png",
+   "name": "panel/decor:g1_hub",
+   "obj_id": 18,
+   "parent": "panel/gauge:g1"
+  },
+  {
+   "box": {
+    "x0": 729,
+    "x1": 771,
+    "y0": 381,
+    "y1": 408
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "10",
+   "mask": "masks/obj_00019.png",
+   "name": "panel/label:g1_t0",
+   "obj_id": 19,
+   "parent": "panel/labels:g1_ticks"
+  },
+  {
+   "box": {
+    "x0": 716,
+    "x1": 758,
+    "y0": 320,
+    "y1": 347
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "30",
+   "mask": "masks/obj_00020.png",
+   "name": "panel/label:g1_t1",
+   "obj_id": 20,
+   "parent": "panel/labels:g1_ticks"
+  },
+  {
+   "box": {
+    "x0": 769,
+    "x1": 811,
+    "y0": 285,
+    "y1": 312
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "50",
+   "mask": "masks/obj_00021.png",
+   "name": "panel/label:g1_t2",
+   "obj_id": 21,
+   "parent": "panel/labels:g1_ticks"
+  },
+  {
+   "box": {
+    "x0": 821,
+    "x1": 863,
+    "y0": 320,
+    "y1": 347
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "70",
+   "mask": "masks/obj_00022.png",
+   "name": "panel/label:g1_t3",
+   "obj_id": 22,
+   "parent": "panel/labels:g1_ticks"
+  },
+  {
+   "box": {
+    "x0": 808,
+    "x1": 850,
+    "y0": 381,
+    "y1": 408
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "90",
+   "mask": "masks/obj_00023.png",
+   "name": "panel/label:g1_t4",
+   "obj_id": 23,
+   "parent": "panel/labels:g1_ticks"
+  },
+  {
+   "box": {
+    "x0": 767,
+    "x1": 812,
+    "y0": 492,
+    "y1": 519
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "G1",
+   "mask": "masks/obj_00024.png",
+   "name": "panel/label:gauge_G1",
+   "obj_id": 24,
+   "parent": "panel/labels:gauges"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    250,
+    249,
+    244
+   ],
+   "font_px": null,
+   "kind": "dial",
+   "label_text": null,
+   "mask": "masks/obj_00025.png",
+   "name": "panel/dial:g2",
+   "obj_id": 25,
+   "parent": "panel/gauge:g2"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    40,
+    160,
+    70
+   ],
+   "font_px": null,
+   "kind": "zone_arc",
+   "label_text": null,
+   "mask": "masks/obj_00026.png",
+   "name": "panel/zone_arc:g2_green",
+   "obj_id": 26,
+   "parent": "panel/gauge:g2"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    232,
+    160,
+    20
+   ],
+   "font_px": null,
+   "kind": "zone_arc",
+   "label_text": null,
+   "mask": "masks/obj_00027.png",
+   "name": "panel/zone_arc:g2_amber",
+   "obj_id": 27,
+   "parent": "panel/gauge:g2"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    210,
+    40,
+    40
+   ],
+   "font_px": null,
+   "kind": "zone_arc",
+   "label_text": null,
+   "mask": "masks/obj_00028.png",
+   "name": "panel/zone_arc:g2_red",
+   "obj_id": 28,
+   "parent": "panel/gauge:g2"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    35,
+    35,
+    35
+   ],
+   "font_px": null,
+   "kind": "tick",
+   "label_text": null,
+   "mask": "masks/obj_00029.png",
+   "name": "panel/tick:g2_0",
+   "obj_id": 29,
+   "parent": "panel/gauge:g2"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    35,
+    35,
+    35
+   ],
+   "font_px": null,
+   "kind": "tick",
+   "label_text": null,
+   "mask": "masks/obj_00030.png",
+   "name": "panel/tick:g2_1",
+   "obj_id": 30,
+   "parent": "panel/gauge:g2"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    35,
+    35,
+    35
+   ],
+   "font_px": null,
+   "kind": "tick",
+   "label_text": null,
+   "mask": "masks/obj_00031.png",
+   "name": "panel/tick:g2_2",
+   "obj_id": 31,
+   "parent": "panel/gauge:g2"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    35,
+    35,
+    35
+   ],
+   "font_px": null,
+   "kind": "tick",
+   "label_text": null,
+   "mask": "masks/obj_00032.png",
+   "name": "panel/tick:g2_3",
+   "obj_id": 32,
+   "parent": "panel/gauge:g2"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    35,
+    35,
+    35
+   ],
+   "font_px": null,
+   "kind": "tick",
+   "label_text": null,
+   "mask": "masks/obj_00033.png",
+   "name": "panel/tick:g2_4",
+   "obj_id": 33,
+   "parent": "panel/gauge:g2"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    70,
+    70,
+    70
+   ],
+   "font_px": null,
+   "kind": "tick_minor",
+   "label_text": null,
+   "mask": "masks/obj_00034.png",
+   "name": "panel/tick_minor:g2",
+   "obj_id": 34,
+   "parent": "panel/gauge:g2"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    200,
+    30,
+    30
+   ],
+   "font_px": null,
+   "kind": "needle",
+   "label_text": null,
+   "mask": "masks/obj_00035.png",
+   "name": "panel/needle:g2",
+   "obj_id": 35,
+   "parent": "panel/gauge:g2"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    150,
+    152,
+    158
+   ],
+   "font_px": null,
+   "kind": "decor",
+   "label_text": null,
+   "mask": "masks/obj_00036.png",
+   "name": "panel/decor:g2_hub",
+   "obj_id": 36,
+   "parent": "panel/gauge:g2"
+  },
+  {
+   "box": {
+    "x0": 729,
+    "x1": 771,
+    "y0": 805,
+    "y1": 832
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "10",
+   "mask": "masks/obj_00037.png",
+   "name": "panel/label:g2_t0",
+   "obj_id": 37,
+   "parent": "panel/labels:g2_ticks"
+  },
+  {
+   "box": {
+    "x0": 716,
+    "x1": 758,
+    "y0": 744,
+    "y1": 771
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "30",
+   "mask": "masks/obj_00038.png",
+   "name": "panel/label:g2_t1",
+   "obj_id": 38,
+   "parent": "panel/labels:g2_ticks"
+  },
+  {
+   "box": {
+    "x0": 769,
+    "x1": 811,
+    "y0": 709,
+    "y1": 736
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "50",
+   "mask": "masks/obj_00039.png",
+   "name": "panel/label:g2_t2",
+   "obj_id": 39,
+   "parent": "panel/labels:g2_ticks"
+  },
+  {
+   "box": {
+    "x0": 821,
+    "x1": 863,
+    "y0": 744,
+    "y1": 771
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "70",
+   "mask": "masks/obj_00040.png",
+   "name": "panel/label:g2_t3",
+   "obj_id": 40,
+   "parent": "panel/labels:g2_ticks"
+  },
+  {
+   "box": {
+    "x0": 808,
+    "x1": 850,
+    "y0": 805,
+    "y1": 832
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "90",
+   "mask": "masks/obj_00041.png",
+   "name": "panel/label:g2_t4",
+   "obj_id": 41,
+   "parent": "panel/labels:g2_ticks"
+  },
+  {
+   "box": {
+    "x0": 767,
+    "x1": 812,
+    "y0": 916,
+    "y1": 943
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "G2",
+   "mask": "masks/obj_00042.png",
+   "name": "panel/label:gauge_G2",
+   "obj_id": 42,
+   "parent": "panel/labels:gauges"
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    0,
+    0,
+    0
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00043.png",
+   "name": "panel/strand:s0",
+   "obj_id": 43,
+   "parent": null
+  },
+  {
+   "box": null,
+   "color_rgb": [
+    136,
+    34,
+    85
+   ],
+   "font_px": null,
+   "kind": "strand",
+   "label_text": null,
+   "mask": "masks/obj_00044.png",
+   "name": "panel/strand:s1",
+   "obj_id": 44,
+   "parent": null
+  },
+  {
+   "box": {
+    "x0": 66,
+    "x1": 90,
+    "y0": 460,
+    "y1": 487
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "E",
+   "mask": "masks/obj_00045.png",
+   "name": "panel/label:start_E",
+   "obj_id": 45,
+   "parent": "panel/labels:start"
+  },
+  {
+   "box": {
+    "x0": 65,
+    "x1": 91,
+    "y0": 524,
+    "y1": 551
+   },
+   "color_rgb": [
+    30,
+    30,
+    30
+   ],
+   "font_px": 26,
+   "kind": "label",
+   "label_text": "A",
+   "mask": "masks/obj_00046.png",
+   "name": "panel/label:start_A",
+   "obj_id": 46,
+   "parent": "panel/labels:start"
+  }
+ ],
+ "plugin": "panel",
+ "schema_version": "1.1.0",
+ "supersample": 2,
+ "terminals": [
+  {
+   "box": {
+    "x0": 633,
+    "x1": 653,
+    "y0": 346,
+    "y1": 366
+   },
+   "label_obj": 24,
+   "role": "port",
+   "terminal_id": "panel/terminal:port_g1"
+  },
+  {
+   "box": {
+    "x0": 633,
+    "x1": 653,
+    "y0": 770,
+    "y1": 790
+   },
+   "label_obj": 42,
+   "role": "port",
+   "terminal_id": "panel/terminal:port_g2"
+  },
+  {
+   "box": {
+    "x0": 102,
+    "x1": 122,
+    "y0": 464,
+    "y1": 484
+   },
+   "label_obj": 45,
+   "role": "start",
+   "terminal_id": "panel/terminal:start_E"
+  },
+  {
+   "box": {
+    "x0": 102,
+    "x1": 122,
+    "y0": 528,
+    "y1": 548
+   },
+   "label_obj": 46,
+   "role": "start",
+   "terminal_id": "panel/terminal:start_A"
+  }
+ ]
+}

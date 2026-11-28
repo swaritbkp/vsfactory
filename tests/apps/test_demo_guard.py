@@ -18,6 +18,7 @@ KEY = "sk-or-v1-server-side-secret-0123456789"
 @pytest.fixture
 def demo(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     monkeypatch.setenv(G.ENV, "1")
+    monkeypatch.delenv(G.BYOK_ENV, raising=False)  # the default demo: Offline Mock only
     monkeypatch.setenv("OPENROUTER_API_KEY", KEY)
     root = tmp_path / "knotwork_demo"
     monkeypatch.setattr(G, "SANDBOX_ROOT", root)
@@ -117,6 +118,7 @@ def test_demo_arena_page_hides_live_mode_keys_and_campaign_import(
     app.switch_page("app_pages/arena.py").run()
     assert not app.exception, app.exception
     assert any(G.BANNER in i.value for i in app.info)
+    app.button_group(key="arena_home_view").set_value("New Session").run()
     assert app.session_state["ar_mode"] == "Offline Mock (No Key)"
     mode = next(s for s in app.get("button_group") if "Offline Mock (No Key)" in str(s.proto))
     assert "Live (OpenRouter)" not in str(mode.proto)
@@ -138,6 +140,152 @@ def test_local_arena_page_keeps_live_mode_and_campaign_import(
     app = AppTest.from_file(str(repo / "apps" / "inspector.py"), default_timeout=120).run()
     app.switch_page("app_pages/arena.py").run()
     assert not app.exception, app.exception
+    app.button_group(key="arena_home_view").set_value("New Session").run()
     mode = next(s for s in app.get("button_group") if "Offline Mock (No Key)" in str(s.proto))
-    assert "Live (OpenRouter)" in str(mode.proto)
+    assert "Live · OpenRouter" in str(mode.proto)
     assert [e for e in app.expander if e.label == "Import campaign.yaml"]
+
+
+# ------------------------------------------------------------------ opt-in BYOK tier
+LIVE_MODES = {"Offline Mock (No Key)": "mock", "Live · OpenRouter": "openrouter",
+              "Live · Custom endpoint": "openai_compat"}  # fmt: skip
+
+
+@pytest.fixture
+def byok(demo: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    monkeypatch.setenv(G.BYOK_ENV, "1")
+    return demo
+
+
+@pytest.mark.parametrize("value", [None, "0", "true", ""])
+def test_byok_needs_both_switches(
+    demo: Path, monkeypatch: pytest.MonkeyPatch, value: str | None
+) -> None:
+    if value is not None:
+        monkeypatch.setenv(G.BYOK_ENV, value)
+    assert not G.byok_allowed() and G.banner() == G.BANNER
+    assert G.execution_modes(LIVE_MODES) == {"Offline Mock (No Key)": "mock"}
+    monkeypatch.setenv(G.BYOK_ENV, "1")
+    monkeypatch.delenv(G.ENV)
+    assert not G.byok_allowed()  # BYOK alone (no public demo) changes nothing
+
+
+def _small(demo: Path, **extra: object) -> object:
+    blocks = extra.pop("blocks", None) or [
+        BlockSpec(block_id="b1", domain="tangle", preset="Clean", n=5, seed=0)
+    ]
+    return config(demo, data_dir=demo / "data", mode="live", blocks=blocks, repeats=1,
+                  spend_cap_usd=0.5, **extra)  # fmt: skip
+
+
+def test_byok_caps_are_enforced_server_side(byok: Path) -> None:
+    assert G.byok_allowed() and G.banner() == G.BYOK_BANNER
+    assert G.execution_modes(LIVE_MODES) == LIVE_MODES
+    ok = _small(byok)
+    assert G.offline_only(ok).mode == "live" and G.config_problems(ok) == []
+    two = _small(byok, blocks=[BlockSpec(block_id=f"b{i}", domain="tangle", preset="Clean",
+                                         n=2, seed=0) for i in range(2)])  # fmt: skip
+    six = _small(byok, blocks=[BlockSpec(block_id="b1", domain="tangle", preset="Clean", n=6,
+                                         seed=0)])  # fmt: skip
+    found = " ".join(G.config_problems(two) + G.config_problems(six))
+    assert "1 block" in found and "at most 5 items" in found
+    found = " ".join(G.config_problems(config(byok, data_dir=byok / "data", mode="live",
+                                              repeats=2, spend_cap_usd=0.75, blocks=[
+        BlockSpec(block_id="b1", domain="tangle", preset="Clean", n=1, seed=0)])))  # fmt: skip
+    assert "k = 1" in found and "$0.50" in found
+    mock = config(byok, data_dir=byok / "data", blocks=[
+        BlockSpec(block_id="b1", domain="tangle", preset="Clean", n=10, seed=0)])  # fmt: skip
+    assert G.config_problems(mock) == []  # Offline Mock keeps the ordinary demo caps
+
+
+def test_byok_custom_endpoint_must_pass_the_ssrf_guard(byok: Path) -> None:
+    local = _small(byok, provider="openai_compat", base_url="http://localhost:8000/v1")
+    assert any("Endpoint:" in p and "https" in p for p in G.config_problems(local))
+    meta = _small(byok, provider="openai_compat", base_url="https://169.254.169.254/v1")
+    assert any("Endpoint:" in p for p in G.config_problems(meta))
+
+
+def test_byok_never_reads_the_server_key(byok: Path, tmp_path: Path) -> None:
+    dotenv = tmp_path / ".env"
+    dotenv.write_text(f"OPENROUTER_API_KEY={KEY}\n", encoding="utf-8")
+    assert G.server_api_key() is None and keys.detect(dotenv) == (None, "")
+
+
+def test_byok_resume_is_capped_not_refused(byok: Path) -> None:
+    from knotwork.arena import planning
+
+    big = config(byok, data_dir=byok / "data", mode="live", repeats=3)
+    storage.write_session(big)
+    problems, process = planning.resume(storage.resolve(big.results_dir),
+                                        storage.Workspace(byok / "ws"), KEY)  # fmt: skip
+    assert process is None and any("Small Live BYOK Test" in p for p in problems)
+
+
+def test_byok_arena_page_offers_live_modes_with_session_only_keys(
+    byok: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from streamlit.testing.v1 import AppTest
+
+    monkeypatch.setenv(storage.ROOT_ENV, str(byok / "arena"))
+    monkeypatch.setenv("KNOTWORK_NETWORK", "deny")
+    repo = Path(__file__).resolve().parents[2]
+    app = AppTest.from_file(str(repo / "apps" / "inspector.py"), default_timeout=120).run()
+    app.switch_page("app_pages/arena.py").run()
+    assert not app.exception, app.exception
+    assert any(G.BYOK_BANNER in i.value for i in app.info)
+    app.button_group(key="arena_home_view").set_value("New Session").run()
+    mode = next(s for s in app.get("button_group") if "Offline Mock (No Key)" in str(s.proto))
+    assert "Live · OpenRouter" in str(mode.proto) and "Live · Custom endpoint" in str(mode.proto)
+    assert not app.get("file_uploader")  # campaign import stays off in every demo tier
+    mode.set_value("Live · OpenRouter").run()
+    assert not app.exception, app.exception
+    assert any(G.PRIVACY_NOTE in i.value for i in app.info)
+    assert [t for t in app.text_input if t.label == "OpenRouter API key"]
+    assert not [b for b in app.get("badge") if ".env" in str(b.proto)]  # no server key shown
+    assert any("paste your key above" in w.value for w in app.warning)  # server key not used
+    files = " ".join(p.read_text("utf-8", "ignore") for p in byok.rglob("*") if p.is_file()
+                     and p.suffix in (".json", ".jsonl", ".yaml", ".log"))  # fmt: skip
+    assert KEY not in files
+
+
+def test_display_path_masks_host_paths_only_in_public_demo(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from knotwork.render.canvas import REPO_ROOT
+
+    sample = REPO_ROOT / "samples" / "demo_forensics"
+    # Outside public demo: repo-relative and local paths pass through unchanged
+    monkeypatch.delenv(G.ENV, raising=False)
+    outside = tmp_path / "local_exports" / "out"
+    assert G.display_path(sample) == "samples/demo_forensics"
+    assert G.display_path(outside) == str(outside.resolve())
+
+    # Inside public demo: sandbox paths mask host/temp prefix; outside paths fall back safely
+    monkeypatch.setenv(G.ENV, "1")
+    root = tmp_path / "AppData" / "Local" / "Temp" / "knotwork_demo"
+    monkeypatch.setattr(G, "SANDBOX_ROOT", root)
+    G.sandbox_root()
+    assert G.display_path(root) == "demo sandbox"
+    assert G.display_path(root / "studio" / "export" / "ws") == "demo sandbox / studio/export/ws"
+    assert G.display_path(sample) == "samples/demo_forensics"
+    secret_host = tmp_path / "Users" / "admin" / "secret"
+    masked = G.display_path(secret_host)
+    assert masked == "demo sandbox"
+    assert "AppData" not in masked and "Temp" not in masked and "Users" not in masked
+
+
+def test_working_set_env_override_is_confined_in_public_demo(
+    demo: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from knotwork.studio import working_set as W
+
+    monkeypatch.setenv(W.ENV, "studio/custom_ws")
+    assert W.default_root() == demo / "studio" / "custom_ws"
+
+    monkeypatch.setenv(W.ENV, str(tmp_path / "outside_ws"))
+    with pytest.raises(G.SandboxViolation):
+        W.default_root()
+
+    monkeypatch.setenv(W.ENV, "../escape_ws")
+    with pytest.raises(G.SandboxViolation):
+        W.default_root()

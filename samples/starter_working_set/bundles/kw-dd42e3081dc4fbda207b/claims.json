@@ -1,0 +1,31 @@
+{
+ "claims": [
+  {
+   "args": [
+    "gauge/gauge:g1"
+   ],
+   "claim_id": "read_g1",
+   "expected": {
+    "canonical": "6",
+    "tolerance": 0.0,
+    "type": "float",
+    "value": 6.0
+   },
+   "op": "READ"
+  },
+  {
+   "args": [
+    "gauge/gauge:g1"
+   ],
+   "claim_id": "zone_g1",
+   "expected": {
+    "canonical": "green",
+    "tolerance": 0.0,
+    "type": "zone",
+    "value": "green"
+   },
+   "op": "ZONE"
+  }
+ ],
+ "plugin": "gauge"
+}

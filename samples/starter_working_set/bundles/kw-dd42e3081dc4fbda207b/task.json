@@ -1,0 +1,379 @@
+{
+ "answer": {
+  "canonical": "6",
+  "tolerance": 1.6,
+  "type": "float",
+  "value": 6.0
+ },
+ "bundle_id": "kw-dd42e3081dc4fbda207b",
+ "canary": "KNOTWORK-CANARY-adefa3976ecf67454dc25b1f85753c8f",
+ "certificate": {
+  "agree": true,
+  "bundle_id": "kw-dd42e3081dc4fbda207b",
+  "checks": [
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.6539616182082084,
+    "name": "contrast",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.12
+   },
+   {
+    "code": "E_BEAUTY_MISMATCH",
+    "metric": 0.0003212081959982904,
+    "name": "needle_tip_color",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.1
+   },
+   {
+    "code": "E_UNEXPLAINED_INK",
+    "metric": 0.0,
+    "name": "unexplained_ink",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 30.0
+   },
+   {
+    "code": "E_OOB",
+    "metric": 0.0,
+    "name": "oob_mask",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 0.0
+   },
+   {
+    "code": "E_OOB",
+    "metric": 0.0,
+    "name": "oob_box",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 0.0
+   },
+   {
+    "code": "E_CVD_AMBIGUOUS",
+    "metric": 15.068522244823777,
+    "name": "cvd_zones",
+    "obj_id": null,
+    "passed": true,
+    "threshold": 8.0
+   },
+   {
+    "code": "E_ILLEGIBLE_RES",
+    "metric": 10.062305898749054,
+    "name": "stroke_768",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 2.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 20,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 21,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 22,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_LABEL_MISMATCH",
+    "metric": 1.0,
+    "name": "ocr_768",
+    "obj_id": 23,
+    "passed": true,
+    "threshold": 1.0
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.9375,
+    "name": "oracle_path",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.35
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.7127311162266423,
+    "name": "oracle_tip",
+    "obj_id": 17,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8347322550881978,
+    "name": "oracle_object",
+    "obj_id": 19,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8094569686489921,
+    "name": "oracle_object",
+    "obj_id": 20,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.7952240595237287,
+    "name": "oracle_object",
+    "obj_id": 21,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.83095062697478,
+    "name": "oracle_object",
+    "obj_id": 22,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8369372294988386,
+    "name": "oracle_object",
+    "obj_id": 23,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8228627889209665,
+    "name": "oracle_object",
+    "obj_id": 10,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8149604865553324,
+    "name": "oracle_object",
+    "obj_id": 11,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8160899488796376,
+    "name": "oracle_object",
+    "obj_id": 12,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8178362722645115,
+    "name": "oracle_object",
+    "obj_id": 13,
+    "passed": true,
+    "threshold": 0.08
+   },
+   {
+    "code": "E_ORACLE_GHOST",
+    "metric": 0.8250346762063792,
+    "name": "oracle_object",
+    "obj_id": 14,
+    "passed": true,
+    "threshold": 0.08
+   }
+  ],
+  "claims_checked": 2,
+  "claims_failed": 0,
+  "codes": [],
+  "d1": {
+   "canonical": "6",
+   "tolerance": 0.0,
+   "type": "float",
+   "value": 6.0
+  },
+  "d2": {
+   "canonical": "6",
+   "tolerance": 0.0,
+   "type": "float",
+   "value": 6.0
+  },
+  "d3": {
+   "canonical": "5.96518",
+   "tolerance": 0.47174685207294453,
+   "type": "float",
+   "value": 5.965175310780162
+  },
+  "kernel_sha256": "cc915c558ec021270fb01b0baab9726af53c21735be08512ed06d36bceadf42f",
+  "kernel_version": "1.0.0",
+  "ocr_engine": "rapidocr",
+  "steps": [
+   {
+    "codes": [],
+    "evidence": {
+     "R": 257.4491717807999,
+     "axis_offset": 0.14005208045229267,
+     "center": [
+      309.0,
+      698.0
+     ],
+     "hi": 20,
+     "length": 251.21577172564344,
+     "limit": 7.723475153423996,
+     "lo": 0,
+     "phi_needle": 20.09685546398555,
+     "theta_needle": 204.8528232952089,
+     "ticks": [
+      {
+       "ocr": "00",
+       "phi": 0.0,
+       "r": 202.28947024493255,
+       "theta": 224.94967875919446,
+       "v": 0
+      },
+      {
+       "ocr": "20",
+       "phi": 67.3806029729482,
+       "r": 202.2055633625376,
+       "theta": 157.56907578624626,
+       "v": 20
+      },
+      {
+       "ocr": "40",
+       "phi": 134.8075059008375,
+       "r": 201.50062034643963,
+       "theta": 90.14217285835697,
+       "v": 40
+      },
+      {
+       "ocr": "60",
+       "phi": 202.43589597593675,
+       "r": 201.51289166919142,
+       "theta": 22.5137827832577,
+       "v": 60
+      },
+      {
+       "ocr": "80",
+       "phi": 270.05406194219773,
+       "r": 201.2526513058259,
+       "theta": 314.8956168169967,
+       "v": 80
+      }
+     ],
+     "tip": [
+      128.82138212737306,
+      781.6102215179678
+     ],
+     "tol": 0.47174685207294453
+    },
+    "inputs": [
+     "gauge/gauge:g1"
+    ],
+    "op": "READ",
+    "output": [
+     5.965175310780162,
+     0.47174685207294453
+    ],
+    "step_id": "s0"
+   }
+  ],
+  "verdict": "CERTIFIED"
+ },
+ "family": "G1_READ",
+ "files": {
+  "beauty.png": "a10ff3a12fa76d8ad590b4fc51995fdba944655415f0d1d5521468cfddaa57a9",
+  "claims.json": "deceefdd08a481fcb9764b2d2b83e25395b228f420b13ccadcb643a47e3a941c",
+  "id_buffer.png": "cff553bbb3d313c6659113e3174e1ec4a0390d459e45b25b6838cc20eea8f324",
+  "manifest.json": "60d52de581569f9e56cd0aa98e176282fb07bd45dff8de43c5d78605bc516475",
+  "masks/obj_00001.png": "2fefb3223a65b2745c905973be9efb7f9a657db33f03c116fd7b9d8190fa1fed",
+  "masks/obj_00002.png": "a88b9e24e74c8ce98fbffc29e69d14bd4af26977832d5a58811635466ec6e1ab",
+  "masks/obj_00003.png": "ad37035ca69718201751bde3c326b424a8867abf3ec6bf0cfc66c62ad887363d",
+  "masks/obj_00004.png": "923490b307953fca3d100c6e9c9c4a10dca125799b26e59bd8b2393a32a8b250",
+  "masks/obj_00005.png": "526dbb84ed9378000c07b41ad6bcea4874519d296be18b8806ae82da8a143036",
+  "masks/obj_00006.png": "15170dbe7e619ae7bfa5fa1b1b103d5a14a599c522a1e12a8ea108cb1676fc04",
+  "masks/obj_00007.png": "ff842f05ec0e9be889aa6c97bd93d2c809fe29c20bb0fe9efc84d67666fe8a4b",
+  "masks/obj_00008.png": "1f98121a09ada1f4fe18ca86436b290711661977d2d10f23f5a87fdc85383749",
+  "masks/obj_00009.png": "21e56dd51a361475f169890a8f98e24e00150293906a495121c2e701cdf23ee4",
+  "masks/obj_00010.png": "74bcefd9768604d6a4385aa53d01d0091c39a62ed8ae64e7ef3ef0bc39dd023a",
+  "masks/obj_00011.png": "d476e3321d9c794d856fc059decd6b781d6b7b72669dec0456833e062096074d",
+  "masks/obj_00012.png": "967c2c10a517c5b3f2cb74efa80f00c9972582bbfd82fb59b7d5b51306e27e57",
+  "masks/obj_00013.png": "928e7ae82897a1ec726b7f704afdea370be239d9729615516dac5b2d7a0d9e84",
+  "masks/obj_00014.png": "3f91b0ac2a9c43b93c96ff635e673f37024fc697558153fd0272b64e3f2c46e2",
+  "masks/obj_00015.png": "8ac2054a6466ec3fc576fa667ce335326aac8cdf379da2a0d9cc518232536aec",
+  "masks/obj_00016.png": "6cd7282540474ce7ffe15c498e6f42971fc646a64d67bfc88a75cf18a2712994",
+  "masks/obj_00017.png": "15dd3589155a0adffa5cf264def581593381360c2ada1ac4dcd22692f65c8b27",
+  "masks/obj_00018.png": "82f168670f947d9b40abc215343440156cb9ca58b81e6fc04f89d722b50d5042",
+  "masks/obj_00019.png": "4933020e473467ea9fc2eb3846644edfb59691fb70bf48910c8fb5a7730b8b65",
+  "masks/obj_00020.png": "6fe559f52a82786e192655439d76113fe095fbdf1cfacb3ca094c396558228c3",
+  "masks/obj_00021.png": "0fbf172785e7698eded070ed7fbfb60c699eedd5421f6863929421165347c2fc",
+  "masks/obj_00022.png": "c7dc47adbe26c9bd874418f4e733e02057c9bd9b79efd7d00be46c95b809b908",
+  "masks/obj_00023.png": "04798ef04243c629141ae3d65812b1065e0684bc261d98211ae735864f2f9513"
+ },
+ "freshness_receipt_id": "623d229b48410ab8ceffb2c2124875338637c7d1ddd71d3372f8cde7c2f6ae5f",
+ "plugin": "gauge",
+ "question": {
+  "answer_type": "float",
+  "difficulty": {
+   "radius": 240.0,
+   "span": 80.0
+  },
+  "difficulty_spec": {
+   "color_regime": "unique",
+   "dpi_scale": null,
+   "jitter_px": null,
+   "noise": null,
+   "occlusion_level": 0.0,
+   "realism": 0.0,
+   "reasoning_load": 0.2,
+   "stroke_px": null,
+   "visual_stress": 0.0
+  },
+  "family": "G1_READ",
+  "options": null,
+  "premise": null,
+  "program_id": "gauge/G1_READ/33a3b21886a51dec",
+  "steps": [
+   {
+    "args": [
+     "gauge/gauge:g1"
+    ],
+    "op": "READ",
+    "step_id": "s0"
+   }
+  ],
+  "text": "What value does the gauge needle point to?\nEnd your reply with a final line of the form 'ANSWER: <number>'."
+ },
+ "scene_id": "9d8b56b6d3f73a919daa051e4a257352ebc8c0cb75bf7339d1d7063883f2e550",
+ "schema_version": "1.1.0",
+ "seed_path": "s:studio/s:gauge/s:G1_READ/i:0/s:scene",
+ "split": "dev",
+ "twins": {
+  "base_id": null,
+  "causal_id": null,
+  "edit": null,
+  "nuisance_id": null,
+  "pixel_diff_frac": null,
+  "role": "base"
+ }
+}

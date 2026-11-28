@@ -195,11 +195,13 @@ def _reproduce(case: RegressionCase, cache: Path) -> tuple[ItemRecord | None, st
     return item, ""
 
 
-def _live_asker(model: str, cache: Path, max_tokens: int) -> Any:
+def _live_asker(model: str, cache: Path, max_tokens: int, provider: str = "openrouter",
+                base_url: str = "") -> Any:  # fmt: skip
     from knotwork.arena.runner import Runner
     from knotwork.arena.schemas import BlockSpec, SessionConfig
 
     cfg = SessionConfig(session_name="knot gate", slug="knot-gate", mode="live",
+                        provider=provider, base_url=base_url,  # type: ignore[arg-type]
                         data_dir=str(cache), results_dir=str(cache / "_results"),
                         default_models=[model], max_tokens=max_tokens,
                         blocks=[BlockSpec(block_id="gate", domain="tangle", preset="Clean", n=1,
@@ -215,6 +217,8 @@ def run_gate(
     min_accuracy: float | None = None,
     cache_dir: Path | None = None,
     max_tokens: int = 512,
+    provider: str = "openrouter",
+    base_url: str = "",
 ) -> dict[str, Any]:
     """Grade `model` on every case. The report's `exit_code` is the CI verdict."""
     from knotwork.arena.runner import ApiError, grade, mock_reply
@@ -226,7 +230,9 @@ def run_gate(
         tmp = tempfile.TemporaryDirectory(prefix="knot-gate-")
     cache = Path(tmp.name) if tmp is not None else Path(cache_dir or ".")
     try:
-        asker = _live_asker(model, cache, max_tokens) if mode == "live" else None
+        asker = (
+            _live_asker(model, cache, max_tokens, provider, base_url) if mode == "live" else None
+        )
         for case in suite.cases:
             row: dict[str, Any] = {"case_id": case.case_id, "domain": case.domain,
                                    "seed": case.seed, "family": case.question_family,
@@ -295,7 +301,13 @@ def gate_command(suite_path: Path | str, model: str = "<model-id>") -> str:
 
 
 def main_gate(
-    suite_path: Path, model: str, mode: GateMode, min_accuracy: float | None, json_out: Path | None
+    suite_path: Path,
+    model: str,
+    mode: GateMode,
+    min_accuracy: float | None,
+    json_out: Path | None,
+    provider: str = "openrouter",
+    base_url: str = "",
 ) -> tuple[int, str]:
     """CLI body: (exit code, text to print)."""
     try:
@@ -304,7 +316,7 @@ def main_gate(
         return EXIT_INVALID, f"knot gate: invalid suite: {exc}"
     if not suite.cases:
         return EXIT_INVALID, f"knot gate: {suite_path} has no pinned cases"
-    report = run_gate(suite, model, mode, min_accuracy)
+    report = run_gate(suite, model, mode, min_accuracy, provider=provider, base_url=base_url)
     if json_out is not None:
         json_out.parent.mkdir(parents=True, exist_ok=True)
         json_out.write_text(json.dumps(report, indent=1, sort_keys=True) + "\n", encoding="utf-8")

@@ -12,8 +12,8 @@ headingFontSizes = ["26px", "20px", "17px", "16px", "15px", "14px"]
 headingFontWeights = [700, 600, 600, 600, 600, 600]
 metricValueFontSize = "1.6rem"
 metricValueFontWeight = 600
-paddingTop = "0.75rem"
-paddingBottom = "1.5rem"
+paddingTop = "0.5rem"
+paddingBottom = "1.0rem"
 
 [theme.light]
 # Emerald 600: its own hover/active shade stays emerald instead of falling to near-black.

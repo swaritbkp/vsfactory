@@ -16,7 +16,17 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pydantic import ValidationError
 
-from knotwork.arena import catalog, keys, planning, regression, report, runner, storage
+from knotwork.arena import (
+    catalog,
+    client,
+    keys,
+    planning,
+    regression,
+    report,
+    runner,
+    showcase,
+    storage,
+)
 from knotwork.arena import forensics as arena_forensics
 from knotwork.arena.campaign_yaml import export_campaign_yaml, load_campaign_yaml
 from knotwork.arena.schemas import (
@@ -30,12 +40,19 @@ from knotwork.arena.schemas import (
 )
 from knotwork.pipeline.io import read_json
 from knotwork.studio import demo_guard, factory, forensics, guide, review
-from posttrain_ui import posttrain_tab
+from knotwork.studio.ssrf_guard import validate_custom_base_url
+from posttrain_ui import PRESETS as SANDBOX_PRESETS
+from posttrain_ui import posttrain_tab, reward_sandbox
 from studio_ui import relative, review_controls, run_with_status
+from ui_chrome import switch_factory_page, working_set
 
 WS = storage.Workspace()
-MODES = {"Offline Mock (No Key)": "mock", "Live (OpenRouter)": "live"}
-DATA_MODES = {"Generate new dataset": "generate", "Reuse existing certified dataset": "reuse"}
+#: execution mode label -> provider (`mock` is offline; the other two are live)
+MODES = {label: key for key, label in client.PROVIDERS.items()}
+#: where a new session's items come from
+SOURCES = {"Working Set": "ws", "Generate new blocks": "generate",
+           "Existing dataset folder": "reuse"}  # fmt: skip
+HOME_VIEWS = ("Showcase · 531-Call Audit", "New Session", "Reward Verifier Sandbox")
 FILTERS = ("All", "Running", "Paused", "Done")
 STATE_PILL = {
     "running": ("RUNNING", "blue", ":material/autorenew:"),
@@ -51,6 +68,8 @@ FILTER_STATES = {"Running": {"running"}, "Paused": {"paused", "stopped", "budget
 IMAGE_PX = 500
 SYNTH_MODELS = ("google/gemini-2.5-flash", "openai/gpt-5.4", "anthropic/claude-sonnet-4.5")
 SECRET_KEY = "ar_api_key"  # session-only widget state; never written anywhere
+CUSTOM_KEY = "ar_custom_key"  # the custom endpoint's optional key: session-only as well
+WS_MAX_PICK = 5
 
 
 # ------------------------------------------------------------------ cached reads
@@ -92,13 +111,24 @@ def _facts(entry_dir: str) -> dict[str, Any]:
     return _card_facts(entry_dir, stamp)
 
 
-def _api_key() -> tuple[str | None, str]:
-    """The key to hand a run: the session-only override when switched on, else the detected one."""
-    if demo_guard.is_public_demo():  # Offline Mock only: no key from anywhere
+def _api_key(provider: str = "openrouter") -> tuple[str | None, str]:
+    """The key to hand a run: the session-only override when switched on, else the detected one.
+    A custom endpoint's key only ever comes from its session field. In the public demo the
+    server's own key is never used: Offline Mock has none, and a BYOK test uses the visitor's."""
+    ss = st.session_state
+    if provider == "openai_compat":
+        return (str(ss.get(CUSTOM_KEY) or "").strip() or None), "session"
+    if demo_guard.is_public_demo():
+        if demo_guard.byok_allowed() and ss.get(SECRET_KEY):
+            return str(ss[SECRET_KEY]).strip(), "your session"
         return None, ""
-    if st.session_state.get("ar_override") and st.session_state.get(SECRET_KEY):
-        return str(st.session_state[SECRET_KEY]).strip(), "session override"
+    if ss.get("ar_override") and ss.get(SECRET_KEY):
+        return str(ss[SECRET_KEY]).strip(), "session override"
     return keys.detect()
+
+
+def _provider_of(cfg: SessionConfig) -> str:
+    return cfg.provider if cfg.mode == "live" else "mock"
 
 
 def _pill(state: str) -> None:
@@ -115,18 +145,33 @@ def _init_state() -> None:
     ss.setdefault("ar_custom_models", [])
     ss.setdefault("ar_live_catalog", False)
     ss.setdefault("ar_procs", {})
-    slug = storage.slugify(str(ss.ar_name))
+    slug = WS.unique_slug(storage.slugify(str(ss.ar_name)))  # never an occupied folder
     data_dir, results_dir = storage.default_dirs(slug)
     ss.setdefault("ar_data_dir", data_dir)
     ss.setdefault("ar_results_dir", results_dir)
+    ss.setdefault("ar_last_slug", slug)
     ss.setdefault("ar_models", list(catalog.DEFAULT_MODELS))
+    ss.setdefault("ar_source", "Generate new blocks")
+    ss.setdefault("ar_base_url", "" if demo_guard.is_public_demo() else "http://localhost:8000/v1")
+    ss.setdefault("ar_model_id", "Qwen/Qwen2.5-VL-7B-Instruct")
+    open_new = ss.pop("_arena_open_new_session", False)
+    quick_pending = ss.pop("ar_quick_pending", False)
+    if open_new or quick_pending:
+        ss.arena_home_view = "New Session"
+        ss.ar_source = "Working Set"
+        ss.ar_selected = None
+        ss.pop("ar_ws_pick", None)
+        ss.ar_name = "Working Set quick test"
+        slug = WS.unique_slug(storage.slugify(ss.ar_name))
+        ss.ar_data_dir, ss.ar_results_dir = storage.default_dirs(slug)
+        ss.ar_last_slug = slug
 
 
 def _on_name() -> None:
     """Folders that still hold the previous default follow the new session name."""
     ss = st.session_state
     old = ss.get("ar_last_slug") or ""
-    new = storage.slugify(str(ss.ar_name))
+    new = WS.unique_slug(storage.slugify(str(ss.ar_name)))
     old_dirs = storage.default_dirs(old) if old else ("", "")
     new_dirs = storage.default_dirs(new)
     for key, before, after in zip(
@@ -144,9 +189,12 @@ def _load_form(cfg: SessionConfig) -> None:
     ss.ar_name = cfg.session_name
     ss.ar_last_slug = cfg.slug
     ss.ar_client, ss.ar_eval, ss.ar_notes = cfg.client, cfg.evaluator, cfg.notes
-    ss.ar_data_mode = "Generate new dataset"
+    ss.ar_source = "Generate new blocks"
     ss.ar_data_dir, ss.ar_results_dir = cfg.data_dir, cfg.results_dir
-    ss.ar_mode = next(k for k, v in MODES.items() if v == cfg.mode)
+    ss.ar_mode = next(k for k, v in MODES.items() if v == _provider_of(cfg))
+    if cfg.provider == "openai_compat":
+        ss.ar_base_url = cfg.base_url
+        ss.ar_model_id = cfg.default_models[0]
     ss.ar_cap, ss.ar_conc, ss.ar_rpm = cfg.spend_cap_usd, cfg.max_concurrency, cfg.rpm
     ss.ar_repeats = cfg.repeats
     ss.ar_temperature = cfg.temperature
@@ -172,13 +220,15 @@ def _select(slug: str) -> None:
 def _sidebar() -> None:
     ss = st.session_state
     with st.sidebar:
-        st.button("New session", type="primary", icon=":material/add:", width="stretch",
-                  on_click=_new_session, key="ar_new", help=guide.tip("ar_new"))  # fmt: skip
+        if ss.ar_selected:
+            st.button("← Back to Arena home", icon=":material/arrow_back:", width="stretch",
+                      on_click=_new_session, key="ar_back_home")  # fmt: skip
         query = st.text_input("Search sessions", key="ar_q", placeholder="Name, client or model",
                               label_visibility="collapsed", icon=":material/search:",
                               help=guide.tip("ar_search"))  # fmt: skip
         chosen = st.selectbox("Status", FILTERS, key="ar_filter", label_visibility="collapsed",
                               help=guide.tip("ar_filter"))  # fmt: skip
+        _showcase_card()
         entries = WS.entries()
         shown = []
         for entry in entries:
@@ -224,6 +274,31 @@ def _sidebar() -> None:
                 else:
                     ss.ar_selected = entry.slug
                     st.rerun()
+
+
+@st.cache_resource(show_spinner=False)
+def _showcase() -> showcase.Showcase | None:
+    return showcase.load()
+
+
+def _open_showcase() -> None:
+    st.session_state.ar_selected = None
+    st.session_state.arena_home_view = "Showcase · 531-Call Audit"
+
+
+def _showcase_card() -> None:
+    sc = _showcase()
+    if sc is None:
+        return
+    k = sc.kpis()
+    with st.container(border=True, key="ar_card_showcase"):
+        st.button("v2 4-domain live audit", key="ar_open_showcase", width="stretch",
+                  type="tertiary", on_click=_open_showcase,
+                  help=guide.tip("ar_showcase"))  # fmt: skip
+        with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+            st.badge("Showcase", color="violet", icon=":material/workspace_premium:")
+            st.badge("Read-only", color="gray", icon=":material/lock:")
+        st.caption(f"{k['calls']} live calls · {k['models']} models · ${k['spend_usd']:.4f}")
 
 
 def _quick_actions(slug: str) -> None:
@@ -277,12 +352,19 @@ def _setup_card() -> dict[str, Any]:
         b.text_input("Evaluator", key="ar_eval", placeholder="Optional", help=guide.tip("ar_eval"))
         st.text_area("Notes", key="ar_notes", height=68, placeholder="What this run is for",
                      help=guide.tip("ar_notes"))  # fmt: skip
-        mode = st.segmented_control("Dataset folder", list(DATA_MODES), key="ar_data_mode",
-                                    default="Generate new dataset", required=True,
-                                    width="stretch", help=guide.tip("ar_data_mode"))  # fmt: skip
-        reuse = DATA_MODES[str(mode)] == "reuse"
+        source = SOURCES[str(st.segmented_control(
+            "Dataset source", list(SOURCES), key="ar_source", required=True, width="stretch",
+            help=guide.tip("ar_source"),
+        ))]  # fmt: skip
+        reuse = source in ("reuse", "ws")
         items: list[ItemRecord] = []
-        if reuse:
+        if source == "ws":
+            items = _ws_picker()
+            data_dir = st.text_input("Dataset folder (data_dir)", key="ar_data_dir",
+                                     help=guide.tip("ar_data_dir"))  # fmt: skip
+            st.caption("Launch copies the chosen items into this folder, so the run is frozen "
+                       "even if the Working Set changes later.")  # fmt: skip
+        elif reuse:
             options = _dataset_options()
             picked = st.selectbox("Certified dataset", options, index=0 if options else None,
                                   key="ar_reuse_dir", accept_new_options=True,
@@ -315,7 +397,66 @@ def _setup_card() -> dict[str, Any]:
             st.warning("This results folder already holds a session. Open it from the sidebar to "
                        "resume, or choose an empty folder.", icon=":material/warning:")  # fmt: skip
     return {"slug": slug, "reuse": reuse, "data_dir": data_dir, "results_dir": results_dir,
-            "items": items}  # fmt: skip
+            "items": items, "source": source}  # fmt: skip
+
+
+def _ws_items(ids: list[str]) -> list[ItemRecord]:
+    """Working Set items as a frozen Arena dataset: one block per domain, in the picked order."""
+    ws = working_set()
+    rows = {r["bundle_id"]: r for r in ws.rows()}
+    found = {i.bundle_id: i for i in storage.studio_batch_items(ws.root)}
+    per: dict[str, int] = {}
+    out = []
+    for bid in ids:
+        item = found.get(bid)
+        if item is None:
+            continue
+        k = per.get(item.domain, 0)
+        per[item.domain] = k + 1
+        seed = rows.get(bid, {}).get("seed")
+        out.append(item.model_copy(update={"block_id": item.domain, "item_index": k,
+                                           "seed": int(seed) if seed is not None else k,
+                                           "preset": "Working Set"}))  # fmt: skip
+    return out
+
+
+def _ws_picker() -> list[ItemRecord]:
+    ss = st.session_state
+    ws = working_set()
+    table = {r["bundle_id"]: r for r in ws.table()}
+    ids = list(table)
+    if not ids:
+        st.caption("The Working Set is empty. Add items from Studio first.")
+        return []
+    quick = [i for i in ss.get("ar_quick_ids") or [] if i in table]
+    most = WS_MAX_PICK  # a quick check; Generate new blocks scales to full campaigns
+    ss.setdefault("ar_ws_pick", quick or ids[:3])
+
+    def label(bid: str) -> str:
+        r = table[bid]
+        return f"{r['domain'].replace('_', ' ').title()} · {r['family']} · truth {r['answer']} · {bid[-6:]}"
+
+    picked = list(st.multiselect("Working Set items", ids, key="ar_ws_pick", format_func=label,
+                                 max_selections=most, help=guide.tip("ar_ws_items")))  # fmt: skip
+    items = _ws_items(picked)
+    if items:
+        domains = len({i.domain for i in items})
+        st.caption(f"{len(items)} certified item{'s' if len(items) != 1 else ''} in {domains} "
+                   f"block{'s' if domains != 1 else ''} (one per domain).")  # fmt: skip
+    return items
+
+
+def _freeze_ws(data_dir: str, items: list[ItemRecord]) -> None:
+    """Copy the picked Working Set bundles into the session's dataset folder with a manifest."""
+    import shutil
+
+    ws = working_set()
+    data = storage.resolve(data_dir)
+    for item in items:
+        target = data / item.dir
+        if not (target / "task.json").is_file():
+            shutil.copytree(ws.root / item.dir, target, dirs_exist_ok=True)
+    storage.write_manifest(data, items, {"session": "working-set", "generator": "knotwork.studio"})
 
 
 def _dataset_options() -> list[str]:
@@ -334,11 +475,25 @@ def _mode_card() -> dict[str, Any]:
         modes = demo_guard.execution_modes(MODES)
         if ss.get("ar_mode") not in modes:  # e.g. a loaded live config in the public demo
             ss.ar_mode = next(iter(modes))
-        mode = modes[str(st.segmented_control("Execution mode", list(modes), key="ar_mode",
-                                              default="Offline Mock (No Key)", required=True,
-                                              width="stretch", help=guide.tip("ar_mode")))]  # fmt: skip
-        found, source = keys.detect()
-        if mode == "live":
+        provider = modes[str(st.segmented_control(
+            "Execution mode", list(modes), key="ar_mode", default=client.PROVIDERS["mock"],
+            required=True, width="stretch", help=guide.tip("ar_mode"),
+        ))]  # fmt: skip
+        mode = "mock" if provider == "mock" else "live"
+        byok = demo_guard.byok_allowed()
+        if byok and mode == "live":
+            small = demo_guard.BYOK_LIMITS
+            st.info(f"Small Live BYOK Test: up to {small.total_items} items in "
+                    f"{small.max_blocks} block, k = 1, spend cap at most "
+                    f"${small.spend_cap_usd:.2f}. {demo_guard.PRIVACY_NOTE}.",
+                    icon=":material/shield:")  # fmt: skip
+        if provider == "openai_compat":
+            _custom_endpoint_fields()
+        elif provider == "openrouter" and byok:
+            st.text_input("OpenRouter API key", type="password", key=SECRET_KEY,
+                          placeholder="sk-or-…", help=guide.tip("ar_key"))  # fmt: skip
+        elif provider == "openrouter":
+            found, source = keys.detect()
             if found:
                 st.badge(f"Key loaded from {source} ({keys.mask(found)})", color="green",
                          icon=":material/key:")  # fmt: skip
@@ -351,7 +506,7 @@ def _mode_card() -> dict[str, Any]:
         else:
             st.caption("Simulated models answer the certified items offline: no key, no network, "
                        "no charges. Costs shown are what a live run would cost.")  # fmt: skip
-            if demo_guard.is_public_demo():
+            if demo_guard.is_public_demo() and not byok:
                 st.caption("This public sandbox runs Offline Mock only. Run Knotwork locally or "
                            "in your own Docker container for live OpenRouter campaigns.")  # fmt: skip
         a, b, c = st.columns(3)
@@ -371,14 +526,66 @@ def _mode_card() -> dict[str, Any]:
         if mode == "mock":
             delay = float(st.number_input("Simulated latency per call (s)", 0.0, 5.0, 0.2, 0.1,
                                           key="ar_delay", help=guide.tip("ar_delay")))  # fmt: skip
-    return {"mode": mode, "cap": float(ss.ar_cap), "conc": int(ss.ar_conc),
+    return {"mode": mode, "provider": provider if mode == "live" else "openrouter",
+            "base_url": str(ss.get("ar_base_url", "")).strip() if provider == "openai_compat"
+            else "", "cap": float(ss.ar_cap), "conc": int(ss.ar_conc),
             "rpm": int(ss.ar_rpm), "delay": delay, "repeats": int(ss.ar_repeats),
             "temperature": float(ss.ar_temperature)}  # fmt: skip
 
 
-def _models_card(live_mode: bool) -> tuple[list[str], catalog.Catalog]:
+def _custom_endpoint_fields() -> None:
+    """Base URL, model id, optional key and a Test endpoint button for any OpenAI-compatible
+    server. The key is a password field held only in this browser session."""
+    st.caption("Any OpenAI-compatible server: vLLM, SGLang, Ollama, OpenAI or the Gemini "
+               "OpenAI endpoint.")  # fmt: skip
+    example = "https://your-endpoint.example/v1" if demo_guard.is_public_demo() else (
+        "http://localhost:8000/v1")  # fmt: skip
+    u_col, m_col = st.columns([1.35, 1.0], gap="small")
+    u_col.text_input("Base URL", key="ar_base_url", placeholder=example,
+                     help=guide.tip("ar_base_url"))  # fmt: skip
+    m_col.text_input("Model ID", key="ar_model_id", placeholder="Qwen/Qwen2.5-VL-7B-Instruct",
+                     help=guide.tip("ar_model_id"))  # fmt: skip
+    st.text_input("Endpoint API key (optional)", type="password", key=CUSTOM_KEY,
+                  placeholder="Leave empty for a local server", help=guide.tip("ar_custom_key"))  # fmt: skip
+    check = validate_custom_base_url(str(st.session_state.get("ar_base_url", "")),
+                                            demo_guard.is_public_demo())  # fmt: skip
+    if not str(st.session_state.get("ar_base_url", "")).strip():
+        st.caption(check.reason)  # empty: an invitation, not an error
+        return
+    if not check.ok:
+        st.warning(check.reason, icon=":material/link_off:")
+    else:
+        st.caption(f"Requests go to `{check.endpoint}` with redirects off.")
+    _test_endpoint()
+
+
+@st.fragment
+def _test_endpoint() -> None:
+    ss = st.session_state
+    if st.button("Test endpoint", icon=":material/network_check:", key="ar_ping",
+                 help=guide.tip("ar_test_endpoint")):  # fmt: skip
+        with st.spinner("Calling /models…"):
+            ss.ar_ping_result = client.ping(str(ss.get("ar_base_url", "")),
+                                            str(ss.get("ar_model_id", "")).strip(),
+                                            str(ss.get(CUSTOM_KEY) or ""))  # fmt: skip
+    result = ss.get("ar_ping_result")
+    if result is not None:
+        st.badge(result.message, color="green" if result.ok else "red",
+                 icon=":material/check_circle:" if result.ok else ":material/error:")  # fmt: skip
+
+
+def _models_card(provider: str) -> tuple[list[str], catalog.Catalog]:
     ss = st.session_state
     cat = _catalog(bool(ss.ar_live_catalog))
+    if provider == "openai_compat":
+        model = str(ss.get("ar_model_id", "")).strip()
+        with st.container(border=True):
+            st.markdown("**Vision model**")
+            st.caption(f"Every block asks `{model or '(set a Model ID)'}` on your endpoint. "
+                       "Costs are estimated at catalog prices; a local server charges "
+                       "nothing.")  # fmt: skip
+        return ([model] if model else []), cat
+    live_mode = provider == "openrouter"
     with st.container(border=True):
         with st.container(horizontal=True, vertical_alignment="center"):
             st.markdown("**Vision models**", width="content")
@@ -517,6 +724,7 @@ def _build_config(setup: dict[str, Any], mode: dict[str, Any], models: list[str]
         session_name=str(ss.ar_name).strip() or "Untitled session", slug=setup["slug"],
         client=str(ss.get("ar_client", "")).strip(), evaluator=str(ss.get("ar_eval", "")).strip(),
         notes=str(ss.get("ar_notes", "")).strip(), mode=mode["mode"],
+        provider=mode.get("provider", "openrouter"), base_url=mode.get("base_url", ""),
         data_mode="reuse" if setup["reuse"] else "generate",
         data_dir=setup["data_dir"], results_dir=setup["results_dir"],
         default_models=models or ["(none)"],
@@ -563,12 +771,14 @@ def _launch_bar(setup: dict[str, Any], mode: dict[str, Any], models: list[str],
             problems.append("Pick at least one default model.")
         if any(b.get("models") == [] for b in blocks):
             problems.append("A block with its own models needs at least one model.")
-        key, _ = _api_key()
-        if live and not key:
-            problems.append("Live mode needs an OpenRouter API key: add it to .env or use the "
-                            "override field.")  # fmt: skip
+        key, _ = _api_key(cfg.provider)
+        if live and cfg.provider == "openrouter" and not key:
+            where = ("paste your key above" if demo_guard.byok_allowed()
+                     else "add it to .env or use the override field")  # fmt: skip
+            problems.append(f"Live mode needs an OpenRouter API key: {where}.")
         if setup["reuse"] and not setup["items"]:
-            problems.append("Pick a certified dataset to reuse.")
+            problems.append("Pick Working Set items to evaluate." if setup["source"] == "ws"
+                            else "Pick a certified dataset to reuse.")  # fmt: skip
         problems += demo_guard.config_problems(cfg)
         for p in problems:
             st.warning(p, icon=":material/rule:")
@@ -584,6 +794,8 @@ def _launch_bar(setup: dict[str, Any], mode: dict[str, Any], models: list[str],
         if launch.button("Launch campaign", type="primary", icon=":material/rocket_launch:",
                          width="stretch", disabled=bool(problems), key="ar_launch",
                          help=guide.tip("ar_launch")):  # fmt: skip
+            if setup["source"] == "ws":
+                _freeze_ws(cfg.data_dir, setup["items"])
             found, process = planning.start(cfg, WS, cat, key if live else None)
             if found:
                 for p in found:
@@ -628,14 +840,116 @@ def _new_session_view() -> None:
         setup = _setup_card()
     with right:
         mode = _mode_card()
-    models, cat = _models_card(mode["mode"] == "live")
+    provider = mode["provider"] if mode["mode"] == "live" else "mock"
+    models, cat = _models_card(provider)
     blocks = _campaign(models, setup)
     _launch_bar(setup, mode, models, blocks, cat)
 
 
+# ------------------------------------------------------------------ home: showcase and sandbox
+def _showcase_view(sc: showcase.Showcase) -> None:
+    """The committed v2 live audit, read-only: KPIs, leaderboard, reliability and frontier."""
+    k = sc.kpis()
+    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+        st.markdown("### v2 4-domain live audit", width="content")
+        st.badge(f"{k['calls']} calls · read-only", color="violet", icon=":material/lock:")
+        st.badge("Live · OpenRouter", color="gray", icon=":material/cloud:")
+        st.badge(f"T = {k['temperature']:g} · k = {k['k']}", color="gray", icon=":material/repeat:")
+    st.caption(f"{k['blocks']} blocks across four domains, {k['models']} vision models, every "
+               "item certified by the kernel before any model saw it. Read from "
+               f"`{relative(sc.folder)}`; nothing here calls the network.")  # fmt: skip
+    a, b, c, d = st.columns(4)
+    a.metric("Live spend", f"${k['spend_usd']:.4f}", f"{k['calls']} calls", delta_color="off",
+             delta_arrow="off", border=True)  # fmt: skip
+    b.metric("Certified items", f"{k['certified']} / {k['items']}", f"{k['yield']:.1%} yield",
+             delta_color="off", delta_arrow="off", border=True)  # fmt: skip
+    c.metric("Top model", f"{k['best_acc']:.1%}", f"{k['best']} · CI {k['best_lo']:.0%}–"
+             f"{k['best_hi']:.0%}", delta_color="off", delta_arrow="off", border=True)  # fmt: skip
+    d.metric("Scored calls", f"{k['scored']} / {k['planned']}", f"{k['api_errors']} API error",
+             delta_color="off", delta_arrow="off", border=True)  # fmt: skip
+    st.markdown("**Leaderboard**")
+    st.dataframe(pd.DataFrame(sc.leaderboard()), hide_index=True, width="stretch",
+                 key="sc_board", column_config={
+                     "Accuracy": st.column_config.ProgressColumn(
+                         format="%.1f%%", min_value=0.0, max_value=100.0,
+                         help=guide.tip("col_accuracy")),
+                     "95% CI": st.column_config.TextColumn(help=guide.tip("col_ci")),
+                     "Cost": st.column_config.NumberColumn(format="$%.4f"),
+                     "$ / correct": st.column_config.NumberColumn(
+                         format="$%.4f", help=guide.tip("col_cost_per_correct")),
+                 })  # fmt: skip
+    for x, y in sc.ties():
+        st.caption(f"{x} and {y} overlap within their Wilson 95% intervals: a statistical tie at "
+                   "this sample size.")  # fmt: skip
+    gap = sc.widest_gap()
+    st.markdown("**Reliability: pass@k vs pass^k**")
+    st.caption(f"{showcase.short(gap['model'])} on {gap['block']} solves "
+               f"{gap['pass_at_k']:.1%} of items at least once in {gap['k']} tries, but only "
+               f"{gap['pass_hat_k']:.1%} on every try. Single-run accuracy overstates "
+               "reliability.")  # fmt: skip
+    pct = st.column_config.NumberColumn(format="%.1f%%")
+    st.dataframe(pd.DataFrame(sc.reliability()), hide_index=True, width="stretch",
+                 height=260, key="sc_rel", column_config={
+                     "pass@1": pct, "pass@k": pct, "pass^k": pct,
+                     "Gap (pp)": st.column_config.NumberColumn(format="%.1f"),
+                 })  # fmt: skip
+    f = sc.frontier()
+    st.markdown("**Post-training frontier**")
+    a, b, c, d = st.columns(4)
+    a.metric("GRPO frontier cells", f["frontier"], border=True, help=guide.tip("pt_frontier"))
+    b.metric("SFT cold-start cells", f["cold_start"], border=True, help=guide.tip("pt_cold"))
+    c.metric("Saturated cells", f["saturated"], border=True, help=guide.tip("pt_saturated"))
+    d.metric("Pack rows", f"{f['sft'] + f['dpo'] + f['grpo']}",
+             f"{f['sft']} SFT · {f['dpo']} DPO · {f['grpo']} GRPO", delta_color="off",
+             delta_arrow="off", border=True)  # fmt: skip
+    with st.container(horizontal=True, gap="small"):
+        for path in sc.downloads():
+            st.download_button(path.name, path.read_bytes(), path.name, key=f"sc_dl_{path.name}",
+                               icon=":material/download:", on_click="ignore")  # fmt: skip
+
+
+def _sandbox_view() -> None:
+    ws = working_set()
+    items = [i for i in storage.studio_batch_items(ws.root) if i.certified]
+    st.markdown("### Reward verifier sandbox")
+    st.caption("Score a rollout with the same RLVR reward a trainer would call. A right answer "
+               "only earns outcome credit when at least one reasoning box matches a certified "
+               "box (IoU ≥ 0.5). Items come from the Working Set; nothing leaves this machine.")  # fmt: skip
+    if not items:
+        st.info("The Working Set is empty. Add an item from Studio first.",
+                icon=":material/inventory_2:")  # fmt: skip
+        return
+    with st.container(border=True):
+        reward_sandbox(items, ws.root, "sb", SANDBOX_PRESETS)
+
+
+def _home() -> None:
+    """Deterministic home view: Showcase by default, New Session, or Reward Verifier Sandbox."""
+    sc = _showcase()
+    labels = [v for v in HOME_VIEWS if sc is not None or not v.startswith("Showcase")]
+    default_view = labels[0]
+    if st.session_state.get("arena_home_view") not in labels:
+        st.session_state["arena_home_view"] = default_view
+    view = st.segmented_control(
+        "Arena view",
+        labels,
+        key="arena_home_view",
+        label_visibility="collapsed",
+        width="stretch",
+    )
+    if view is None:
+        view = default_view
+    if view == "Showcase · 531-Call Audit" and sc is not None:
+        _showcase_view(sc)
+    elif view == "New Session":
+        _new_session_view()
+    else:
+        _sandbox_view()
+
+
 # ------------------------------------------------------------------ session view
 def _controls(entry_dir: Path, cfg: SessionConfig, state: str, running: bool) -> None:
-    key, _ = _api_key()
+    key, _ = _api_key(cfg.provider)
     with st.container(horizontal=True, gap="small"):
         if st.button("Pause", icon=":material/pause:", disabled=not running, key="ar_pause",
                      help=guide.tip("ar_pause")):  # fmt: skip
@@ -889,7 +1203,7 @@ def _to_forensics(item: ItemRecord, trial: TrialRecord, cfg: SessionConfig) -> N
     if got is not None:
         st.session_state.cf_out = relative(out)
         st.session_state.fx_section = "Counterfactual twins"
-        st.switch_page("app_pages/forensics.py")
+        switch_factory_page("forensics")
 
 
 def _inspector(cfg: SessionConfig) -> None:
@@ -993,7 +1307,8 @@ def _report_tab(cfg: SessionConfig, entry_dir: Path) -> None:
         st.caption("No report yet. Press Generate report to write it.")
         return
     files = [Path(p) for p in written.values() if Path(p).is_file()]
-    st.success(f"Report written to `{relative(reports)}`.", icon=":material/check_circle:")
+    st.success(f"Report written to `{demo_guard.display_path(reports)}`.",
+               icon=":material/check_circle:")  # fmt: skip
     with st.container(horizontal=True, gap="small"):
         for path in sorted(files, key=lambda p: p.suffix):
             st.download_button(path.name, path.read_bytes(), path.name, key=f"ar_dl_{path.name}",
@@ -1035,8 +1350,9 @@ def _session_view(slug: str) -> None:
     entry_dir = Path(entry.results_dir)
     cfg = storage.load_config(entry_dir)
     if cfg is None:
-        st.error(f"`{entry_dir}` no longer holds a valid config.json. Remove it from the sidebar "
-                 "or register the folder again.", icon=":material/folder_off:")  # fmt: skip
+        st.error(f"`{demo_guard.display_path(entry_dir)}` no longer holds a valid config.json. "
+                 "Remove it from the sidebar or register the folder again.",
+                 icon=":material/folder_off:")  # fmt: skip
         return
     status = storage.read_status(entry_dir)
     child = st.session_state.ar_procs.get(slug)
@@ -1048,13 +1364,13 @@ def _session_view(slug: str) -> None:
     with st.container(horizontal=True, vertical_alignment="center", gap="small"):
         st.markdown(f"### {cfg.session_name}", width="content")
         _pill(state)
-        st.badge("Live (OpenRouter)" if cfg.mode == "live" else "Offline mock",
+        st.badge(cfg.provider_label,
                  color="violet" if cfg.mode == "live" else "gray",
                  icon=":material/cloud:" if cfg.mode == "live" else ":material/science:")  # fmt: skip
         if cfg.client:
             st.badge(cfg.client, color="gray", icon=":material/apartment:")
-    st.caption(f"Dataset `{relative(storage.resolve(cfg.data_dir))}` · results "
-               f"`{relative(entry_dir)}` · run `{cfg.run_id or '—'}`")  # fmt: skip
+    st.caption(f"Dataset `{demo_guard.display_path(storage.resolve(cfg.data_dir))}` · results "
+               f"`{demo_guard.display_path(entry_dir)}` · run `{cfg.run_id or '—'}`")  # fmt: skip
     if status.message:
         (st.warning if state in ("failed", "budget_stop") else st.caption)(status.message)
     if state == "stopped" and status.state == "running":
@@ -1082,5 +1398,5 @@ _sidebar()
 if st.session_state.ar_selected:
     _session_view(str(st.session_state.ar_selected))
 else:
-    _new_session_view()
+    _home()
 st.sidebar.caption(report.FOOTER)

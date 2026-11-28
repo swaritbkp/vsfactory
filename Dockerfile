@@ -40,6 +40,11 @@ RUN uv sync --locked --no-install-project
 COPY --chown=appuser:appuser . .
 RUN uv sync --locked && rm -rf /home/appuser/.cache/uv
 
+# The image ships without .git: pass the commit for the Studio header badge, e.g.
+#   docker build --build-arg KNOTWORK_BUILD_SHA=$(git rev-parse --short HEAD) -t knotwork:v2 .
+ARG KNOTWORK_BUILD_SHA=""
+ENV KNOTWORK_BUILD_SHA=${KNOTWORK_BUILD_SHA}
+
 # Runtime is fully offline: uv never re-syncs or reaches an index, Streamlit sends no telemetry.
 ENV KNOTWORK_NETWORK=deny \
     UV_NO_SYNC=1 \

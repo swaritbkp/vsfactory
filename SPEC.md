@@ -1173,3 +1173,20 @@ spec leaves open. Never silently change a threshold.
   drop is framed as the combined monochrome + high-stress preset with the per-item Fisher p ~ 0.21
   (the repeat-pooled p = 0.007 treats repeats of one image as independent), and Gemini 2.5 Flash vs
   Qwen3-VL-235B is reported as a statistical tie (overlapping Wilson 95 % CIs).
+* D-50: v2.1 Studio workflow and custom endpoints (branch `feat/v2.1-ux-custom-endpoints`; no
+  kernel, contract, threshold or golden change). (a) A shared **Working Set** dataset
+  (`knotwork.studio.working_set`, an ordinary `index.jsonl` + `bundles/` folder) ties the five pages
+  together; a cold start copies the committed, kernel-certified 4-domain starter
+  (`samples/starter_working_set/`, rebuilt by `scripts/build_starter_set.py`, re-verified nightly)
+  instead of rendering, and under pytest each process gets its own folder so xdist workers never
+  share files. `review_log.jsonl` records gain optional `tags` (older logs load unchanged). (b) Model
+  Arena gains `provider: openai_compat` + `base_url` (vLLM / SGLang / Ollama / OpenAI / Gemini) beside
+  OpenRouter; configs without the fields load as OpenRouter, campaign files still refuse keys, and
+  the network gateway gets a `custom` policy that allows exactly one configured host. Custom calls
+  never follow redirects, time out at 10 s connect / 45 s read and read at most 2 MB. (c) Public demo:
+  `KNOTWORK_DEMO_ALLOW_BYOK=1` (with `KNOTWORK_PUBLIC_DEMO=1`) opts into a Small Live BYOK Test
+  capped server-side at 5 items, 1 block, k = 1, $0.50; custom URLs must pass `ssrf_guard` (HTTPS,
+  public unicast addresses only, re-checked before every request). Unset, the demo is unchanged:
+  Offline Mock only. (d) Containers without `.git` show `KNOTWORK_BUILD_SHA` or the package version
+  in the header, never `detached @ unknown`; a copy of the `knot mutate` report in
+  `samples/fault_matrix/` keeps the Forensics fault-coverage KPI real where `artifacts/` is absent.

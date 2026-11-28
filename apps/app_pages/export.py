@@ -14,24 +14,26 @@ from knotwork.export.run import run_export
 from knotwork.freshness import lineage
 from knotwork.pipeline.io import read_json
 from knotwork.render.canvas import REPO_ROOT
-from knotwork.studio import demo_guard, factory, forensics, guide, present, review
+from knotwork.studio import demo_guard, factory, forensics, guide, present, review, working_set
 from studio_ui import OUT, dataset_label, dataset_select, relative, resolve
+from ui_chrome import is_working_set, review_log_for
 
-FALLBACKS = ("artifacts/selftest/data/tangle", "artifacts/phase3/bench_split/tangle")
 PREVIEW_PX = 220
 FILE_TABLE_HEIGHT = 260
+QA_LABELS = {"approved": "Approved", "flagged": "Flagged", "unreviewed": "Pending"}
 
 
 def _preferred() -> str | None:
-    """The batch just built in Studio, else a tangle dataset."""
+    """The batch just built in Studio, else the Working Set (the selector's first option)."""
     last = st.session_state.get("last_batch_dir")
     if last and (REPO_ROOT / last / "index.jsonl").is_file():
         return str(last)
-    return next((f for f in FALLBACKS if (REPO_ROOT / f / "index.jsonl").is_file()), None)
+    return None
 
 
 def _export(dataset: Path, formats: list[str], out: Path, shard: float, limit: int,
-            only_ids: set[str] | None = None) -> None:  # fmt: skip
+            only_ids: set[str] | None = None,
+            filters: dict[str, object] | None = None) -> None:  # fmt: skip
     chosen = [f for f in formats if f != "manifest"]
     with st.status("Exporting dataset…", expanded=True) as status:
         try:
@@ -43,6 +45,7 @@ def _export(dataset: Path, formats: list[str], out: Path, shard: float, limit: i
                 limit or None,
                 shard or None,
                 only_ids,
+                filters,
             )
             st.write("Checking every file against the manifest hashes")
             problems = check_manifest(out) if code == 0 else ["the exporter wrote nothing"]
@@ -59,6 +62,22 @@ def _export(dataset: Path, formats: list[str], out: Path, shard: float, limit: i
 
 
 # ------------------------------------------------------------------ right column
+def _ws_table(dataset: Path) -> None:
+    """Every Working Set item with its domain, certified answer, QA status and tags."""
+    rows = [{"Domain": r["domain"].replace("_", " ").title(),
+             "Certified answer": r["answer"], "QA status": QA_LABELS[r["status"]],
+             "Tags": r["tags"], "Bundle": r["bundle_id"]}
+            for r in working_set.WorkingSet(dataset).table()]  # fmt: skip
+    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch", key="ex_ws_table",
+                 column_config={
+                     "Domain": st.column_config.TextColumn(width="small"),
+                     "Certified answer": st.column_config.TextColumn(width="small"),
+                     "QA status": st.column_config.TextColumn(width="small"),
+                     "Tags": st.column_config.ListColumn(),
+                     "Bundle": st.column_config.TextColumn(width="medium"),
+                 })  # fmt: skip
+
+
 def _preview(dataset: Path) -> None:
     rows = forensics.bundles(dataset)
     if not rows:
@@ -87,18 +106,27 @@ def _result(out: Path) -> None:
     digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
     rows = present.export_summary(out)
     total = sum(r["bytes"] for r in rows)
-    st.success(
-        f"**Dataset exported.** {data.get('n_bundles', '?')} items, "
+    n_bundles = data.get("n_bundles", "?")
+    item_word = "item" if n_bundles == 1 else "items"
+    msg_col, dl_col = st.columns([3, 1.5], vertical_alignment="center")
+    msg_col.success(
+        f"**Dataset exported.** {n_bundles} {item_word}, "
         f"{sum(r['files'] for r in rows)} files, {present.human_bytes(total)} in "
-        f"`{relative(out)}`.  \nManifest SHA-256 `{digest}`",
+        f"`{demo_guard.display_path(out)}`.  \nManifest SHA-256 `{digest}`",
         icon=":material/check_circle:",
     )
+    dl_col.download_button(
+        "Download export (.zip)", lambda: working_set.folder_zip(out, out.name),
+        f"{out.name}_export.zip", mime="application/zip", type="primary",
+        icon=":material/download:", key="ex_zip", on_click="ignore", width="stretch",
+        help=guide.tip("ex_download_zip"),
+    )  # fmt: skip
     files = pd.DataFrame(present.export_rows(out, data))
     st.dataframe(files, hide_index=True, width="stretch", height=FILE_TABLE_HEIGHT,
                  alt="Every exported file and its size")  # fmt: skip
     st.download_button(
-        "Download dataset_manifest.json", manifest.read_bytes(), "dataset_manifest.json",
-        icon=":material/download:", key="ex_manifest", width="stretch",
+        "dataset_manifest.json", manifest.read_bytes(), "dataset_manifest.json",
+        icon=":material/data_object:", key="ex_manifest", on_click="ignore",
         help=guide.tip("ex_manifest"),
     )  # fmt: skip
 
@@ -149,7 +177,11 @@ with controls:
                                           help=guide.tip("ex_shard")))  # fmt: skip
             limit = int(st.number_input("Limit bundles (0 = all)", 0, 10_000_000, 0,
                                         help=guide.tip("ex_limit")))  # fmt: skip
-            default = relative(OUT / "export" / (dataset.name if dataset else "dataset"))
+            default = (
+                f"studio/export/{dataset.name if dataset else 'dataset'}"
+                if demo_guard.is_public_demo()
+                else relative(OUT / "export" / (dataset.name if dataset else "dataset"))
+            )
             folder = st.text_input("Output folder", default, key=f"ex_out_{default}",
                                    help=guide.tip("ex_out"))  # fmt: skip
     with st.container(border=True):
@@ -161,16 +193,28 @@ with controls:
         only = st.toggle("Approved items only", key="ex_approved",
                          help=guide.tip("qa_approved_only"))  # fmt: skip
         only_ids: set[str] | None = None
-        if only and dataset is not None:
-            states = review.load_review_states(review.STUDIO_LOG)
-            ids = [r["bundle_id"] for r in forensics.bundles(dataset)]
-            only_ids = {i for i in ids if review.status_of(states, i) == "approved"}
-            if only_ids:
-                st.caption(review.filter_note(len(only_ids), len(ids)) + " (Human Eval reviews).")
+        filters: dict[str, object] | None = None
+        states = review.load_review_states(review_log_for(dataset))
+        ids = [r["bundle_id"] for r in forensics.bundles(dataset)] if dataset else []
+        used = sorted({t for i in ids for t in review.tags_of(states, i)})
+        tags = list(st.pills("Filter by tag", list(dict.fromkeys([*review.TAGS, *used])),
+                             selection_mode="multi", key="ex_tags",
+                             help=guide.tip("ex_tags")))  # fmt: skip
+        if (only or tags) and dataset is not None:
+            keep = set(ids)
+            if only:
+                keep = {i for i in keep if review.status_of(states, i) == "approved"}
+            if tags:
+                keep = {i for i in keep if set(review.tags_of(states, i)) & set(tags)}
+            only_ids = keep
+            filters = {"qa_filter": review.QA_FILTER if only else "none", "tag_filter": tags}
+            where = "Working Set reviews" if is_working_set(dataset) else "Human Eval reviews"
+            if keep:
+                st.caption(f"{len(keep)} of {len(ids)} items match ({where}).")
             else:
-                st.warning(f"{review.filter_note(0, len(ids))}. Approve items in Human Eval, or "
-                           "turn this off to export every item.", icon=":material/rule:")  # fmt: skip
-        st.caption(f"Writes to `{relative(out)}`.")
+                st.warning(f"0 of {len(ids)} items match these filters. Review or tag items in "
+                           "Studio or Human Eval, or clear a filter.", icon=":material/rule:")  # fmt: skip
+        st.caption(f"Writes to `{demo_guard.display_path(out)}`.")
         go = st.button(
             "Export dataset", type="primary", width="stretch", icon=":material/package_2:",
             disabled=dataset is None or not formats or only_ids == set() or bool(refused),
@@ -180,19 +224,25 @@ with controls:
         if not formats:
             st.caption("Choose at least one format to export.")
 with output:
+    exported_here = st.session_state.get("exported") == str(out)
+    if go and dataset is not None:
+        _export(dataset, formats, out, shard, limit, only_ids, filters)
+        exported_here = st.session_state.get("exported") == str(out)
+    if exported_here:
+        with st.container(border=True):
+            st.markdown("**Export output**")
+            _result(out)
     with st.container(border=True):
         if dataset is None:
             st.info("Choose a dataset on the left to preview it.", icon=":material/dataset:")
         else:
             st.markdown(f"**{dataset_label(relative(dataset))}**")
             _preview(dataset)
-    with st.container(border=True):
-        st.markdown("**Export output**")
-        if go and dataset is not None:
-            _export(dataset, formats, out, shard, limit, only_ids)
-        if st.session_state.get("exported") == str(out):
-            _result(out)
-        else:
+            if is_working_set(dataset):
+                _ws_table(dataset)
+    if not exported_here:
+        with st.container(border=True):
+            st.markdown("**Export output**")
             st.caption("Nothing exported yet. Press Export dataset to write the files here.")
     if dataset is not None:
         with st.expander("Manifest & lineage", icon=":material/account_tree:"):
