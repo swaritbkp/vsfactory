@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import os
 import shlex
 import subprocess
 import sys
@@ -288,11 +289,19 @@ def command_line(args: list[str]) -> str:
 
 def start_batch(args: list[str], log: Path) -> subprocess.Popen[bytes]:
     """Run `knot generate` in its own process (worker pools do not mix with the UI process)."""
+    from knotwork.studio import demo_guard
+
+    env = dict(os.environ)
+    if demo_guard.is_public_demo():
+        sid = demo_guard.get_demo_session_id()
+        if sid is not None:
+            env[demo_guard.SESSION_ENV] = sid
     log.parent.mkdir(parents=True, exist_ok=True)
     with log.open("wb") as sink:
         return subprocess.Popen(
             [sys.executable, "-m", "knotwork", *args],
             cwd=REPO_ROOT,
+            env=env,
             stdout=sink,
             stderr=subprocess.STDOUT,
         )

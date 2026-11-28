@@ -15,8 +15,8 @@ from knotwork.pipeline.counterfactual import run_counterfactual
 from knotwork.pipeline.io import read_json
 from knotwork.render.canvas import REPO_ROOT
 from knotwork.studio import demo_guard, factory, fault_proofs, forensics, guide, present
-from studio_ui import OUT, dataset_select, relative, resolve, run_with_status, verdict_badge
-from ui_chrome import working_set
+from studio_ui import dataset_select, relative, resolve, run_with_status, studio_out, verdict_badge
+from ui_chrome import sync_demo_session, working_set
 
 SECTIONS = ("Counterfactual twins", "Quarantine", "Fault proofs")
 IMAGE_TWINS = (
@@ -34,7 +34,6 @@ MAX_SEGMENTS = 4
 CARD_HEIGHT = 380
 SAMPLE_REPORT = "samples/demo_forensics"  # committed sample: real twins, written replies
 BUILD_REPORT = "artifacts/studio/counterfactual"
-WS_REPORT = OUT / "counterfactual" / "working_set"
 COMMITTED = "samples/"
 
 
@@ -71,14 +70,17 @@ def _request(action: str) -> None:
 
 def _ws_twins_card() -> None:
     """Sleek single-row bar while the committed sample is shown: build twins for the Working Set."""
+    ws_report_dir = studio_out() / "counterfactual" / "working_set"
     ws_report = (
-        "studio/counterfactual/working_set" if demo_guard.is_public_demo() else relative(WS_REPORT)
+        "studio/counterfactual/working_set"
+        if demo_guard.is_public_demo()
+        else relative(ws_report_dir)
     )
     if st.session_state.get("cf_out") == ws_report:
         return
     with st.container(border=True, key="cf_ws_card"):
         text, go = st.columns([3.5, 1.5], vertical_alignment="center")
-        built = (WS_REPORT / "suites.json").is_file()
+        built = (ws_report_dir / "suites.json").is_file()
         text.markdown(
             "**Working Set twins** — :gray[sample below; generate clean, palette-swap, "
             "step-down & text twins for your item.]"
@@ -90,7 +92,7 @@ def _ws_twins_card() -> None:
         built
         or run_with_status(
             "Render twins for the first Working Set item",
-            lambda: forensics.dataset_suite(working_set().root, WS_REPORT),
+            lambda: forensics.dataset_suite(working_set().root, ws_report_dir),
         )
     ):
         st.session_state.cf_out = ws_report
@@ -302,7 +304,7 @@ def _quarantine(dataset: Path | None) -> None:
         st.caption(record.get("detail", ""))
         if st.button("Re-render and re-certify", icon=":material/replay:", key="q_replay",
                      help=guide.tip("q_replay")):  # fmt: skip
-            target = OUT / "quarantine" / uuid.uuid4().hex[:8]
+            target = studio_out() / "quarantine" / uuid.uuid4().hex[:8]
             got = run_with_status(
                 "Reproduce the candidate", lambda: forensics.reproduce(dataset, record, target)
             )
@@ -315,9 +317,9 @@ def _quarantine(dataset: Path | None) -> None:
 
 # ------------------------------------------------------------------ faults
 @st.cache_data(show_spinner=False, max_entries=32)
-def _proof(fault_id: str, seed: int) -> list[fault_proofs.ProofSide]:
+def _proof(fault_id: str, seed: int, out_dir: str) -> list[fault_proofs.ProofSide]:
     """A proof pair per (fault, seed): built once per server, then instant."""
-    return fault_proofs.build(FaultCode(fault_id), seed, OUT / "faults")
+    return fault_proofs.build(FaultCode(fault_id), seed, Path(out_dir))
 
 
 @st.cache_resource(show_spinner=False)
@@ -350,6 +352,7 @@ def _strip(fault: FaultCode, sides: list[fault_proofs.ProofSide]) -> None:
 def _faults() -> None:
     """Live Fault Check: inject a renderer fault, run the kernel, show the verdict and its code.
     A fragment, so a check redraws only this section."""
+    sync_demo_session()
     sample = _sample()
     values = [f.value for f in FaultCode]
     default_fault, default_seed = (sample[0], sample[1]) if sample else (FaultCode.M1, 3)
@@ -371,7 +374,8 @@ def _faults() -> None:
     if st.session_state.get("fp_built") != (fault.value, seed):
         st.caption("Press Run live fault check to inject this fault and certify both renders.")
         return
-    sides = run_with_status("Inject and certify", lambda: _proof(fault.value, seed))
+    fault_dir = str(studio_out() / "faults")
+    sides = run_with_status("Inject and certify", lambda: _proof(fault.value, seed, fault_dir))
     if sides is not None:
         _verdict_line(fault, sides)
         _strip(fault, sides)

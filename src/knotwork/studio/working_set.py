@@ -58,10 +58,10 @@ def default_root() -> Path:
     override = os.environ.get(ENV, "").strip()
     if override:
         return demo_guard.confine(override) if demo_guard.is_public_demo() else Path(override)
+    if demo_guard.is_public_demo():
+        return demo_guard.sandbox_root() / "studio" / "working_set"
     if "PYTEST_CURRENT_TEST" in os.environ or "PYTEST_XDIST_WORKER" in os.environ:
         return Path(tempfile.gettempdir()) / f"knotwork-ws-{os.getpid()}"
-    if demo_guard.is_public_demo():
-        return demo_guard.SANDBOX_ROOT / "studio" / "working_set"
     return REPO_ROOT / "artifacts" / "studio" / "working_set"
 
 

@@ -48,6 +48,10 @@ def load_profile(path: Path | str) -> dict[str, Any]:
     data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError(f"profile {path} must be a mapping")
+    if "rack_patch" not in data and "tangle" in data:
+        from knotwork.plugins.rack_patch.plugin import rack_section
+
+        data["rack_patch"] = rack_section(data)
     return data
 
 

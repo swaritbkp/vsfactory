@@ -27,23 +27,29 @@ other demo rule above still holds. Unset or `0`, the demo is exactly the Offline
 from __future__ import annotations
 
 import os
+import re
+import shutil
+from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 ENV = "KNOTWORK_PUBLIC_DEMO"
 BYOK_ENV = "KNOTWORK_DEMO_ALLOW_BYOK"
+SESSION_ENV = "KNOTWORK_DEMO_SESSION_ID"
+SESSION_ID_RE = re.compile(r"^s_[0-9a-f]{8}$")
 SANDBOX_ROOT = Path("/tmp/knotwork_demo")
 BANNER = (
-    "Live Interactive Sandbox (Offline Mock only · capped at 10 items/block · ephemeral /tmp "
-    "storage)"
+    "Live Interactive Sandbox (Offline Mock only · capped at 10 items/block · ephemeral sandbox "
+    "storage, isolated per browser session)"
 )
 BYOK_BANNER = (
     "Live Interactive Sandbox (Offline Mock, or a Small Live BYOK Test of up to 5 items with your "
-    "own key · ephemeral /tmp storage)"
+    "own key · ephemeral sandbox storage, isolated per browser session)"
 )
 PRIVACY_NOTE = "Key stays in browser session RAM only · never logged or saved"
 OFFLINE_MODE = "mock"
+_DEMO_SESSION_ID: ContextVar[str | None] = ContextVar("_knotwork_demo_session_id", default=None)
 
 
 @dataclass(frozen=True)
@@ -98,11 +104,73 @@ def cap(value: int, ceiling: int) -> int:
     return min(value, ceiling) if is_public_demo() else value
 
 
-def sandbox_root(root: Path | None = None) -> Path:
-    """The sandbox folder (created). Only meaningful in the public demo."""
+def _validate_session_id(sid: str | None) -> str | None:
+    if sid is None:
+        return None
+    if not isinstance(sid, str) or not SESSION_ID_RE.match(sid):
+        raise ValueError(f"invalid demo session id: {sid!r}")
+    return sid
+
+
+def set_demo_session_id(sid: str | None) -> None:
+    """Bind the current execution context to a validated demo session id (or None to clear)."""
+    _DEMO_SESSION_ID.set(_validate_session_id(sid))
+
+
+def get_demo_session_id() -> str | None:
+    """Active demo session id from the ContextVar, falling back to `KNOTWORK_DEMO_SESSION_ID`."""
+    sid = _DEMO_SESSION_ID.get()
+    if sid is not None:
+        return sid
+    raw = os.environ.get(SESSION_ENV, "").strip()
+    return _validate_session_id(raw) if raw else None
+
+
+def base_sandbox_root(root: Path | None = None) -> Path:
+    """The shared demo sandbox base folder (created)."""
     path = (root or SANDBOX_ROOT).resolve()
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def sandbox_root(root: Path | None = None) -> Path:
+    """The active sandbox folder (per-session when public demo and a session id is active)."""
+    base = base_sandbox_root(root)
+    if is_public_demo():
+        sid = get_demo_session_id()
+        if sid is not None:
+            path = (base / sid).resolve()
+            path.mkdir(parents=True, exist_ok=True)
+            return path
+    return base
+
+
+def prune_old_sessions(
+    max_sessions: int = 15, keep_sid: str | None = None, root: Path | None = None
+) -> int:
+    """Remove oldest `s_*` session folders beyond `max_sessions`, never deleting `keep_sid`."""
+    keep = _validate_session_id(keep_sid)
+    base = base_sandbox_root(root)
+    dirs = [p for p in base.iterdir() if p.is_dir() and SESSION_ID_RE.match(p.name)]
+    cap_n = max(1, int(max_sessions))
+    if len(dirs) <= cap_n:
+        return 0
+    dirs.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    kept: list[Path] = []
+    if keep is not None:
+        kept.extend(p for p in dirs if p.name == keep)
+    for p in dirs:
+        if len(kept) >= cap_n:
+            break
+        if p not in kept:
+            kept.append(p)
+    kept_set = set(kept)
+    removed = 0
+    for p in dirs:
+        if p not in kept_set:
+            shutil.rmtree(p, ignore_errors=True)
+            removed += 1
+    return removed
 
 
 def confine(path: str | Path, root: Path | None = None) -> Path:
@@ -110,7 +178,7 @@ def confine(path: str | Path, root: Path | None = None) -> Path:
     placed under it); raises SandboxViolation otherwise. Outside the demo: `Path(path)` unchanged."""
     if not is_public_demo():
         return Path(path)
-    base = (root or SANDBOX_ROOT).resolve()
+    base = root.resolve() if root is not None else sandbox_root()
     raw = Path(str(path).strip()).expanduser()
     target = (raw if raw.is_absolute() else base / raw).resolve()
     if target != base and not target.is_relative_to(base):
@@ -127,13 +195,20 @@ def path_problem(path: str | Path, root: Path | None = None) -> str | None:
     return None
 
 
+def _strip_session_prefix(rel: str) -> str:
+    parts = [p for p in rel.split("/") if p]
+    if parts and SESSION_ID_RE.match(parts[0]):
+        parts = parts[1:]
+    return "/".join(parts)
+
+
 def display_path(path: Path | str, root: Path | None = None) -> str:
     """Human-readable path for UI captions.
 
     Outside the public demo, returns repo-relative POSIX text (or the resolved path outside the
-    repo). In the public demo, strips host/temp prefixes and formats sandbox paths as
-    ``demo sandbox / <subpath>``, keeps committed ``samples/`` relative, and never discloses OS
-    temp or user home paths.
+    repo). In the public demo, strips host/temp prefixes and per-session ids and formats sandbox
+    paths as ``demo sandbox / <subpath>``, keeps committed ``samples/`` relative, and never
+    discloses OS temp, user home paths, or session hashes.
     """
     from knotwork.render.canvas import REPO_ROOT
 
@@ -145,7 +220,8 @@ def display_path(path: Path | str, root: Path | None = None) -> str:
             return resolved.relative_to(repo).as_posix()
         except ValueError:
             return str(resolved)
-    base = (root or SANDBOX_ROOT).resolve()
+    session_base = root.resolve() if root is not None else sandbox_root()
+    shared_base = root.resolve() if root is not None else base_sandbox_root()
     samples = (repo / "samples").resolve()
     if raw.is_absolute():
         resolved = raw.resolve()
@@ -153,11 +229,15 @@ def display_path(path: Path | str, root: Path | None = None) -> str:
         repo_candidate = (repo / raw).resolve()
         if repo_candidate == samples or repo_candidate.is_relative_to(samples):
             return repo_candidate.relative_to(repo).as_posix()
-        resolved = (base / raw).resolve()
-    if resolved == base:
+        resolved = (session_base / raw).resolve()
+    if resolved in (session_base, shared_base):
         return "demo sandbox"
-    if resolved.is_relative_to(base):
-        return f"demo sandbox / {resolved.relative_to(base).as_posix()}"
+    if resolved.is_relative_to(session_base):
+        rel = _strip_session_prefix(resolved.relative_to(session_base).as_posix())
+        return f"demo sandbox / {rel}" if rel else "demo sandbox"
+    if resolved.is_relative_to(shared_base):
+        rel = _strip_session_prefix(resolved.relative_to(shared_base).as_posix())
+        return f"demo sandbox / {rel}" if rel else "demo sandbox"
     if resolved == samples or resolved.is_relative_to(samples):
         return resolved.relative_to(repo).as_posix()
     return "demo sandbox"
@@ -243,8 +323,9 @@ def config_problems(cfg: Any, root: Path | None = None) -> list[str]:
 
 __all__ = [
     "BANNER", "BYOK_BANNER", "BYOK_ENV", "BYOK_LIMITS", "DEMO_LIMITS", "ENV", "OFFLINE_MODE",
-    "PRIVACY_NOTE", "SANDBOX_ROOT", "ByokLimits", "Limits", "SandboxViolation", "banner",
-    "byok_allowed", "byok_problems", "campaign_import_allowed", "cap", "config_problems", "confine",
-    "display_path", "execution_modes", "is_public_demo", "limits", "offline_only", "path_problem",
-    "sandbox_root", "server_api_key",
+    "PRIVACY_NOTE", "SANDBOX_ROOT", "SESSION_ENV", "SESSION_ID_RE", "ByokLimits", "Limits",
+    "SandboxViolation", "banner", "base_sandbox_root", "byok_allowed", "byok_problems",
+    "campaign_import_allowed", "cap", "config_problems", "confine", "display_path",
+    "execution_modes", "get_demo_session_id", "is_public_demo", "limits", "offline_only",
+    "path_problem", "prune_old_sessions", "sandbox_root", "server_api_key", "set_demo_session_id",
 ]  # fmt: skip

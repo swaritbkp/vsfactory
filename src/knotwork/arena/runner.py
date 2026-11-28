@@ -102,6 +102,13 @@ def launch(
     else:
         env = client.runner_env("openrouter", "", None, dict(os.environ))
         env["KNOTWORK_NETWORK"] = "deny"
+    from knotwork.studio import demo_guard
+
+    if demo_guard.is_public_demo():
+        sid = demo_guard.get_demo_session_id()
+        if sid is not None:
+            env[demo_guard.SESSION_ENV] = sid
+        env[storage.ROOT_ENV] = str(demo_guard.sandbox_root() / "arena")
     src = str(Path(__file__).resolve().parents[2])
     env["PYTHONPATH"] = os.pathsep.join(p for p in (src, env.get("PYTHONPATH", "")) if p)
     results_dir.mkdir(parents=True, exist_ok=True)

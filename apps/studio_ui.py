@@ -30,12 +30,27 @@ SOURCES = (  # folder prefix -> where the dataset came from, in the reader's wor
 )
 
 
+def studio_out() -> Path:
+    """Studio output folder: per-session sandbox in public demo, else `artifacts/studio/`."""
+    return (
+        demo_guard.sandbox_root() / "studio"
+        if demo_guard.is_public_demo()
+        else REPO_ROOT / "artifacts" / "studio"
+    )
+
+
 def relative(path: Path) -> str:
-    """Repository-relative text for a path (absolute when it lies elsewhere)."""
+    """Repository-relative (or sandbox-relative in public demo) text for a path."""
+    resolved = path.resolve()
+    if demo_guard.is_public_demo():
+        root = demo_guard.sandbox_root()
+        if resolved == root or resolved.is_relative_to(root):
+            rel = resolved.relative_to(root).as_posix()
+            return rel or "."
     try:
-        return path.resolve().relative_to(REPO_ROOT).as_posix()
+        return resolved.relative_to(REPO_ROOT).as_posix()
     except ValueError:
-        return str(path.resolve())
+        return str(resolved)
 
 
 def resolve(text: str) -> Path:
@@ -54,12 +69,17 @@ def footer() -> None:
 
 
 @st.cache_data(ttl=30, show_spinner=False)
-def _item_count(folder: str) -> int:
+def _item_count_cached(folder: str, _scope: str) -> int:
     index = resolve(folder) / "index.jsonl"
     if not index.is_file():
         return 0
     with index.open(encoding="utf-8") as handle:
         return sum(1 for line in handle if line.strip())
+
+
+def _item_count(folder: str) -> int:
+    scope = str(demo_guard.sandbox_root()) if demo_guard.is_public_demo() else ""
+    return _item_count_cached(folder, scope)
 
 
 def working_set_folder() -> str:
@@ -103,12 +123,18 @@ def dataset_select(
         index=index,
         key=key,
         format_func=dataset_label,
-        accept_new_options=True,
-        placeholder="Pick a dataset or type a folder path",
+        accept_new_options=not demo_guard.is_public_demo(),
+        placeholder="Pick a dataset"
+        if demo_guard.is_public_demo()
+        else "Pick a dataset or type a folder path",
         help=help,
     )
     if not chosen:
         st.caption("No dataset yet. Build one in Studio under Batch & OOD Build.")
+        return None
+    refused = demo_guard.path_problem(str(chosen))
+    if refused:
+        st.error(refused, icon=":material/folder_off:")
         return None
     path = resolve(str(chosen))
     if not (path / "index.jsonl").is_file():

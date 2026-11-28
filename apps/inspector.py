@@ -65,6 +65,7 @@ def _status() -> present.RepoStatus:
 
 def _system_popover(page: str | None, status: present.RepoStatus) -> None:
     from studio_ui import guide_controls
+    from ui_chrome import reset_demo_sandbox
 
     build = present.build_label(status)
     container = build.startswith("package ")
@@ -93,6 +94,14 @@ def _system_popover(page: str | None, status: present.RepoStatus) -> None:
         st.badge("TCB audit failed", icon=":material/gpp_bad:", color="red")
     if demo_guard.is_public_demo():
         st.info(demo_guard.banner(), icon=":material/shield:")
+        if st.button(
+            "Reset my sandbox",
+            icon=":material/restart_alt:",
+            key="sys_reset_sandbox",
+            width="stretch",
+        ):
+            reset_demo_sandbox()
+            st.rerun()
     st.divider()
     guide_controls(page)
 
@@ -119,7 +128,7 @@ def header(page: str | None) -> None:
                     )
                 else:
                     st.badge(
-                        "Offline Mock Sandbox · 10-item cap · /tmp",
+                        "Offline Mock Sandbox · 10-item cap · Ephemeral",
                         icon=":material/shield:",
                         color="blue",
                     )
@@ -131,30 +140,37 @@ def header(page: str | None) -> None:
         cols = st.columns(5, gap="small")
         for col, (stage_key, label, icon, tip_text) in zip(cols, HERO_STAGES, strict=True):
             is_active = (page == stage_key) or (page == "arena" and stage_key == "model_arena")
-            if (
-                col.button(
-                    label,
-                    icon=icon,
-                    type="primary" if is_active else "secondary",
-                    width="stretch",
-                    key=f"hero_nav_{stage_key}",
-                    help=tip_text,
-                )
-                and not is_active
+            if col.button(
+                label,
+                icon=icon,
+                type="primary" if is_active else "secondary",
+                width="stretch",
+                key=f"hero_nav_{stage_key}",
+                help=tip_text,
             ):
-                if stage_key == "model_arena":
+                if stage_key == "model_arena" and (
+                    not is_active
+                    or st.session_state.get("ar_selected") is not None
+                    or st.session_state.get("arena_home_view")
+                    not in (None, "Showcase · 531-Call Audit")
+                ):
                     st.session_state.pop("arena_home_view", None)
                     st.session_state.pop("ar_selected", None)
-                switch_factory_page(stage_key)
+                    if is_active:
+                        st.rerun()
+                if not is_active:
+                    switch_factory_page(stage_key)
         guide_strip(page)
 
 
 def main() -> None:
     os.environ["KNOTWORK_NETWORK"] = "deny"  # the studio never touches the network
-    if demo_guard.is_public_demo():  # sessions, datasets and results live in the sandbox only
-        os.environ["KNOTWORK_ARENA_ROOT"] = str(demo_guard.sandbox_root() / "arena")
     if str(APP) not in sys.path:
         sys.path.insert(0, str(APP))  # pages import `studio_ui`
+    from studio_ui import footer  # importable once APP is on sys.path
+    from ui_chrome import sync_demo_session, working_set
+
+    sync_demo_session()
     st.set_page_config(page_title="Knotwork VTF Studio", page_icon=":material/hub:", layout="wide")
     pages = [
         st.Page(str(APP / "app_pages" / name), title=title, icon=icon, default=i == 0)
@@ -163,9 +179,6 @@ def main() -> None:
     st.session_state["_knotwork_pages"] = {
         key: page_obj for (key, _, _, _), page_obj in zip(PAGES, pages, strict=True)
     }
-    from studio_ui import footer  # importable once APP is on sys.path
-    from ui_chrome import working_set
-
     working_set()  # cold start: seed the shared Working Set before any page reads it
     current = st.navigation(pages, position="hidden")
     header(guide.page_key(current.title))
