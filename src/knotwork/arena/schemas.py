@@ -40,8 +40,12 @@ MAX_BLOCK_ITEMS = 100_000
 MAX_SPEND_USD = 250.0
 #: repeats per (item, model) for pass@k / pass^k reliability (ZeroBench, Roberts et al., ICML 2026)
 MAX_REPEATS = 5
-#: anything shaped like a provider secret (OpenRouter, OpenAI, Anthropic, Google AIza, bearer)
-SECRET_RE = re.compile(r"(sk-[A-Za-z0-9_-]{8,}|AIza[0-9A-Za-z_-]{20,}|Bearer\s+[A-Za-z0-9._-]{8,})")
+#: anything shaped like a provider secret (OpenRouter, OpenAI, Anthropic, Google, Groq, xAI, HF, GitHub, AWS, bearer)
+SECRET_RE = re.compile(
+    r"(sk-[A-Za-z0-9_-]{8,}|AIza[0-9A-Za-z_-]{20,}|Bearer\s+[A-Za-z0-9._-]{8,}"
+    r"|gsk_[A-Za-z0-9]{20,}|xai-[A-Za-z0-9_-]{20,}|hf_[A-Za-z0-9]{20,}"
+    r"|ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16})"
+)
 
 
 class _Record(BaseModel):

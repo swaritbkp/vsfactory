@@ -249,3 +249,36 @@ def test_openrouter_campaign_files_keep_the_pre_v2_1_shape(arena_root: Path) -> 
     body = " ".join(line for line in text.splitlines() if not line.startswith("#"))
     assert "provider" not in body and "base_url" not in body
     assert load_campaign_yaml(text).provider == "openrouter"
+
+
+@pytest.mark.parametrize(
+    "token",
+    [
+        "gsk_0123456789abcdefghij",
+        "xai-0123456789abcdefghij",
+        "hf_0123456789abcdefghij",
+        "ghp_0123456789abcdefghij",
+        "AKIAIOSFODNN7EXAMPLE",
+    ],
+)
+def test_campaign_yaml_rejects_modern_provider_secret_prefixes(token: str) -> None:
+    body = (
+        "session_name: Provider Secret Check\nmode: live\nprovider: openai_compat\n"
+        "base_url: https://example.com/v1\nmodel_id: qwen2.5-vl\n"
+        f"notes: token={token}\n"
+        "blocks:\n  - {block_id: b1, domain: tangle, preset: Clean, n: 1, seed: 0}\n"
+    )
+    with pytest.raises(ValueError, match="secret"):
+        load_campaign_yaml(body)
+
+
+def test_campaign_yaml_allows_benign_hf_identifiers() -> None:
+    for note in ("hf_dataset_v2", "hf_export_dir"):
+        body = (
+            f"session_name: {note}\nmode: mock\n"
+            "default_models: [openai/gpt-5.4]\n"
+            f"notes: source={note}\n"
+            "blocks:\n  - {block_id: b1, domain: tangle, preset: Clean, n: 1, seed: 0}\n"
+        )
+        cfg = load_campaign_yaml(body)
+        assert cfg.notes == f"source={note}"

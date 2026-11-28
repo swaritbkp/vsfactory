@@ -246,3 +246,46 @@ def test_byok_arena_page_offers_live_modes_with_session_only_keys(
     files = " ".join(p.read_text("utf-8", "ignore") for p in byok.rglob("*") if p.is_file()
                      and p.suffix in (".json", ".jsonl", ".yaml", ".log"))  # fmt: skip
     assert KEY not in files
+
+
+def test_display_path_masks_host_paths_only_in_public_demo(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from knotwork.render.canvas import REPO_ROOT
+
+    sample = REPO_ROOT / "samples" / "demo_forensics"
+    # Outside public demo: repo-relative and local paths pass through unchanged
+    monkeypatch.delenv(G.ENV, raising=False)
+    outside = tmp_path / "local_exports" / "out"
+    assert G.display_path(sample) == "samples/demo_forensics"
+    assert G.display_path(outside) == str(outside.resolve())
+
+    # Inside public demo: sandbox paths mask host/temp prefix; outside paths fall back safely
+    monkeypatch.setenv(G.ENV, "1")
+    root = tmp_path / "AppData" / "Local" / "Temp" / "knotwork_demo"
+    monkeypatch.setattr(G, "SANDBOX_ROOT", root)
+    G.sandbox_root()
+    assert G.display_path(root) == "demo sandbox"
+    assert G.display_path(root / "studio" / "export" / "ws") == "demo sandbox / studio/export/ws"
+    assert G.display_path(sample) == "samples/demo_forensics"
+    secret_host = tmp_path / "Users" / "admin" / "secret"
+    masked = G.display_path(secret_host)
+    assert masked == "demo sandbox"
+    assert "AppData" not in masked and "Temp" not in masked and "Users" not in masked
+
+
+def test_working_set_env_override_is_confined_in_public_demo(
+    demo: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from knotwork.studio import working_set as W
+
+    monkeypatch.setenv(W.ENV, "studio/custom_ws")
+    assert W.default_root() == demo / "studio" / "custom_ws"
+
+    monkeypatch.setenv(W.ENV, str(tmp_path / "outside_ws"))
+    with pytest.raises(G.SandboxViolation):
+        W.default_root()
+
+    monkeypatch.setenv(W.ENV, "../escape_ws")
+    with pytest.raises(G.SandboxViolation):
+        W.default_root()

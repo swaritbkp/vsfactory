@@ -64,6 +64,9 @@ def test_cold_start_seeds_the_working_set_and_header(app: AppTest, env: Path) ->
 def test_studio_adds_tags_and_hands_off_to_the_arena(app: AppTest, env: Path) -> None:
     app.switch_page("app_pages/studio.py").run()
     ws = W.WorkingSet(env / "working_set")
+    assert any(b.label == "In the Working Set" and b.disabled for b in app.button)
+    next(b for b in app.button if b.label == "Generate & Certify Task").click().run()
+    assert not app.exception, app.exception
     bid = app.session_state["item"]["task"]["bundle_id"]
     seed = app.session_state["item"]["seed"]
     item_key = f"{bid}_{seed}"
@@ -162,3 +165,129 @@ def test_export_filters_by_tag_and_offers_a_zip(app: AppTest, env: Path) -> None
     manifest = json.loads((folder / "dataset_manifest.json").read_text(encoding="utf-8"))
     assert manifest["tag_filter"] == ["regression"] and manifest["selected_count"] == tagged
     assert manifest["qa_filter"] == "none" and manifest["candidate_count"] == total
+
+
+def test_segmented_controls_handle_none_deselection(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(W.ENV, str(tmp_path / "working_set"))
+    monkeypatch.setenv(storage.ROOT_ENV, str(tmp_path / "arena"))
+    monkeypatch.setenv("KNOTWORK_NETWORK", "deny")
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.setattr(calibration, "LOG", tmp_path / "human_calibration.jsonl")
+
+    fresh = AppTest.from_file(str(REPO / "apps" / "inspector.py"), default_timeout=120).run()
+    assert not fresh.exception, fresh.exception
+
+    # 1. Studio View deselection -> falls back to Beauty
+    fresh.button_group(key="view").set_value(None).run()
+    assert not fresh.exception, fresh.exception
+    assert any("What a model sees" in c.value for c in fresh.caption)
+
+    # 2. Studio QA Decision deselection -> falls back to unreviewed without error
+    item = fresh.session_state["item"]
+    item_key = f"{item['task']['bundle_id']}_{item['seed']}"
+    fresh.button_group(key=f"studio_qa_decision_{item_key}").set_value("Approve").run()
+    assert not fresh.exception, fresh.exception
+    fresh.button_group(key=f"studio_qa_decision_{item_key}").set_value(None).run()
+    assert not fresh.exception, fresh.exception
+    assert "Unreviewed" in _text(fresh)
+
+    # 3. Arena view deselection -> falls back to default showcase view
+    fresh.switch_page("app_pages/arena.py").run()
+    fresh.button_group(key="arena_home_view").set_value(None).run()
+    assert not fresh.exception, fresh.exception
+    assert "v2 4-domain live audit" in _text(fresh)
+
+    # 4. Human Eval Your answer deselection -> clean no-exception render
+    fresh.switch_page("app_pages/human_eval.py").run()
+    ans_group = next((g for g in fresh.button_group if g.label == "Your answer"), None)
+    if ans_group is not None:
+        ans_group.set_value(ans_group.options[0]).run()
+        assert not fresh.exception, fresh.exception
+        next(g for g in fresh.button_group if g.label == "Your answer").set_value(None).run()
+        assert not fresh.exception, fresh.exception
+
+
+def test_studio_qa_rapid_clicks_and_seed_switch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(W.ENV, str(tmp_path / "working_set"))
+    monkeypatch.setenv(storage.ROOT_ENV, str(tmp_path / "arena"))
+    monkeypatch.setenv("KNOTWORK_NETWORK", "deny")
+
+    fresh = AppTest.from_file(str(REPO / "apps" / "inspector.py"), default_timeout=120).run()
+    ws = W.WorkingSet(tmp_path / "working_set")
+    next(b for b in fresh.button if b.label == "Generate & Certify Task").click().run()
+    assert not fresh.exception, fresh.exception
+
+    item_a = fresh.session_state["item"]
+    bid_a = item_a["task"]["bundle_id"]
+    seed_a = int(item_a["seed"])
+    key_a = f"{bid_a}_{seed_a}"
+
+    fresh.button_group(key=f"studio_qa_decision_{key_a}").set_value("Approve").run()
+    assert not fresh.exception, fresh.exception
+    fresh.button_group(key=f"studio_qa_decision_{key_a}").set_value("Flag").run()
+    assert not fresh.exception, fresh.exception
+    fresh.button_group(key=f"studio_qa_tags_{key_a}").set_value(["hard-case", "monochrome"]).run()
+    assert not fresh.exception, fresh.exception
+
+    next(b for b in fresh.button if b.label == "Generate & Certify Task").click().run()
+    assert not fresh.exception, fresh.exception
+    item_b = fresh.session_state["item"]
+    bid_b = item_b["task"]["bundle_id"]
+    key_b = f"{bid_b}_{item_b['seed']}"
+    assert bid_b != bid_a
+    assert fresh.button_group(key=f"studio_qa_tags_{key_b}").value == []
+    assert fresh.button_group(key=f"studio_qa_decision_{key_b}").value is None
+
+    # Switch back to seed_a and re-generate: latest decision + tags persist without duplicates
+    fresh.number_input(key="seed").set_value(seed_a).run()
+    next(b for b in fresh.button if b.label == "Generate & Certify Task").click().run()
+    assert not fresh.exception, fresh.exception
+    assert fresh.session_state["item"]["task"]["bundle_id"] == bid_a
+    assert ws.ids().count(bid_a) == 1
+    rec = review.load_review_states(ws.review_log)[bid_a]
+    assert rec.status == "flagged" and rec.tags == ["hard-case", "monochrome"]
+
+
+def test_studio_cold_start_and_domain_mismatch_cue(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from knotwork.studio import factory
+
+    monkeypatch.setenv(W.ENV, str(tmp_path / "working_set"))
+    monkeypatch.setenv(storage.ROOT_ENV, str(tmp_path / "arena"))
+    monkeypatch.setenv("KNOTWORK_NETWORK", "deny")
+
+    def forbid_generate(*_args: Any, **_kwargs: Any) -> Any:
+        raise AssertionError("cold start must load Starter Working Set without generating")
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(factory, "generate_one", forbid_generate)
+        fresh = AppTest.from_file(str(REPO / "apps" / "inspector.py"), default_timeout=120).run()
+
+    assert not fresh.exception, fresh.exception
+    item = fresh.session_state["item"]
+    assert item["plugin"] == "tangle" and item["family"] == "T1_TRACE"
+    assert fresh.session_state["plugin"] == "tangle" and fresh.session_state["seed"] == item["seed"]
+    assert any(b.label == "In the Working Set" and b.disabled for b in fresh.button)
+
+    # Selecting Rack patch-bay without Generate keeps preview and surfaces mismatch cue
+    fresh.button_group(key="plugin").set_value("rack_patch").run()
+    assert not fresh.exception, fresh.exception
+    assert fresh.session_state["item"]["plugin"] == "tangle"
+    assert any("Rack patch-bay" in i.value and "Tangle" in i.value for i in fresh.info)
+
+    # Switching back to Tangle clears the cue immediately
+    fresh.button_group(key="plugin").set_value("tangle").run()
+    assert not any("currently previewing" in i.value for i in fresh.info)
+
+    # Switching to Rack patch-bay and generating renders Rack patch-bay and clears the cue
+    fresh.button_group(key="plugin").set_value("rack_patch").run()
+    assert any("currently previewing" in i.value for i in fresh.info)
+    next(b for b in fresh.button if b.label == "Generate & Certify Task").click().run()
+    assert not fresh.exception, fresh.exception
+    assert fresh.session_state["item"]["plugin"] == "rack_patch"
+    assert not any("currently previewing" in i.value for i in fresh.info)

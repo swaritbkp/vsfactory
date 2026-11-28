@@ -434,7 +434,7 @@ def _ws_picker() -> list[ItemRecord]:
 
     def label(bid: str) -> str:
         r = table[bid]
-        return f"{r['domain'].replace('_', ' ').title()} · {r['family']} · truth {r['answer']}"
+        return f"{r['domain'].replace('_', ' ').title()} · {r['family']} · truth {r['answer']} · {bid[-6:]}"
 
     picked = list(st.multiselect("Working Set items", ids, key="ar_ws_pick", format_func=label,
                                  max_selections=most, help=guide.tip("ar_ws_items")))  # fmt: skip
@@ -1307,7 +1307,8 @@ def _report_tab(cfg: SessionConfig, entry_dir: Path) -> None:
         st.caption("No report yet. Press Generate report to write it.")
         return
     files = [Path(p) for p in written.values() if Path(p).is_file()]
-    st.success(f"Report written to `{relative(reports)}`.", icon=":material/check_circle:")
+    st.success(f"Report written to `{demo_guard.display_path(reports)}`.",
+               icon=":material/check_circle:")  # fmt: skip
     with st.container(horizontal=True, gap="small"):
         for path in sorted(files, key=lambda p: p.suffix):
             st.download_button(path.name, path.read_bytes(), path.name, key=f"ar_dl_{path.name}",
@@ -1349,8 +1350,9 @@ def _session_view(slug: str) -> None:
     entry_dir = Path(entry.results_dir)
     cfg = storage.load_config(entry_dir)
     if cfg is None:
-        st.error(f"`{entry_dir}` no longer holds a valid config.json. Remove it from the sidebar "
-                 "or register the folder again.", icon=":material/folder_off:")  # fmt: skip
+        st.error(f"`{demo_guard.display_path(entry_dir)}` no longer holds a valid config.json. "
+                 "Remove it from the sidebar or register the folder again.",
+                 icon=":material/folder_off:")  # fmt: skip
         return
     status = storage.read_status(entry_dir)
     child = st.session_state.ar_procs.get(slug)
@@ -1367,8 +1369,8 @@ def _session_view(slug: str) -> None:
                  icon=":material/cloud:" if cfg.mode == "live" else ":material/science:")  # fmt: skip
         if cfg.client:
             st.badge(cfg.client, color="gray", icon=":material/apartment:")
-    st.caption(f"Dataset `{relative(storage.resolve(cfg.data_dir))}` · results "
-               f"`{relative(entry_dir)}` · run `{cfg.run_id or '—'}`")  # fmt: skip
+    st.caption(f"Dataset `{demo_guard.display_path(storage.resolve(cfg.data_dir))}` · results "
+               f"`{demo_guard.display_path(entry_dir)}` · run `{cfg.run_id or '—'}`")  # fmt: skip
     if status.message:
         (st.warning if state in ("failed", "budget_stop") else st.caption)(status.message)
     if state == "stopped" and status.state == "running":

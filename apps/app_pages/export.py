@@ -112,7 +112,7 @@ def _result(out: Path) -> None:
     msg_col.success(
         f"**Dataset exported.** {n_bundles} {item_word}, "
         f"{sum(r['files'] for r in rows)} files, {present.human_bytes(total)} in "
-        f"`{relative(out)}`.  \nManifest SHA-256 `{digest}`",
+        f"`{demo_guard.display_path(out)}`.  \nManifest SHA-256 `{digest}`",
         icon=":material/check_circle:",
     )
     dl_col.download_button(
@@ -177,7 +177,11 @@ with controls:
                                           help=guide.tip("ex_shard")))  # fmt: skip
             limit = int(st.number_input("Limit bundles (0 = all)", 0, 10_000_000, 0,
                                         help=guide.tip("ex_limit")))  # fmt: skip
-            default = relative(OUT / "export" / (dataset.name if dataset else "dataset"))
+            default = (
+                f"studio/export/{dataset.name if dataset else 'dataset'}"
+                if demo_guard.is_public_demo()
+                else relative(OUT / "export" / (dataset.name if dataset else "dataset"))
+            )
             folder = st.text_input("Output folder", default, key=f"ex_out_{default}",
                                    help=guide.tip("ex_out"))  # fmt: skip
     with st.container(border=True):
@@ -210,7 +214,7 @@ with controls:
             else:
                 st.warning(f"0 of {len(ids)} items match these filters. Review or tag items in "
                            "Studio or Human Eval, or clear a filter.", icon=":material/rule:")  # fmt: skip
-        st.caption(f"Writes to `{relative(out)}`.")
+        st.caption(f"Writes to `{demo_guard.display_path(out)}`.")
         go = st.button(
             "Export dataset", type="primary", width="stretch", icon=":material/package_2:",
             disabled=dataset is None or not formats or only_ids == set() or bool(refused),

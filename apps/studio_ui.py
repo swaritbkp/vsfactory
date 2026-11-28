@@ -118,7 +118,7 @@ def dataset_select(
         )
         return None
     if str(chosen) != working_set_folder():
-        st.caption(f"Folder: `{relative(path)}`")
+        st.caption(f"Folder: `{demo_guard.display_path(path)}`")
     return path
 
 

@@ -51,14 +51,24 @@ def plugin_label(name: str) -> str:
 # ------------------------------------------------------------------ state
 def _init_state() -> None:
     ss = st.session_state
-    ss.setdefault("plugin", SAMPLE[0])
+    if "item" not in ss:
+        starter = _load_starter_item()
+        if starter is not None:
+            ss.item = starter
+    item = ss.get("item")
+    default_plugin = str(item["plugin"]) if item else SAMPLE[0]
+    default_family = str(item["family"]) if item else SAMPLE[1]
+    default_seed = int(item["seed"]) if item else SAMPLE[2] + 1
+    ss.setdefault("plugin", default_plugin)
+    ss.setdefault(f"family_{default_plugin}", default_family)
     ss.setdefault("view", VIEWS[0])
-    ss.setdefault("seed", SAMPLE[2] + 1)  # the first Generate shows a new scene, not the sample
+    ss.setdefault("seed", default_seed)  # synced with starter item on cold load
     for name, value in present.KNOB_DEFAULTS.items():
         ss.setdefault(f"knob_{name}", value)
     for name in ("stroke_px", "jitter_px", "noise", "dpi_scale"):
         ss.setdefault(f"knob_{name}", AUTO)
-    if ss.pop("bump_seed", False):
+    bumped_from = ss.pop("bump_seed", None)
+    if bumped_from is not None and ss.get("seed") == bumped_from:
         ss.seed += 1
 
 
@@ -93,6 +103,43 @@ def _view_of(made: factory.Generated, seed: int) -> dict[str, Any]:
         "task": made.task,
         "scores": present.difficulty_scores(c.scene.plugin, c.scene.params, c.scene.payload),
     }
+
+
+def _load_starter_item() -> dict[str, Any] | None:
+    """Load the first certified item from the active Working Set for instant cold start."""
+    ws = active_set()
+    rows = ws.rows()
+    ordered = sorted(rows, key=lambda r: 0 if r.get("plugin") == SAMPLE[0] else 1)
+    for row in ordered:
+        bundle = ws.root / str(row["dir"])
+        if not ((bundle / "beauty.png").is_file() and (bundle / "manifest.json").is_file()):
+            continue
+        try:
+            task = json.loads((bundle / "task.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(task, dict) or not working_set.certified(task):
+            continue
+        question = task["question"]
+        seed_val = row.get("seed")
+        seed = int(seed_val) if seed_val is not None else SAMPLE[2]
+        payload = {
+            **dict(question.get("difficulty") or {}),
+            "difficulty_spec": question.get("difficulty_spec"),
+        }
+        return {
+            "dir": str(bundle),
+            "plugin": str(task["plugin"]),
+            "family": str(task["family"]),
+            "seed": seed,
+            "attempts": 1,
+            "certificate": task["certificate"],
+            "question": question,
+            "answer": str(task["answer"]["canonical"]),
+            "task": task,
+            "scores": present.difficulty_scores(str(task["plugin"]), {}, payload),
+        }
+    return None
 
 
 @st.cache_resource(show_spinner=False)
@@ -131,7 +178,7 @@ def _generate(plugin: str, family: str) -> None:
     item = run_with_status("Render and certify", action)
     if item is not None:
         st.session_state.item = item
-        st.session_state.bump_seed = True
+        st.session_state.bump_seed = seed
 
 
 # ------------------------------------------------------------------ batch build
@@ -160,7 +207,7 @@ def _batch_result(job: dict[str, Any]) -> None:
         st.success(
             f"**Batch built.** {done} certified base items, {total} bundles in total "
             f"(twins included), yield {yield_text}.  \n"
-            f"Saved to `{relative(out)}`. "
+            f"Saved to `{demo_guard.display_path(out)}`. "
             "It is preselected on the Export page.",
             icon=":material/check_circle:",
         )
@@ -468,7 +515,9 @@ def _stage() -> None:
         certificate.json(item["certificate"], expanded=1)
         if item["task"]:
             task.json(item["task"], expanded=1)
-            task.caption(f"Written to `{item['dir']}`; `knot verify` can re-check it.")
+            task.caption(
+                f"Written to `{demo_guard.display_path(item['dir'])}`; `knot verify` can re-check it."
+            )
         else:
             task.caption("Only certified tasks are written as task.json.")
 
@@ -556,4 +605,13 @@ with stage:
     if clicked:
         with progress:
             _generate(plugin, family)
+    current = st.session_state.get("item")
+    if current is not None and current.get("plugin") != plugin:
+        selected_label = plugin_label(plugin)
+        shown_label = plugin_label(str(current["plugin"]))
+        st.info(
+            f"Selected **{selected_label}** — currently previewing **{shown_label}**. "
+            f"Press **Generate & Certify Task** to render {selected_label}.",
+            icon=":material/info:",
+        )
     _stage()

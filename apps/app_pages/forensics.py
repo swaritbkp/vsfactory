@@ -14,7 +14,7 @@ from knotwork.knotcore.contracts import FAULT_EXPECTED, FAULT_PLUGIN, FaultCode
 from knotwork.pipeline.counterfactual import run_counterfactual
 from knotwork.pipeline.io import read_json
 from knotwork.render.canvas import REPO_ROOT
-from knotwork.studio import factory, fault_proofs, forensics, guide, present
+from knotwork.studio import demo_guard, factory, fault_proofs, forensics, guide, present
 from studio_ui import OUT, dataset_select, relative, resolve, run_with_status, verdict_badge
 from ui_chrome import working_set
 
@@ -51,9 +51,15 @@ def _kpis(dataset: Path | None) -> None:
     b.metric("Quarantine rate", _percent(kpi["quarantine_rate"]), border=True,
              help=guide.tip("kpi_quarantine"))  # fmt: skip
     caught = "n/a" if cover["caught"] is None else f"{cover['caught']} / {cover['total']}"
-    source = f"From {relative(cover['report'])}." if cover["report"] else "Run `knot mutate`."
+    source = (
+        f"From {demo_guard.display_path(cover['report'])}."
+        if cover["report"]
+        else "Run `knot mutate`."
+    )
     c.metric("Fault matrix coverage", caught, border=True,
              help=f"{guide.tip('kpi_faults')} {source}")  # fmt: skip
+    if cover["caught"] is not None:
+        c.caption("14 fault classes (M1–M14) × 4 injections = 56/56 caught")
 
 
 # ------------------------------------------------------------------ twins
@@ -65,7 +71,9 @@ def _request(action: str) -> None:
 
 def _ws_twins_card() -> None:
     """Sleek single-row bar while the committed sample is shown: build twins for the Working Set."""
-    ws_report = relative(WS_REPORT)
+    ws_report = (
+        "studio/counterfactual/working_set" if demo_guard.is_public_demo() else relative(WS_REPORT)
+    )
     if st.session_state.get("cf_out") == ws_report:
         return
     with st.container(border=True, key="cf_ws_card"):

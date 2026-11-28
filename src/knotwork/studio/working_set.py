@@ -57,7 +57,7 @@ def default_root() -> Path:
     """The folder of the active Working Set (see the module docstring for the order)."""
     override = os.environ.get(ENV, "").strip()
     if override:
-        return Path(override)
+        return demo_guard.confine(override) if demo_guard.is_public_demo() else Path(override)
     if "PYTEST_CURRENT_TEST" in os.environ or "PYTEST_XDIST_WORKER" in os.environ:
         return Path(tempfile.gettempdir()) / f"knotwork-ws-{os.getpid()}"
     if demo_guard.is_public_demo():

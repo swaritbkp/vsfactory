@@ -127,6 +127,42 @@ def path_problem(path: str | Path, root: Path | None = None) -> str | None:
     return None
 
 
+def display_path(path: Path | str, root: Path | None = None) -> str:
+    """Human-readable path for UI captions.
+
+    Outside the public demo, returns repo-relative POSIX text (or the resolved path outside the
+    repo). In the public demo, strips host/temp prefixes and formats sandbox paths as
+    ``demo sandbox / <subpath>``, keeps committed ``samples/`` relative, and never discloses OS
+    temp or user home paths.
+    """
+    from knotwork.render.canvas import REPO_ROOT
+
+    repo = REPO_ROOT.resolve()
+    raw = Path(path)
+    if not is_public_demo():
+        resolved = (raw if raw.is_absolute() else repo / raw).resolve()
+        try:
+            return resolved.relative_to(repo).as_posix()
+        except ValueError:
+            return str(resolved)
+    base = (root or SANDBOX_ROOT).resolve()
+    samples = (repo / "samples").resolve()
+    if raw.is_absolute():
+        resolved = raw.resolve()
+    else:
+        repo_candidate = (repo / raw).resolve()
+        if repo_candidate == samples or repo_candidate.is_relative_to(samples):
+            return repo_candidate.relative_to(repo).as_posix()
+        resolved = (base / raw).resolve()
+    if resolved == base:
+        return "demo sandbox"
+    if resolved.is_relative_to(base):
+        return f"demo sandbox / {resolved.relative_to(base).as_posix()}"
+    if resolved == samples or resolved.is_relative_to(samples):
+        return resolved.relative_to(repo).as_posix()
+    return "demo sandbox"
+
+
 def server_api_key(name: str = "OPENROUTER_API_KEY") -> str | None:
     """The server's own key from the environment; always None in the public demo."""
     if is_public_demo():
@@ -209,6 +245,6 @@ __all__ = [
     "BANNER", "BYOK_BANNER", "BYOK_ENV", "BYOK_LIMITS", "DEMO_LIMITS", "ENV", "OFFLINE_MODE",
     "PRIVACY_NOTE", "SANDBOX_ROOT", "ByokLimits", "Limits", "SandboxViolation", "banner",
     "byok_allowed", "byok_problems", "campaign_import_allowed", "cap", "config_problems", "confine",
-    "execution_modes", "is_public_demo", "limits", "offline_only", "path_problem", "sandbox_root",
-    "server_api_key",
+    "display_path", "execution_modes", "is_public_demo", "limits", "offline_only", "path_problem",
+    "sandbox_root", "server_api_key",
 ]  # fmt: skip

@@ -14,8 +14,8 @@ from knotwork.arena import storage
 from knotwork.arena.schemas import ItemRecord, SessionConfig
 from knotwork.posttrain import curriculum, vcot
 from knotwork.posttrain.reward import is_full_image, parse_boxes, score_rollout
-from knotwork.studio import factory, guide, review
-from studio_ui import relative, run_with_status
+from knotwork.studio import demo_guard, factory, guide, review
+from studio_ui import run_with_status
 
 EXAMPLES = ("Grounded vCoT", "Lucky guess (no boxes)", "Wrong answer")
 #: the always-on sandbox's one-click presets (Model Arena home, no campaign needed)
@@ -126,7 +126,7 @@ def reward_sandbox(items: list[ItemRecord], data: Path, key: str,
 
 def _item_label(i: ItemRecord) -> str:
     if i.preset == "Studio batch":
-        return f"{i.domain.replace('_', ' ').title()} · {i.family} · truth {i.truth}"
+        return f"{i.domain.replace('_', ' ').title()} · {i.family} · truth {i.truth} · {i.bundle_id[-6:]}"
     return f"{i.block_id} #{i.item_index:03d} · {i.family} · truth {i.truth}"
 
 
@@ -209,7 +209,7 @@ def _export(cfg: SessionConfig, entry_dir: Path) -> None:
         a.metric("SFT traces", done["sft"], help=guide.tip("pt_sft"))
         b.metric("DPO pairs", done["dpo"], help=guide.tip("pt_dpo"))
         c.metric("GRPO prompts", done["grpo"], help=guide.tip("pt_grpo"))
-    st.success(f"Pack written to `{relative(entry_dir / curriculum.PACK_DIR)}`.",
+    st.success(f"Pack written to `{demo_guard.display_path(entry_dir / curriculum.PACK_DIR)}`.",
                icon=":material/check_circle:")  # fmt: skip
     st.download_button("Download posttrain_pack.zip", archive.read_bytes(), archive.name,
                        key="pt_download", icon=":material/download:",
