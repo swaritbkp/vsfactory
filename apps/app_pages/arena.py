@@ -44,7 +44,7 @@ from knotwork.studio.ssrf_guard import validate_custom_base_url
 from posttrain_ui import PRESETS as SANDBOX_PRESETS
 from posttrain_ui import posttrain_tab, reward_sandbox
 from studio_ui import relative, review_controls, run_with_status
-from ui_chrome import working_set
+from ui_chrome import switch_factory_page, working_set
 
 WS = storage.Workspace()
 #: execution mode label -> provider (`mock` is offline; the other two are live)
@@ -52,7 +52,7 @@ MODES = {label: key for key, label in client.PROVIDERS.items()}
 #: where a new session's items come from
 SOURCES = {"Working Set": "ws", "Generate new blocks": "generate",
            "Existing dataset folder": "reuse"}  # fmt: skip
-HOME_TABS = ("Showcase", "New session", "Reward verifier sandbox")
+HOME_VIEWS = ("Showcase · 531-Call Audit", "New Session", "Reward Verifier Sandbox")
 FILTERS = ("All", "Running", "Paused", "Done")
 STATE_PILL = {
     "running": ("RUNNING", "blue", ":material/autorenew:"),
@@ -154,8 +154,10 @@ def _init_state() -> None:
     ss.setdefault("ar_source", "Generate new blocks")
     ss.setdefault("ar_base_url", "" if demo_guard.is_public_demo() else "http://localhost:8000/v1")
     ss.setdefault("ar_model_id", "Qwen/Qwen2.5-VL-7B-Instruct")
-    if ss.pop("ar_quick_pending", False):  # Studio's Quick test: the builder on the Working Set
-        ss.ar_home_tab = "New session"
+    open_new = ss.pop("_arena_open_new_session", False)
+    quick_pending = ss.pop("ar_quick_pending", False)
+    if open_new or quick_pending:
+        ss.arena_home_view = "New Session"
         ss.ar_source = "Working Set"
         ss.ar_selected = None
         ss.pop("ar_ws_pick", None)
@@ -218,8 +220,9 @@ def _select(slug: str) -> None:
 def _sidebar() -> None:
     ss = st.session_state
     with st.sidebar:
-        st.button("New session", type="primary", icon=":material/add:", width="stretch",
-                  on_click=_new_session, key="ar_new", help=guide.tip("ar_new"))  # fmt: skip
+        if ss.ar_selected:
+            st.button("← Back to Arena home", icon=":material/arrow_back:", width="stretch",
+                      on_click=_new_session, key="ar_back_home")  # fmt: skip
         query = st.text_input("Search sessions", key="ar_q", placeholder="Name, client or model",
                               label_visibility="collapsed", icon=":material/search:",
                               help=guide.tip("ar_search"))  # fmt: skip
@@ -280,7 +283,7 @@ def _showcase() -> showcase.Showcase | None:
 
 def _open_showcase() -> None:
     st.session_state.ar_selected = None
-    st.session_state.ar_home_tab = "Showcase"
+    st.session_state.arena_home_view = "Showcase · 531-Call Audit"
 
 
 def _showcase_card() -> None:
@@ -537,10 +540,11 @@ def _custom_endpoint_fields() -> None:
                "OpenAI endpoint.")  # fmt: skip
     example = "https://your-endpoint.example/v1" if demo_guard.is_public_demo() else (
         "http://localhost:8000/v1")  # fmt: skip
-    st.text_input("Base URL", key="ar_base_url", placeholder=example,
-                  help=guide.tip("ar_base_url"))  # fmt: skip
-    st.text_input("Model ID", key="ar_model_id", placeholder="Qwen/Qwen2.5-VL-7B-Instruct",
-                  help=guide.tip("ar_model_id"))  # fmt: skip
+    u_col, m_col = st.columns([1.35, 1.0], gap="small")
+    u_col.text_input("Base URL", key="ar_base_url", placeholder=example,
+                     help=guide.tip("ar_base_url"))  # fmt: skip
+    m_col.text_input("Model ID", key="ar_model_id", placeholder="Qwen/Qwen2.5-VL-7B-Instruct",
+                     help=guide.tip("ar_model_id"))  # fmt: skip
     st.text_input("Endpoint API key (optional)", type="password", key=CUSTOM_KEY,
                   placeholder="Leave empty for a local server", help=guide.tip("ar_custom_key"))  # fmt: skip
     check = validate_custom_base_url(str(st.session_state.get("ar_base_url", "")),
@@ -550,8 +554,8 @@ def _custom_endpoint_fields() -> None:
         return
     if not check.ok:
         st.warning(check.reason, icon=":material/link_off:")
-        return
-    st.caption(f"Requests go to `{check.endpoint}` with redirects off.")
+    else:
+        st.caption(f"Requests go to `{check.endpoint}` with redirects off.")
     _test_endpoint()
 
 
@@ -920,18 +924,26 @@ def _sandbox_view() -> None:
 
 
 def _home() -> None:
-    """No session selected: the showcase, the builder and the sandbox, one click apart."""
+    """Deterministic home view: Showcase by default, New Session, or Reward Verifier Sandbox."""
     sc = _showcase()
-    labels = [t for t in HOME_TABS if sc is not None or t != "Showcase"]
-    asked = st.session_state.pop("ar_home_tab", None)
-    default = asked if asked in labels else (labels[0] if not WS.entries() else "New session")
-    tabs = dict(zip(labels, st.tabs(labels, default=default), strict=True))
-    if sc is not None:
-        with tabs["Showcase"]:
-            _showcase_view(sc)
-    with tabs["New session"]:
+    labels = [v for v in HOME_VIEWS if sc is not None or not v.startswith("Showcase")]
+    default_view = labels[0]
+    if st.session_state.get("arena_home_view") not in labels:
+        st.session_state["arena_home_view"] = default_view
+    view = st.segmented_control(
+        "Arena view",
+        labels,
+        key="arena_home_view",
+        label_visibility="collapsed",
+        width="stretch",
+    )
+    if view is None:
+        view = default_view
+    if view == "Showcase · 531-Call Audit" and sc is not None:
+        _showcase_view(sc)
+    elif view == "New Session":
         _new_session_view()
-    with tabs["Reward verifier sandbox"]:
+    else:
         _sandbox_view()
 
 
@@ -1191,7 +1203,7 @@ def _to_forensics(item: ItemRecord, trial: TrialRecord, cfg: SessionConfig) -> N
     if got is not None:
         st.session_state.cf_out = relative(out)
         st.session_state.fx_section = "Counterfactual twins"
-        st.switch_page("app_pages/forensics.py")
+        switch_factory_page("forensics")
 
 
 def _inspector(cfg: SessionConfig) -> None:

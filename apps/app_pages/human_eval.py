@@ -16,7 +16,7 @@ from knotwork.studio import calibration, factory, guide, present, review
 from studio_ui import dataset_select, review_controls
 from ui_chrome import is_working_set, qa_review, qa_strip, working_set
 
-IMAGE_PX = 520
+IMAGE_PX = 370
 MAX_BUTTON_OPTIONS = 8
 EMPTY_ANSWER = "Enter an answer before submitting."
 
@@ -219,9 +219,9 @@ def baseline_frame() -> pd.DataFrame:
 # ------------------------------------------------------------------ page
 if "participant" not in st.session_state:
     st.session_state.participant = f"p-{uuid.uuid4().hex[:6]}"
-qa_strip(working_set())
 card, side = st.columns([2, 1.15], gap="large")
 with side:
+    qa_strip(working_set())
     chosen = dataset_select("Item set", "he_dataset", help=guide.tip("he_item_set"))
     with st.container(border=True, key="he_scoreboard"):
         st.markdown("**Scoreboard**")

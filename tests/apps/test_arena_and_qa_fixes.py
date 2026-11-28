@@ -37,8 +37,11 @@ def test_model_arena_opens_offline_with_sessions_rail(monkeypatch, tmp_path: Pat
     app = _app(monkeypatch, tmp_path / "ws")
     app.switch_page("app_pages/arena.py").run()
     assert not app.exception, app.exception
-    assert [b.label for b in app.sidebar.button][0] == "New session"
+    assert app.session_state["arena_home_view"] == "Showcase · 531-Call Audit"
+    assert [b.label for b in app.sidebar.button][0] == "v2 4-domain live audit"
     assert any("No saved sessions yet" in c.value for c in app.sidebar.caption)
+    app.button_group(key="arena_home_view").set_value("New Session").run()
+    assert not app.exception, app.exception
     labels = {m.label: m.value for m in app.metric}
     assert labels["Images to generate"] == "20" and labels["Model trials"] == "60"
     assert "Cost if run live" in labels  # mock mode by default: nothing is charged
@@ -123,6 +126,8 @@ def test_human_eval_scoreboard_first_and_verdict_under_the_picture(
 def test_batch_cli_command_is_collapsed(monkeypatch, tmp_path: Path) -> None:  # type: ignore[no-untyped-def]
     app = _app(monkeypatch, tmp_path / "ws")
     assert not app.exception, app.exception
+    app.button_group(key="studio_mode").set_value("Batch Factory").run()
+    assert not app.exception, app.exception
     cli = next(e for e in app.expander if e.label == "Show CLI command")
     assert any("uv run knot generate" in c.value for c in cli.code)
     assert not cli.proto.expanded
@@ -151,6 +156,7 @@ def test_arena_temperature_control_and_post_training_tab(monkeypatch, tmp_path: 
     storage.Workspace().register(cfg)
     app = _app(monkeypatch, root)
     app.switch_page("app_pages/arena.py").run()
+    app.button_group(key="arena_home_view").set_value("New Session").run()
     temp = next(s for s in app.slider if s.label == "Temperature")
     assert temp.value == 0.0 and not app.exception
     next(b for b in app.sidebar.button if b.label == cfg.session_name).click().run()

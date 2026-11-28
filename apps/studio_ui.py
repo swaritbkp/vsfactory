@@ -157,7 +157,9 @@ def _hide_guide() -> None:
 
 
 def _go(page: str) -> None:
-    st.switch_page(guide.PAGES[page][1])
+    from ui_chrome import switch_factory_page
+
+    switch_factory_page(page)
 
 
 @st.dialog(TOUR_TITLE, width="large")
@@ -174,43 +176,32 @@ def tour_dialog() -> None:
 
 
 def guide_controls(page: str | None) -> None:
-    """Guided mode toggle, Page guide popover and Quick tour button, for the header row."""
+    """Guided mode toggle, Page guide details and Quick tour trigger inside System & Guide."""
     st.session_state.setdefault(GUIDED_KEY, True)
-    with st.container(horizontal=True, width="content", gap="small", vertical_alignment="center"):
-        st.toggle("Guided mode", key=GUIDED_KEY, help=guide.tip("guided_mode"))
-        if page is not None:
-            info = guide.PAGE_GUIDES[page]
-            with st.popover("Page guide", icon=":material/help:", help=guide.tip("page_guide")):
-                st.markdown(f"**{info['title']}**: {info['summary']}")
-                st.markdown("\n".join(f"{i}. {s}" for i, s in enumerate(info["steps"], 1)))
-                st.caption(f"Try first: {info['try_first']}")
-                st.markdown("**Terms**")
-                terms = "\n".join(f"- **{t}**: {guide.GLOSSARY[t]}" for t in info["terms"])
-                st.markdown(terms)
-        if st.button("Quick tour", icon=":material/route:", type="tertiary", key="tour_open",
-                     help=guide.tip("quick_tour")):  # fmt: skip
-            tour_dialog()
+    st.toggle("Guided mode", key=GUIDED_KEY, help=guide.tip("guided_mode"))
+    if page is not None:
+        info = guide.PAGE_GUIDES[page]
+        with st.expander("Page guide", icon=":material/help:"):
+            st.markdown(f"**{info['title']}**: {info['summary']}")
+            st.markdown("\n".join(f"{i}. {s}" for i, s in enumerate(info["steps"], 1)))
+            st.caption(f"Try first: {info['try_first']}")
+            st.markdown("**Terms**")
+            terms = "\n".join(f"- **{t}**: {guide.GLOSSARY[t]}" for t in info["terms"])
+            st.markdown(terms)
+    if st.button("Quick tour", icon=":material/route:", key="tour_open", width="stretch",
+                 help=guide.tip("quick_tour")):  # fmt: skip
+        tour_dialog()
 
 
 def guide_strip(page: str | None) -> None:
-    """One slim bordered strip: the tour step, a tip, Next step and Hide guide. Guided mode only."""
+    """Single-line guide caption inside the Hero card when Guided mode is active."""
     if page is None or not guided():
         return
     i = guide.tour_index(page)
     step = guide.TOUR_STEPS[i]
-    following = guide.next_page(page)
-    with st.container(border=True, key="guide_strip"):
-        text, actions = st.columns([3, 1.3], vertical_alignment="center")
-        text.markdown(
-            f"**Step {i + 1} of {len(guide.TOUR_STEPS)} · {step['goal']}**  \n:gray[{step['tip']}]"
-        )
-        with actions, st.container(horizontal=True, horizontal_alignment="right", gap="small"):
-            st.button("Hide guide", type="tertiary", key="guide_hide", on_click=_hide_guide,
-                      help=guide.tip("hide_guide"))  # fmt: skip
-            target = following or guide.TOUR_STEPS[0]["page"]
-            label = f"Next step: {guide.PAGES[target][0]} →" if following else "Back to Studio"
-            if st.button(label, key="guide_next", help=guide.tip("next_step")):
-                _go(target)
+    st.markdown(
+        f":small[:gray[**Step {i + 1} of {len(guide.TOUR_STEPS)} · Guide:** {step['tip']}]]"
+    )
 
 
 def review_controls(log: Path, item_id: str, domain: str, seed: int | None, key: str) -> str:

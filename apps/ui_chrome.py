@@ -45,13 +45,30 @@ def review_log_for(dataset: Path | None) -> Path:
     return working_set().review_log if is_working_set(dataset) else review.STUDIO_LOG
 
 
+def switch_factory_page(page_key: str) -> None:
+    """Switch to a canonical factory page via the hidden navigation registry, or record the
+    requested page when running an isolated single-page AppTest outside `inspector.py`."""
+    canonical = "model_arena" if page_key == "arena" else page_key
+    pages = st.session_state.get("_knotwork_pages") or {}
+    page_obj = pages.get(canonical) or pages.get(page_key)
+    if page_obj is not None:
+        st.switch_page(page_obj)
+    else:
+        st.session_state["_knotwork_requested_page"] = canonical
+
+
 def ws_pill(ws: WorkingSet | None = None) -> None:
-    """`Working Set: 5 certified · 2 approved`, the same badge on every page."""
+    """`Working Set: 5 certified · 2 approved` (omitting approved count when 0)."""
     ws = ws or working_set()
     qa = ws.qa()
     total = sum(qa.values())
-    st.badge(f"{LABEL}: {total} certified · {qa['approved']} approved", icon=WS_ICON,
-             color="green" if total else "gray", help=guide.tip("ws_pill"))  # fmt: skip
+    approved = f" · {qa['approved']} approved" if qa["approved"] > 0 else ""
+    st.badge(
+        f"{LABEL}: {total} certified{approved}",
+        icon=":material/inventory_2:",
+        color="green" if total else "gray",
+        help=guide.tip("ws_pill"),
+    )
 
 
 def qa_strip(ws: WorkingSet, target: str | None = "export") -> None:
@@ -63,9 +80,10 @@ def qa_strip(ws: WorkingSet, target: str | None = "export") -> None:
         st.badge(f"{qa['flagged']} flagged", icon=":material/flag:", color="red")
         st.badge(f"{qa['unreviewed']} pending", icon=":material/pending:", color="gray")
         if target is not None:
-            title, page = guide.PAGES[target]
-            st.page_link(page, label=f"Open {title}", icon=":material/arrow_forward:",
-                         help=guide.tip("qa_jump"))  # fmt: skip
+            title, _ = guide.PAGES[target]
+            if st.button(f"Open {title}", icon=":material/arrow_forward:", type="tertiary",
+                         key=f"qa_jump_{target}", help=guide.tip("qa_jump")):  # fmt: skip
+                switch_factory_page(target)
 
 
 def _choice_of(status: str) -> str | None:
@@ -74,9 +92,9 @@ def _choice_of(status: str) -> str | None:
 
 def qa_review(ws: WorkingSet, item_id: str, key: str, bundle: Path | None = None,
               seed: int | None = None, attempts: int = 1) -> None:  # fmt: skip
-    """Approve / Flag, tag pills and an optional note for one item, saved to the Working Set's
-    append-only review log. With `bundle`, saving a review of an item that is not in the set yet
-    adds it first. Runs as a fragment: saving redraws only this card."""
+    """Approve / Flag, tag pills and an optional note for one item, auto-saved to the Working
+    Set's append-only review log. With `bundle`, saving a review of an item that is not in the set
+    yet adds it first. Runs as a fragment: saving redraws only this card."""
     st.fragment(_qa_review_body)(ws.root, item_id, key, bundle, seed, attempts)
 
 
@@ -84,53 +102,67 @@ def _qa_review_body(root: Path, item_id: str, key: str, bundle: Path | None, see
                     attempts: int) -> None:  # fmt: skip
     ws = WorkingSet(root)
     states = review.load_review_states(ws.review_log)
-    status = review.status_of(states, item_id)
-    saved_tags = review.tags_of(states, item_id)
+    rec = states.get(item_id)
+    status = rec.status if rec else "unreviewed"
+    saved_tags = list(rec.tags) if rec else []
+    saved_note = rec.note if rec else ""
     text, color, icon = review.BADGES[status]
     in_set = item_id in ws.ids()
-    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
-        st.markdown("**Human QA**", width="content")
-        st.badge(text, color=color, icon=icon)  # type: ignore[arg-type]
-        if saved_tags:
-            st.caption(" · ".join(saved_tags), width="content")
+    dec_key = f"studio_qa_decision_{key}"
+    tags_key = f"studio_qa_tags_{key}"
+    note_key = f"studio_qa_note_{key}"
+    ss = st.session_state
+    ss.setdefault(dec_key, _choice_of(status))
+    ss.setdefault(tags_key, list(saved_tags))
+    ss.setdefault(note_key, saved_note)
+    with st.container(horizontal=True, vertical_alignment="center", horizontal_alignment="distribute",
+                      gap="small"):  # fmt: skip
+        with st.container(horizontal=True, vertical_alignment="center", gap="small",
+                          width="content"):  # fmt: skip
+            st.markdown("**Human QA**", width="content")
+            st.badge(text, color=color, icon=icon)  # type: ignore[arg-type]
+        if in_set or bundle is not None:
+            with st.popover("Note", icon=":material/edit_note:", help=guide.tip("qa_note")):
+                st.text_input("Review note", key=note_key, max_chars=200,
+                              placeholder="Optional, one line")  # fmt: skip
+                st.button("Save note", type="primary", icon=":material/check:",
+                          key=f"studio_qa_save_note_{key}", width="stretch", on_click=_save,
+                          args=(root, item_id, key, bundle, seed, attempts))  # fmt: skip
     if not in_set and bundle is None:
         st.caption("Add this item to the Working Set to review and tag it.")
         return
-    left, right = st.columns([1, 2.4], gap="medium")
-    with left:
-        decision = st.segmented_control(
-            "Decision", list(QA_CHOICES), default=_choice_of(status), key=f"qa_dec_{key}",
-            help=guide.tip("qa_decision"),
-        )  # fmt: skip
-    with right:
-        options = list(dict.fromkeys([*review.TAGS, *saved_tags]))
-        st.pills("Tags", options, selection_mode="multi", default=saved_tags,
-                 key=f"qa_tags_{key}", help=guide.tip("qa_tags"))  # fmt: skip
-    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
-        with st.popover("Note", icon=":material/edit_note:", help=guide.tip("qa_note")):
-            st.text_input("Review note", key=f"qa_note_{key}", max_chars=200,
-                          placeholder="Optional, one line")  # fmt: skip
-        st.button("Save review", icon=":material/check:", key=f"qa_save_{key}",
-                  disabled=decision is None, help=guide.tip("qa_save"), on_click=_save,
-                  args=(root, item_id, key, bundle, seed, attempts))  # fmt: skip
-    if st.session_state.pop(f"qa_added_{key}", False):
+    args = (root, item_id, key, bundle, seed, attempts)
+    st.segmented_control(
+        "Decision", list(QA_CHOICES), key=dec_key, label_visibility="collapsed",
+        width="stretch", on_change=_save, args=args, help=guide.tip("qa_decision"),
+    )  # fmt: skip
+    options = list(dict.fromkeys([*review.TAGS, *saved_tags]))
+    st.pills("Tags", options, selection_mode="multi", key=tags_key, label_visibility="collapsed",
+             on_change=_save, args=args, help=guide.tip("qa_tags"))  # fmt: skip
+    if ss.pop(f"qa_added_{key}", False):
         st.rerun()  # the item joined the set: redraw the page so the header pill counts it
 
 
 def _save(root: Path, item_id: str, key: str, bundle: Path | None, seed: int | None,
           attempts: int) -> None:  # fmt: skip
-    """Save callback: runs before the redraw, so the card shows the new decision at once."""
+    """Auto-save callback: runs before redraw so status, tags and note persist immediately."""
     ss = st.session_state
-    decision = ss.get(f"qa_dec_{key}")
-    if decision is None:
-        return
+    decision = ss.get(f"studio_qa_decision_{key}")
+    chosen = QA_CHOICES[str(decision)] if decision in QA_CHOICES else "unreviewed"
     ws = WorkingSet(root)
-    chosen = QA_CHOICES[str(decision)]
     if item_id not in ws.ids() and bundle is not None:
         ss[f"qa_added_{key}"] = ws.add(bundle, "studio", seed, attempts).added
-    ws.review(item_id, chosen, list(ss.get(f"qa_tags_{key}") or []),
-              str(ss.get(f"qa_note_{key}") or ""))  # fmt: skip
-    st.toast(f"{review.BADGES[chosen][0]}: {item_id}", icon=review.BADGES[chosen][2])
+    ws.review(item_id, chosen, list(ss.get(f"studio_qa_tags_{key}") or []),
+              str(ss.get(f"studio_qa_note_{key}") or ""))  # fmt: skip
+    st.toast(f"QA saved · {review.BADGES[chosen][0]}", icon=review.BADGES[chosen][2])
 
 
-__all__ = ["is_working_set", "qa_review", "qa_strip", "review_log_for", "working_set", "ws_pill"]
+__all__ = [
+    "is_working_set",
+    "qa_review",
+    "qa_strip",
+    "review_log_for",
+    "switch_factory_page",
+    "working_set",
+    "ws_pill",
+]

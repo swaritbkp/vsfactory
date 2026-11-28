@@ -118,6 +118,7 @@ def test_demo_arena_page_hides_live_mode_keys_and_campaign_import(
     app.switch_page("app_pages/arena.py").run()
     assert not app.exception, app.exception
     assert any(G.BANNER in i.value for i in app.info)
+    app.button_group(key="arena_home_view").set_value("New Session").run()
     assert app.session_state["ar_mode"] == "Offline Mock (No Key)"
     mode = next(s for s in app.get("button_group") if "Offline Mock (No Key)" in str(s.proto))
     assert "Live (OpenRouter)" not in str(mode.proto)
@@ -139,6 +140,7 @@ def test_local_arena_page_keeps_live_mode_and_campaign_import(
     app = AppTest.from_file(str(repo / "apps" / "inspector.py"), default_timeout=120).run()
     app.switch_page("app_pages/arena.py").run()
     assert not app.exception, app.exception
+    app.button_group(key="arena_home_view").set_value("New Session").run()
     mode = next(s for s in app.get("button_group") if "Offline Mock (No Key)" in str(s.proto))
     assert "Live · OpenRouter" in str(mode.proto)
     assert [e for e in app.expander if e.label == "Import campaign.yaml"]
@@ -231,6 +233,7 @@ def test_byok_arena_page_offers_live_modes_with_session_only_keys(
     app.switch_page("app_pages/arena.py").run()
     assert not app.exception, app.exception
     assert any(G.BYOK_BANNER in i.value for i in app.info)
+    app.button_group(key="arena_home_view").set_value("New Session").run()
     mode = next(s for s in app.get("button_group") if "Offline Mock (No Key)" in str(s.proto))
     assert "Live · OpenRouter" in str(mode.proto) and "Live · Custom endpoint" in str(mode.proto)
     assert not app.get("file_uploader")  # campaign import stays off in every demo tier

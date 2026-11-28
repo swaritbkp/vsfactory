@@ -106,27 +106,29 @@ def _result(out: Path) -> None:
     digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
     rows = present.export_summary(out)
     total = sum(r["bytes"] for r in rows)
-    st.success(
-        f"**Dataset exported.** {data.get('n_bundles', '?')} items, "
+    n_bundles = data.get("n_bundles", "?")
+    item_word = "item" if n_bundles == 1 else "items"
+    msg_col, dl_col = st.columns([3, 1.5], vertical_alignment="center")
+    msg_col.success(
+        f"**Dataset exported.** {n_bundles} {item_word}, "
         f"{sum(r['files'] for r in rows)} files, {present.human_bytes(total)} in "
         f"`{relative(out)}`.  \nManifest SHA-256 `{digest}`",
         icon=":material/check_circle:",
     )
+    dl_col.download_button(
+        "Download export (.zip)", lambda: working_set.folder_zip(out, out.name),
+        f"{out.name}_export.zip", mime="application/zip", type="primary",
+        icon=":material/download:", key="ex_zip", on_click="ignore", width="stretch",
+        help=guide.tip("ex_download_zip"),
+    )  # fmt: skip
     files = pd.DataFrame(present.export_rows(out, data))
     st.dataframe(files, hide_index=True, width="stretch", height=FILE_TABLE_HEIGHT,
                  alt="Every exported file and its size")  # fmt: skip
-    with st.container(horizontal=True, gap="small"):
-        st.download_button(
-            "Download export (.zip)", lambda: working_set.folder_zip(out, out.name),
-            f"{out.name}_export.zip", mime="application/zip", type="primary",
-            icon=":material/download:", key="ex_zip", on_click="ignore",
-            help=guide.tip("ex_download_zip"),
-        )  # fmt: skip
-        st.download_button(
-            "dataset_manifest.json", manifest.read_bytes(), "dataset_manifest.json",
-            icon=":material/data_object:", key="ex_manifest", on_click="ignore",
-            help=guide.tip("ex_manifest"),
-        )  # fmt: skip
+    st.download_button(
+        "dataset_manifest.json", manifest.read_bytes(), "dataset_manifest.json",
+        icon=":material/data_object:", key="ex_manifest", on_click="ignore",
+        help=guide.tip("ex_manifest"),
+    )  # fmt: skip
 
 
 def _lineage(dataset: Path) -> None:
@@ -218,6 +220,14 @@ with controls:
         if not formats:
             st.caption("Choose at least one format to export.")
 with output:
+    exported_here = st.session_state.get("exported") == str(out)
+    if go and dataset is not None:
+        _export(dataset, formats, out, shard, limit, only_ids, filters)
+        exported_here = st.session_state.get("exported") == str(out)
+    if exported_here:
+        with st.container(border=True):
+            st.markdown("**Export output**")
+            _result(out)
     with st.container(border=True):
         if dataset is None:
             st.info("Choose a dataset on the left to preview it.", icon=":material/dataset:")
@@ -226,13 +236,9 @@ with output:
             _preview(dataset)
             if is_working_set(dataset):
                 _ws_table(dataset)
-    with st.container(border=True):
-        st.markdown("**Export output**")
-        if go and dataset is not None:
-            _export(dataset, formats, out, shard, limit, only_ids, filters)
-        if st.session_state.get("exported") == str(out):
-            _result(out)
-        else:
+    if not exported_here:
+        with st.container(border=True):
+            st.markdown("**Export output**")
             st.caption("Nothing exported yet. Press Export dataset to write the files here.")
     if dataset is not None:
         with st.expander("Manifest & lineage", icon=":material/account_tree:"):

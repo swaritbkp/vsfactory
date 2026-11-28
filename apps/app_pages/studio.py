@@ -15,10 +15,17 @@ from knotwork.posttrain import vcot
 from knotwork.studio import demo_guard, factory, forensics, guide, present, working_set
 from knotwork.studio.present import AUTO
 from studio_ui import OUT, relative, resolve, run_with_status, verdict_badge
-from ui_chrome import qa_review
+from ui_chrome import qa_review, switch_factory_page
 from ui_chrome import working_set as active_set
 
 VIEWS = ("Beauty", "Witness Overlay", "ID Buffer", "CVD Simulation", "vCoT Steps")
+VIEW_SHORT = {
+    "Beauty": "Beauty",
+    "Witness Overlay": "Witness",
+    "ID Buffer": "ID Buffer",
+    "CVD Simulation": "CVD",
+    "vCoT Steps": "vCoT",
+}
 CAPTIONS = {
     "Beauty": "What a model sees (rendered at 1024 px).",
     "Witness Overlay": "Kernel evidence: terminals (green), crossings (cyan), needle axis (magenta), "
@@ -28,7 +35,7 @@ CAPTIONS = {
     "vCoT Steps": "Grounded reasoning steps, numbered in order, boxed on the object masks they read.",
 }
 LEVELS = [AUTO, *(i / 10 for i in range(11))]
-IMAGE_PX = 560
+IMAGE_PX = 400
 CERTIFY_ATTEMPTS = 3
 HOLDOUT_EXAMPLES = {"tangle": "strands=9:10", "gauge": "radius_px=200:240", "panel": "gauges=4"}
 SAMPLE = ("tangle", "T1_TRACE", 1)
@@ -164,7 +171,6 @@ def _batch_result(job: dict[str, Any]) -> None:
         st.code(log.read_text(encoding="utf-8", errors="replace")[-2000:], language=None)
 
 
-@st.fragment
 def _batch_panel(plugin: str) -> None:
     if not factory.batch_ready(plugin):
         st.caption("This plugin has no profile section, so it supports single items only.")
@@ -237,7 +243,7 @@ def _batch_panel(plugin: str) -> None:
         st.session_state.batch = {
             "process": factory.start_batch(args, log), "out": str(out), "n": n, "log": str(log),
         }  # fmt: skip
-        st.rerun(scope="fragment")
+        st.rerun()
     if job is None:
         st.caption("No batch built yet. Set a count and press Launch batch build.")
     elif running:
@@ -291,28 +297,42 @@ def _vcot_panel(item: dict[str, Any]) -> None:
         st.code(trace["formatted_cot"], language=None, wrap_lines=True)
 
 
-def _summary(item: dict[str, Any]) -> None:
+def _truth_card(item: dict[str, Any]) -> None:
+    """Question prominently first, immediately followed by certified truth, verdict and metrics."""
     cert, scores = item["certificate"], item["scores"]
     certified = cert["verdict"] == "CERTIFIED"
-    with st.container(border=True):
-        status, answer, task, load, stress = st.columns(
-            [1.25, 1.1, 1.5, 1, 1], vertical_alignment="center"
-        )
-        with status:
+    question = item["question"]
+    q_text = str(question["text"]).split("\nEnd your reply")[0]
+    with st.container(border=True, key="studio_truth_card"):
+        st.caption("Question")
+        st.markdown(q_text.replace("\n", "  \n"))
+        if question.get("options"):
+            st.caption("Options: " + " · ".join(question["options"]))
+        if certified:
+            with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+                st.markdown(f":material/verified: **Certified truth:** `{item['answer']}`",
+                            width="content")  # fmt: skip
+                st.badge(
+                    f"Certified · {len(cert['codes'])} E_* errors",
+                    icon=":material/verified_user:",
+                    color="green",
+                )
+        else:
             verdict_badge(cert["verdict"])
-            st.caption(f"seed {item['seed']} · attempt {item['attempts']}")
-        answer.metric("Certified answer", item["answer"] if certified else "none",
-                      help=guide.tip("certified_answer"))  # fmt: skip
-        task.metric(
+            st.error(
+                "The kernel rejected this render: " + ", ".join(cert["codes"]),
+                icon=":material/gpp_maybe:",
+            )
+        c1, c2 = st.columns([1.15, 1.35])
+        c1.metric("Certified answer", item["answer"] if certified else "none",
+                  help=guide.tip("certified_answer"))  # fmt: skip
+        c2.metric(
             "Plugin / family", plugin_label(item["plugin"]), item["family"],
             delta_color="off", delta_arrow="off", help=guide.tip("plugin_family"),
         )  # fmt: skip
-        load.metric("Reasoning", f"{scores['reasoning'][0]}/100", help=scores["reasoning"][1])
-        stress.metric("Visual stress", f"{scores['visual'][0]}/100", help=scores["visual"][1])
-    if not certified:
-        st.error(
-            "The kernel rejected this render: " + ", ".join(cert["codes"]),
-            icon=":material/gpp_maybe:",
+        st.caption(
+            f"Reasoning {scores['reasoning'][0]}/100 · "
+            f"Visual {scores['visual'][0]}/100 · seed {item['seed']}"
         )
 
 
@@ -350,8 +370,7 @@ def _add(item: dict[str, Any]) -> working_set.AddResult:
 
 
 def _workflow(item: dict[str, Any]) -> None:
-    """Add to Working Set, Quick test in Arena, Download bundle and inline Human QA, in one card
-    under the stage. Only certified items can be handed on."""
+    """Add to Working Set, Quick test in Arena, Download bundle and item-scoped auto-save QA."""
     if item["certificate"]["verdict"] != "CERTIFIED" or not item["task"]:
         return
     bid = str(item["task"]["bundle_id"])
@@ -373,71 +392,76 @@ def _workflow(item: dict[str, Any]) -> None:
                 file_name=f"{bid}.zip", mime="application/zip", icon=":material/download:",
                 on_click="ignore", key="st_zip", help=guide.tip("st_download"),
             )  # fmt: skip
-        qa_review(ws, bid, f"st_{bid}", Path(item["dir"]), item["seed"], item["attempts"])
+        item_key = f"{bid}_{item['seed']}"
+        qa_review(ws, bid, item_key, Path(item["dir"]), item["seed"], item["attempts"])
     if add:
         result = _add(item)
-        st.toast(f"Added to the Working Set: {result.count} items" if result.added
+        unit = "item" if result.count == 1 else "items"
+        st.toast(f"Added to the Working Set: {result.count} {unit}" if result.added
                  else result.reason, icon=":material/library_add_check:")  # fmt: skip
         st.rerun()
     if quick:
         _add(item)
         st.session_state.ar_quick_ids = [bid]
-        st.session_state.ar_quick_pending = True  # Model Arena opens its builder on the set
-        st.switch_page("app_pages/arena.py")
+        st.session_state.ar_quick_pending = True
+        st.session_state._arena_open_new_session = True
+        switch_factory_page("model_arena")
 
 
-@st.fragment
 def _stage() -> None:
     item = st.session_state.item
-    _summary(item)
-    view = st.segmented_control(
-        "View",
-        VIEWS,
-        key="view",
-        required=True,
-        label_visibility="collapsed",
-        help=guide.tip("view"),
-    )
-    deficiency = "deuteranopia"
-    if view == "CVD Simulation":
-        chosen = st.segmented_control(
-            "Deficiency", ["Deuteranopia", "Protanopia"], default="Deuteranopia",
-            required=True, key="deficiency", label_visibility="collapsed",
-            help=guide.tip("deficiency"),
-        )  # fmt: skip
-        deficiency = str(chosen).lower()
-    with st.container(horizontal_alignment="center", gap="small"):
-        picture = _image(item["dir"], str(view), deficiency, json.dumps(item["certificate"]))
-        st.image(picture, width=IMAGE_PX, alt=f"{view} of the generated task")
-        st.caption(CAPTIONS[str(view)], width="content")
+    left_stage, right_stage = st.columns([1.0, 1.12], gap="medium")
+    with left_stage:
+        view = st.segmented_control(
+            "View",
+            VIEWS,
+            key="view",
+            format_func=lambda v: VIEW_SHORT.get(v, v),
+            label_visibility="collapsed",
+            width="stretch",
+            help=guide.tip("view"),
+        )
+        if view is None:
+            view = VIEWS[0]
+        deficiency = "deuteranopia"
         if view == "CVD Simulation":
-            gates = [c for c in item["certificate"]["checks"] if c["name"].startswith("cvd_")]
-            if gates:
-                worst = min(gates, key=lambda c: c["metric"])
-                st.badge(
-                    f"Kernel colour gate: separation {worst['metric']:.1f} "
-                    f"(floor {worst['threshold']:g})",
-                    color="green" if all(c["passed"] for c in gates) else "red",
-                    icon=":material/palette:",
-                )
-            else:
-                st.caption("Colour carries no meaning in this scene, so the gate does not apply.")
-        if view == "Witness Overlay":
-            _witness_pill(item["certificate"])
-        if view == "vCoT Steps":
-            trace = _trace(item["dir"], json.dumps(item["certificate"]))
-            if trace is None:
-                st.caption("Not certified, so there is no grounded trace to draw.")
-            else:
-                st.badge(f"{len(trace['steps'])} grounded steps · answer {trace['final_answer']}",
-                         color="green", icon=":material/route:")  # fmt: skip
-    _workflow(item)
-    with st.container(border=True):
-        st.caption("Question")
-        question = item["question"]
-        st.markdown(question["text"].replace("\n", "  \n"))
-        if question.get("options"):
-            st.caption("Options: " + " · ".join(question["options"]))
+            chosen = st.segmented_control(
+                "Deficiency", ["Deuteranopia", "Protanopia"], default="Deuteranopia",
+                key="deficiency", label_visibility="collapsed", help=guide.tip("deficiency"),
+            )  # fmt: skip
+            deficiency = str(chosen or "Deuteranopia").lower()
+        with st.container(horizontal_alignment="center", gap="small"):
+            picture = _image(item["dir"], str(view), deficiency, json.dumps(item["certificate"]))
+            st.image(picture, width=IMAGE_PX, alt=f"{view} of the generated task")
+            st.caption(CAPTIONS[str(view)], width="content")
+            if view == "CVD Simulation":
+                gates = [c for c in item["certificate"]["checks"] if c["name"].startswith("cvd_")]
+                if gates:
+                    worst = min(gates, key=lambda c: c["metric"])
+                    st.badge(
+                        f"Kernel colour gate: separation {worst['metric']:.1f} "
+                        f"(floor {worst['threshold']:g})",
+                        color="green" if all(c["passed"] for c in gates) else "red",
+                        icon=":material/palette:",
+                    )
+                else:
+                    st.caption(
+                        "Colour carries no meaning in this scene, so the gate does not apply."
+                    )
+            if view == "Witness Overlay":
+                _witness_pill(item["certificate"])
+            if view == "vCoT Steps":
+                trace = _trace(item["dir"], json.dumps(item["certificate"]))
+                if trace is None:
+                    st.caption("Not certified, so there is no grounded trace to draw.")
+                else:
+                    st.badge(
+                        f"{len(trace['steps'])} grounded steps · answer {trace['final_answer']}",
+                        color="green", icon=":material/route:",
+                    )  # fmt: skip
+    with right_stage:
+        _truth_card(item)
+        _workflow(item)
     _vcot_panel(item)
     with st.expander("certificate.json and task.json", icon=":material/data_object:"):
         certificate, task = st.tabs(["certificate.json", "task.json"])
@@ -451,8 +475,18 @@ def _stage() -> None:
 
 # ------------------------------------------------------------------ page
 _init_state()
-rail, stage = st.columns([3, 7], gap="large")
+rail, stage = st.columns([2.7, 7.3], gap="medium")
 with rail:
+    workspace_mode = st.segmented_control(
+        "Workspace mode",
+        ["Single Task", "Batch Factory"],
+        default="Single Task",
+        key="studio_mode",
+        label_visibility="collapsed",
+        width="stretch",
+    )
+    if workspace_mode is None:
+        workspace_mode = "Single Task"
     names = factory.plugin_names()
     plugin = str(
         st.segmented_control(
@@ -465,50 +499,53 @@ with rail:
             help=guide.tip("plugin"),
         )
     )
-    st.pills(
-        "Scenario preset", list(present.PRESETS), key="preset", on_change=_apply_preset,
-        help=guide.tip("preset"),
-    )  # fmt: skip
-    clicked = st.button(
-        "Generate & Certify Task", type="primary", width="stretch", icon=":material/play_arrow:",
-        key="generate", help=guide.tip("generate"),
-    )  # fmt: skip
-    with st.expander("Advanced Controls", icon=":material/tune:"):
-        family = str(
-            st.selectbox(
-                "Question family",
-                factory.families_of(plugin),
-                key=f"family_{plugin}",
-                help=guide.tip("family"),
-            )  # fmt: skip
-        )
-        st.number_input("Seed", 0, 2**31 - 1, key="seed",
-                        help=guide.tip("seed") + " Advances after each generation.")  # fmt: skip
-        for knob, label, hint in (
-            ("reasoning_load", "Reasoning load", "reasoning_load"),
-            ("visual_stress", "Visual stress", "visual_stress"),
-            ("occlusion_level", "Occlusion", "occlusion"),
-            ("realism", "Surface realism", "realism"),
-        ):
-            st.select_slider(label, LEVELS, key=f"knob_{knob}", help=guide.tip(hint))
-        st.segmented_control(
-            "Color regime", [AUTO, "unique", "partial", "mono"], key="knob_color_regime",
-            required=True, width="stretch", help=guide.tip("color_regime"),
+    clicked = False
+    family = factory.families_of(plugin)[0]
+    if workspace_mode == "Single Task":
+        st.pills(
+            "Scenario preset", list(present.PRESETS), key="preset", on_change=_apply_preset,
+            help=guide.tip("preset"),
         )  # fmt: skip
-        if st.toggle("Show fine render knobs", value=False, key="fine_knobs",
-                     help=guide.tip("fine_knobs")):  # fmt: skip
-            st.select_slider("Stroke width (px)", [AUTO, *range(5, 15)], key="knob_stroke_px",
-                             help=guide.tip("stroke_px"))  # fmt: skip
-            st.select_slider("Jitter (px)", [AUTO, *range(0, 25, 4)], key="knob_jitter_px",
-                             help=guide.tip("jitter_px"))  # fmt: skip
-            st.select_slider("Sensor noise", LEVELS, key="knob_noise", help=guide.tip("noise"))
-            st.select_slider(
-                "Capture resolution",
-                [AUTO, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-                key="knob_dpi_scale",
-                help=guide.tip("dpi_scale"),
+        clicked = st.button(
+            "Generate & Certify Task", type="primary", width="stretch",
+            icon=":material/play_arrow:", key="generate", help=guide.tip("generate"),
+        )  # fmt: skip
+        with st.expander("Advanced Controls", icon=":material/tune:"):
+            family = str(
+                st.selectbox(
+                    "Question family",
+                    factory.families_of(plugin),
+                    key=f"family_{plugin}",
+                    help=guide.tip("family"),
+                )  # fmt: skip
             )
-    with st.expander("Batch & OOD Build", icon=":material/library_add:"):
+            st.number_input("Seed", 0, 2**31 - 1, key="seed",
+                            help=guide.tip("seed") + " Advances after each generation.")  # fmt: skip
+            for knob, label, hint in (
+                ("reasoning_load", "Reasoning load", "reasoning_load"),
+                ("visual_stress", "Visual stress", "visual_stress"),
+                ("occlusion_level", "Occlusion", "occlusion"),
+                ("realism", "Surface realism", "realism"),
+            ):
+                st.select_slider(label, LEVELS, key=f"knob_{knob}", help=guide.tip(hint))
+            st.segmented_control(
+                "Color regime", [AUTO, "unique", "partial", "mono"], key="knob_color_regime",
+                required=True, width="stretch", help=guide.tip("color_regime"),
+            )  # fmt: skip
+            if st.toggle("Show fine render knobs", value=False, key="fine_knobs",
+                         help=guide.tip("fine_knobs")):  # fmt: skip
+                st.select_slider("Stroke width (px)", [AUTO, *range(5, 15)], key="knob_stroke_px",
+                                 help=guide.tip("stroke_px"))  # fmt: skip
+                st.select_slider("Jitter (px)", [AUTO, *range(0, 25, 4)], key="knob_jitter_px",
+                                 help=guide.tip("jitter_px"))  # fmt: skip
+                st.select_slider("Sensor noise", LEVELS, key="knob_noise", help=guide.tip("noise"))
+                st.select_slider(
+                    "Capture resolution",
+                    [AUTO, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                    key="knob_dpi_scale",
+                    help=guide.tip("dpi_scale"),
+                )
+    else:
         _batch_panel(plugin)
 
 with stage:

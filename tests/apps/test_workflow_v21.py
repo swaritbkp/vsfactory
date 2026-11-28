@@ -65,27 +65,38 @@ def test_studio_adds_tags_and_hands_off_to_the_arena(app: AppTest, env: Path) ->
     app.switch_page("app_pages/studio.py").run()
     ws = W.WorkingSet(env / "working_set")
     bid = app.session_state["item"]["task"]["bundle_id"]
+    seed = app.session_state["item"]["seed"]
+    item_key = f"{bid}_{seed}"
     assert any(d.label == "Download bundle (.zip)" for d in app.get("download_button"))
     next(b for b in app.button if b.label == "Add to Working Set").click().run()
     assert not app.exception, app.exception
     assert bid in ws.ids() and len(ws.rows()) == 5
     assert any(b.label == "In the Working Set" and b.disabled for b in app.button)
-    app.button_group(key=f"qa_dec_st_{bid}").set_value("Approve").run()
-    app.button_group(key=f"qa_tags_st_{bid}").set_value(["hard-case", "stress"]).run()
-    next(b for b in app.button if b.label == "Save review").click().run()
+    app.button_group(key=f"studio_qa_tags_{item_key}").set_value(["hard-case", "stress"]).run()
+    assert review.load_review_states(ws.review_log)[bid].tags == ["hard-case", "stress"]
+    app.button_group(key=f"studio_qa_decision_{item_key}").set_value("Approve").run()
     assert not app.exception, app.exception
     rec = review.load_review_states(ws.review_log)[bid]
     assert rec.status == "approved" and rec.tags == ["hard-case", "stress"]
+    next(b for b in app.button if b.label == "Generate & Certify Task").click().run()
+    assert not app.exception, app.exception
+    next_item = app.session_state["item"]
+    next_key = f"{next_item['task']['bundle_id']}_{next_item['seed']}"
+    assert next_key != item_key
+    assert app.button_group(key=f"studio_qa_tags_{next_key}").value == []
     next(b for b in app.button if b.label == "Quick test in Arena").click().run()
     assert not app.exception, app.exception
+    assert app.session_state["arena_home_view"] == "New Session"
     assert app.session_state["ar_source"] == "Working Set"
-    assert app.multiselect(key="ar_ws_pick").value == [bid]
+    assert app.multiselect(key="ar_ws_pick").value == [next_item["task"]["bundle_id"]]
     metrics = {m.label: m.value for m in app.metric}
     assert metrics["Certified images"] == "1"  # one frozen item, nothing to render
 
 
 def test_arena_showcase_and_reward_sandbox(app: AppTest) -> None:
     app.switch_page("app_pages/arena.py").run()
+    assert not app.exception, app.exception
+    app.button_group(key="arena_home_view").set_value("Showcase · 531-Call Audit").run()
     assert not app.exception, app.exception
     metrics = {m.label: m.value for m in app.metric}
     assert metrics["Live spend"] == "$0.6727" and metrics["Certified items"] == "59 / 60"
@@ -94,7 +105,10 @@ def test_arena_showcase_and_reward_sandbox(app: AppTest) -> None:
     assert list(board["Model"]) == ["GPT-5.4", "Gemini 2.5 Flash", "Qwen3-VL-235B"]
     assert abs(board.loc[0, "Accuracy"] - 44.6) < 0.1
     assert any("statistical tie" in c.value for c in app.caption)
+    app.button_group(key="arena_home_view").set_value("Reward Verifier Sandbox").run()
+    assert not app.exception, app.exception
     group = next(g for g in app.button_group if "Grounded trace" in g.options)
+    metrics = {m.label: m.value for m in app.metric}
     assert metrics["Composite"] == "1.000"
     group.set_value("Full-image box cheat [0,0,1000,1000]").run()
     metrics = {m.label: m.value for m in app.metric}

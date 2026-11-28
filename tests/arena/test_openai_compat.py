@@ -225,6 +225,25 @@ def test_campaign_yaml_round_trip_is_secret_free(arena_root: Path) -> None:
             load_campaign_yaml(body)
 
 
+def test_campaign_yaml_rejects_google_aiza_literals() -> None:
+    aiza = "AIzaSyDummyAuditKey1234567890abcd"
+    for field in (f"model_id: {aiza}", f"notes: key={aiza}", f"session_name: {aiza}"):
+        body = (
+            "session_name: Gemini Test\nmode: live\nprovider: openai_compat\n"
+            "base_url: https://generativelanguage.googleapis.com/v1beta/openai/\n"
+            f"{field}\n"
+            "blocks:\n  - {block_id: b1, domain: tangle, preset: Clean, n: 1, seed: 0}\n"
+        )
+        if field.startswith("session_name:"):
+            body = (
+                body.replace("session_name: Gemini Test\n", "") + "\nmodel_id: gemini-2.5-flash\n"
+            )
+        elif not field.startswith("model_id:"):
+            body += "model_id: gemini-2.5-flash\n"
+        with pytest.raises(ValueError, match="secret"):
+            load_campaign_yaml(body)
+
+
 def test_openrouter_campaign_files_keep_the_pre_v2_1_shape(arena_root: Path) -> None:
     text = export_campaign_yaml(config(arena_root, mode="live"))
     body = " ".join(line for line in text.splitlines() if not line.startswith("#"))
